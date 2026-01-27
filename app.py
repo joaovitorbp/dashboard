@@ -7,18 +7,12 @@ import plotly.graph_objects as go
 # ---------------------------------------------------------
 st.set_page_config(layout="wide", page_title="Painel de Obras 360", page_icon="🏗️")
 
-# CSS para limpar a interface e dar destaque aos cards
 st.markdown("""
 <style>
-    /* Remove padding excessivo do topo */
-    .block-container {padding-top: 2rem; padding-bottom: 2rem;}
-    
-    /* Estilo para titulos de seção */
-    h3 {color: #444; font-weight: 600;}
-    
-    /* Ajuste de métricas */
-    [data-testid="stMetricValue"] {font-size: 1.6rem !important; color: #333;}
-    [data-testid="stMetricLabel"] {font-size: 0.9rem !important; color: #666;}
+    .block-container {padding-top: 2rem; padding-bottom: 3rem;}
+    h3 {color: #1f2937; font-weight: 700;}
+    [data-testid="stMetricValue"] {font-size: 1.8rem !important; color: #111827;}
+    [data-testid="stMetricLabel"] {font-size: 1rem !important; color: #6b7280;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -42,18 +36,17 @@ st.sidebar.title("Navegação")
 projetos = df_raw['Projeto'].unique()
 projeto_sel = st.sidebar.selectbox("Selecione a Obra:", projetos)
 
-# Filtrar dados
 dados = df_raw[df_raw['Projeto'] == projeto_sel].iloc[0]
 
 # ---------------------------------------------------------
-# 4. CÁLCULOS (BACKEND)
+# 4. CÁLCULOS
 # ---------------------------------------------------------
 custo_total = dados['Mat_Real'] + dados['Desp_Real'] + dados['HH_Real_Vlr'] + dados['Impostos']
 lucro_liquido = dados['Vendido'] - custo_total
 margem_real_pct = (lucro_liquido / dados['Vendido']) * 100 if dados['Vendido'] > 0 else 0
 
 # ---------------------------------------------------------
-# 5. HEADER DO PROJETO
+# 5. HEADER
 # ---------------------------------------------------------
 col_a, col_b = st.columns([3, 1])
 with col_a:
@@ -61,7 +54,7 @@ with col_a:
     st.markdown(f"**Cliente:** {dados['Cliente']} | **Local:** {dados['Cidade']}")
 
 with col_b:
-    st.write("") # Espaço para alinhar
+    st.write("")
     status_map = {"Finalizado": "green", "Em andamento": "blue", "Não iniciado": "gray", "Apresentado": "orange"}
     cor_st = status_map.get(dados['Status'], "gray")
     st.markdown(f"### :{cor_st}[{dados['Status']}]")
@@ -69,7 +62,7 @@ with col_b:
 st.divider()
 
 # ---------------------------------------------------------
-# 6. LINHA 1: CARDS FINANCEIROS (VISUAL LIMPO)
+# 6. KPI CARDS (LUCRO LÍQUIDO ATUALIZADO)
 # ---------------------------------------------------------
 c1, c2, c3, c4 = st.columns(4)
 
@@ -83,132 +76,148 @@ with c2:
 
 with c3:
     with st.container(border=True):
-        st.metric("📉 Custos Totais", f"R$ {custo_total:,.2f}", help="Soma de Materiais, Despesas, MO e Impostos")
+        # Mudança solicitada: Lucro Líquido no lugar de Custos
+        cor_lucro = "normal" if lucro_liquido >= 0 else "inverse"
+        st.metric("💵 Lucro Líquido (R$)", f"R$ {lucro_liquido:,.2f}", delta_color=cor_lucro)
 
 with c4:
     with st.container(border=True):
         delta = margem_real_pct - 25
-        st.metric("📈 Margem Líquida", f"{margem_real_pct:.1f}%", delta=f"{delta:.1f}% (Meta 25%)")
-
-st.write("") # Espaçamento
-
-# ---------------------------------------------------------
-# 7. LINHA 2: GRÁFICO CASCATA (COM BOTÃO R$/%)
-# ---------------------------------------------------------
-col_water, col_hh_kpi = st.columns([2, 1])
-
-with col_water:
-    st.subheader("Fluxo de Resultado")
-    
-    # Toggle para mudar visualização
-    modo_visualizacao = st.radio("Visualizar em:", ["Valores (R$)", "Porcentagem (%)"], horizontal=True, label_visibility="collapsed")
-    
-    # Preparar dados do gráfico
-    labels = ["Vendido", "Impostos", "Materiais", "Despesas", "Mão de Obra", "Lucro"]
-    
-    if modo_visualizacao == "Valores (R$)":
-        values = [dados['Vendido'], -dados['Impostos'], -dados['Mat_Real'], -dados['Desp_Real'], -dados['HH_Real_Vlr'], lucro_liquido]
-        text_vals = [f"R$ {v/1000:.1f}k" for v in values] # Formato 100k
-        y_title = "Valor (R$)"
-    else:
-        # Calcular % em relação ao Vendido
-        base = dados['Vendido'] if dados['Vendido'] > 0 else 1
-        values = [100, -(dados['Impostos']/base)*100, -(dados['Mat_Real']/base)*100, -(dados['Desp_Real']/base)*100, -(dados['HH_Real_Vlr']/base)*100, (lucro_liquido/base)*100]
-        text_vals = [f"{v:.1f}%" for v in values]
-        y_title = "Porcentagem (%)"
-
-    fig_water = go.Figure(go.Waterfall(
-        name = "Financeiro", orientation = "v",
-        measure = ["relative", "relative", "relative", "relative", "relative", "total"],
-        x = labels,
-        y = values,
-        text = text_vals,
-        textposition = "outside",
-        connector = {"line":{"color":"#cbd5e1"}},
-        decreasing = {"marker":{"color":"#ef4444"}}, # Vermelho
-        increasing = {"marker":{"color":"#10b981"}}, # Verde
-        totals = {"marker":{"color":"#3b82f6"}}       # Azul
-    ))
-    fig_water.update_layout(height=400, margin=dict(t=30, b=0, l=0, r=0), yaxis_title=y_title)
-    st.plotly_chart(fig_water, use_container_width=True)
-
-# ---------------------------------------------------------
-# 8. LINHA LATERAL: EFICIÊNCIA HH (Resumo)
-# ---------------------------------------------------------
-with col_hh_kpi:
-    st.subheader("Eficiência HH")
-    with st.container(border=True):
-        # Dados HH
-        hh_total = dados['HH_Orc_Qtd']
-        hh_gasto = dados['HH_Real_Qtd']
-        perc_hh = (hh_gasto / hh_total * 100) if hh_total > 0 else 0
-        fisico = dados['Conclusao_%']
-        
-        # 1. Comparação Visual Rápida
-        st.write("Físico (Obra)")
-        st.progress(fisico/100)
-        
-        st.write("Horas (Consumido)")
-        bar_color = "red" if perc_hh > (fisico + 10) else "green" # Lógica visual não nativa, mas o texto ajuda
-        st.progress(min(perc_hh/100, 1.0))
-        
-        # Texto de Diagnóstico
-        if perc_hh > (fisico + 10):
-            st.error(f"🚨 **Crítico:** Consumo de horas ({perc_hh:.0f}%) está correndo mais que a obra ({fisico}%).")
-        elif perc_hh < fisico:
-            st.success(f"✅ **Excelente:** Obra avançada ({fisico}%) com economia de horas ({perc_hh:.0f}%).")
-        else:
-            st.info(f"⚖️ **Equilibrado:** Ritmo dentro do esperado.")
-            
-        st.divider()
-        st.metric("Saldo de Horas", f"{int(hh_total - hh_gasto)} h", help="Horas restantes no orçamento")
+        st.metric("📈 Margem Líquida (%)", f"{margem_real_pct:.1f}%", delta=f"{delta:.1f}% (Meta 25%)")
 
 st.divider()
 
 # ---------------------------------------------------------
-# 9. LINHA 3: DETALHAMENTO COMPARATIVO (ORÇADO x REAL)
+# 7. SEÇÃO: COMPOSIÇÃO DE RESULTADO (CASCATA) - FULL WIDTH
 # ---------------------------------------------------------
-st.subheader("Detalhamento de Custos (Orçado vs Real)")
+st.subheader("📊 Composição do Resultado")
 
-c_mat, c_desp, c_hh_vlr = st.columns(3)
+with st.container(border=True):
+    col_tgl, col_chart = st.columns([1, 6])
+    
+    with col_tgl:
+        st.write("")
+        st.write("")
+        modo_vis = st.radio("Visualizar:", ["Valores (R$)", "Percentual (%)"], label_visibility="collapsed")
+    
+    with col_chart:
+        labels = ["Vendido", "Impostos", "Materiais", "Despesas", "Mão de Obra", "Lucro Líquido"]
+        
+        if modo_vis == "Valores (R$)":
+            vals = [dados['Vendido'], -dados['Impostos'], -dados['Mat_Real'], -dados['Desp_Real'], -dados['HH_Real_Vlr'], lucro_liquido]
+            text_vals = [f"R$ {v/1000:.1f}k" for v in vals]
+            y_ax = "Valor (R$)"
+        else:
+            base = dados['Vendido'] if dados['Vendido'] > 0 else 1
+            vals = [100, -(dados['Impostos']/base)*100, -(dados['Mat_Real']/base)*100, -(dados['Desp_Real']/base)*100, -(dados['HH_Real_Vlr']/base)*100, (lucro_liquido/base)*100]
+            text_vals = [f"{v:.1f}%" for v in vals]
+            y_ax = "Percentual (%)"
 
-def plot_horizontal_bar(titulo, orcado, real):
-    # Lógica de cor: Vermelho se Real > Orçado
-    color = '#ef4444' if real > orcado else '#3b82f6'
+        fig_water = go.Figure(go.Waterfall(
+            orientation = "v",
+            measure = ["relative", "relative", "relative", "relative", "relative", "total"],
+            x = labels, y = vals, text = text_vals, textposition = "outside",
+            connector = {"line":{"color":"#cbd5e1"}},
+            decreasing = {"marker":{"color":"#ef4444"}},
+            increasing = {"marker":{"color":"#10b981"}},
+            totals = {"marker":{"color":"#3b82f6"}}
+        ))
+        fig_water.update_layout(height=350, margin=dict(t=10, b=0, l=0, r=0), yaxis_title=y_ax)
+        st.plotly_chart(fig_water, use_container_width=True)
+
+st.write("") # Espaço
+
+# ---------------------------------------------------------
+# 8. SEÇÃO: EFICIÊNCIA OPERACIONAL - FULL WIDTH
+# ---------------------------------------------------------
+st.subheader("⚙️ Eficiência Operacional (Físico vs Horas)")
+
+with st.container(border=True):
+    c_fis, c_hh = st.columns(2)
+    
+    # Progresso Físico
+    with c_fis:
+        fisico = dados['Conclusao_%']
+        st.write(f"**🏗️ Avanço Físico:** {fisico}%")
+        st.progress(fisico/100)
+        st.caption("Baseado no cronograma físico medido.")
+
+    # Progresso Horas
+    with c_hh:
+        hh_orc = dados['HH_Orc_Qtd']
+        hh_real = dados['HH_Real_Qtd']
+        perc_hh = (hh_real / hh_orc * 100) if hh_orc > 0 else 0
+        
+        # Cor dinâmica da barra
+        if perc_hh > (fisico + 10):
+            cor_hh = ":red"
+            msg = "⚠️ Consumo alto de horas!"
+        elif perc_hh < fisico:
+            cor_hh = ":green"
+            msg = "✅ Economia de horas."
+        else:
+            cor_hh = ":blue"
+            msg = "⚖️ Dentro do esperado."
+
+        st.write(f"**⏱️ Banco de Horas:** {perc_hh:.1f}% Consumido {cor_hh}[({int(hh_real)}/{int(hh_orc)}h)]")
+        st.progress(min(perc_hh/100, 1.0))
+        st.caption(msg)
+
+st.write("")
+
+# ---------------------------------------------------------
+# 9. SEÇÃO: COMPARATIVOS FINANCEIROS (BULLET CHART MELHORADO)
+# ---------------------------------------------------------
+st.subheader("📉 Detalhamento de Custos (Orçado vs Realizado)")
+
+c_mat, c_desp, c_mo = st.columns(3)
+
+def plot_bullet(titulo, orcado, real, cor_real="#3b82f6"):
+    # Calcula % para exibir no título
+    pct = (real / orcado * 100) if orcado > 0 else 0
+    cor_final = "#ef4444" if real > orcado else cor_real
     
     fig = go.Figure()
-    # Barra Orçado (Fundo Cinza)
+
+    # Barra de Fundo (Orçado) - Cinza claro, larga
     fig.add_trace(go.Bar(
         y=[''], x=[orcado], name='Orçado',
-        orientation='h', marker_color='#e2e8f0',
-        text=[f"Meta: {orcado/1000:.1f}k"], textposition='auto'
+        orientation='h', marker_color='#e5e7eb',
+        width=0.5, # Barra mais grossa
+        hoverinfo='x+name'
     ))
-    # Barra Real (Frente Colorida)
+
+    # Barra de Frente (Real) - Colorida, mais fina (efeito bullet)
     fig.add_trace(go.Bar(
         y=[''], x=[real], name='Realizado',
-        orientation='h', marker_color=color,
-        text=[f"Real: {real/1000:.1f}k"], textposition='auto'
+        orientation='h', marker_color=cor_final,
+        width=0.25, # Barra mais fina
+        hoverinfo='x+name'
     ))
-    
+
     fig.update_layout(
-        title=titulo,
-        barmode='group', # Barras lado a lado para facilitar comparação
-        height=200,
-        margin=dict(l=0, r=0, t=30, b=0),
-        xaxis=dict(showgrid=False, showticklabels=False), # Limpa eixo X
-        yaxis=dict(showgrid=False),
-        showlegend=False
+        title=f"<b>{titulo}</b> <span style='font-size: 14px; color: #666;'>({pct:.0f}%)</span>",
+        barmode='overlay', # Sobrepor as barras
+        height=180,
+        margin=dict(l=10, r=10, t=40, b=10),
+        xaxis=dict(showgrid=False, showticklabels=True),
+        yaxis=dict(showgrid=False, showticklabels=False),
+        showlegend=False,
+        plot_bgcolor='rgba(0,0,0,0)'
     )
     return fig
 
 with c_mat:
     with st.container(border=True):
-        st.plotly_chart(plot_horizontal_bar("Materiais", dados['Mat_Orc'], dados['Mat_Real']), use_container_width=True)
+        st.plotly_chart(plot_bullet("Materiais", dados['Mat_Orc'], dados['Mat_Real'], "#3b82f6"), use_container_width=True)
+        st.caption(f"Orçado: R$ {dados['Mat_Orc']/1000:.1f}k | Real: R$ {dados['Mat_Real']/1000:.1f}k")
 
 with c_desp:
     with st.container(border=True):
-        st.plotly_chart(plot_horizontal_bar("Despesas", dados['Desp_Orc'], dados['Desp_Real']), use_container_width=True)
+        st.plotly_chart(plot_bullet("Despesas", dados['Desp_Orc'], dados['Desp_Real'], "#f59e0b"), use_container_width=True)
+        st.caption(f"Orçado: R$ {dados['Desp_Orc']/1000:.1f}k | Real: R$ {dados['Desp_Real']/1000:.1f}k")
 
-with c_hh_vlr:
+with c_mo:
     with st.container(border=True):
-        st.plotly_chart(plot_horizontal_bar("Mão de Obra (Valor R$)", dados['HH_Orc_Vlr'], dados['HH_Real_Vlr']), use_container_width=True)
+        st.plotly_chart(plot_bullet("Mão de Obra (R$)", dados['HH_Orc_Vlr'], dados['HH_Real_Vlr'], "#10b981"), use_container_width=True)
+        st.caption(f"Orçado: R$ {dados['HH_Orc_Vlr']/1000:.1f}k | Real: R$ {dados['HH_Real_Vlr']/1000:.1f}k")
