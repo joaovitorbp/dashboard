@@ -3,17 +3,15 @@ import pandas as pd
 import plotly.graph_objects as go
 
 # ---------------------------------------------------------
-# 1. CONFIGURAÇÃO E ESTILO
+# ESTILO CSS BLINDADO
 # ---------------------------------------------------------
-st.set_page_config(layout="wide", page_title="Dashboard Obras")
-
 st.markdown("""
 <style>
     .stApp {background-color: #0e1117;}
     
     /* Espaçamento superior para evitar cortes */
     .block-container {
-        padding-top: 5rem !important; 
+        padding-top: 3rem !important; 
         padding-bottom: 3rem;
     }
     
@@ -25,11 +23,9 @@ st.markdown("""
         background-color: #1c1f26;
         border-radius: 10px;
         padding: 20px;
-        /* Bordas fixas */
         border-top: 1px solid #30363d;
         border-right: 1px solid #30363d;
         border-bottom: 1px solid #30363d;
-        
         margin-bottom: 20px;
         display: flex;
         justify-content: space-between;
@@ -84,14 +80,13 @@ st.markdown("""
         color: #ffffff;
     }
     
-    /* Títulos Gerais */
     h1, h2, h3 {color: #f0f6fc !important;}
     p, label, span, div {color: #e6edf3 !important;}
 </style>
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 2. FUNÇÕES ÚTEIS
+# FUNÇÕES E DADOS
 # ---------------------------------------------------------
 def format_currency(value):
     if pd.isna(value): return "R$ 0,00"
@@ -112,15 +107,15 @@ except FileNotFoundError:
     st.stop()
 
 # ---------------------------------------------------------
-# 3. SIDEBAR
+# SIDEBAR NAVEGAÇÃO INTERNA
 # ---------------------------------------------------------
-st.sidebar.title("Navegação")
+st.sidebar.markdown("### Seleção de Obra")
 lista_projetos = sorted(df_raw['Projeto'].unique())
-id_projeto = st.sidebar.selectbox("Selecione o Projeto:", lista_projetos)
+id_projeto = st.sidebar.selectbox("Projeto:", lista_projetos)
 dados = df_raw[df_raw['Projeto'] == id_projeto].iloc[0]
 
 # ---------------------------------------------------------
-# 4. CÁLCULOS
+# CÁLCULOS
 # ---------------------------------------------------------
 custo_total = dados['Mat_Real'] + dados['Desp_Real'] + dados['HH_Real_Vlr'] + dados['Impostos']
 lucro_liquido = dados['Vendido'] - custo_total
@@ -128,7 +123,7 @@ margem_real_pct = (lucro_liquido / dados['Vendido']) * 100 if dados['Vendido'] >
 META_MARGEM = 25.0
 
 # ---------------------------------------------------------
-# 5. HEADER
+# HEADER
 # ---------------------------------------------------------
 cor_map = {"Finalizado": "#238636", "Em andamento": "#1f6feb", "Não iniciado": "#8b949e"}
 cor_bg = cor_map.get(dados['Status'], "#30363d")
@@ -148,7 +143,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 6. KPI CARDS
+# KPI CARDS
 # ---------------------------------------------------------
 def criar_card_destaque(titulo, valor, cor_borda, cor_texto="#ffffff"):
     st.markdown(f"""
@@ -174,7 +169,7 @@ st.write("")
 st.divider()
 
 # ---------------------------------------------------------
-# 7. SEÇÃO 1: EFICIÊNCIA OPERACIONAL
+# SEÇÃO 1: EFICIÊNCIA OPERACIONAL
 # ---------------------------------------------------------
 st.subheader("⚙️ Eficiência Operacional")
 
@@ -226,19 +221,18 @@ with st.container(border=True):
     with col_diag:
         saldo_hh = hh_orc - hh_real
         
-        # LÓGICA DE TEXTOS ATUALIZADA
         if perc_hh > (dados['Conclusao_%'] + 10):
-            border_c = "#da3633" # Vermelho
+            border_c = "#da3633" 
             titulo = "Baixa Eficiência"
             texto = "O gasto de horas ultrapassou o avanço físico em mais de 10%."
             saldo_txt = f"Excedente: {int(hh_real - hh_orc)}h"
         elif perc_hh < dados['Conclusao_%']:
-            border_c = "#238636" # Verde
+            border_c = "#238636"
             titulo = "Alta Eficiência"
             texto = "A obra está avançada em relação ao gasto de horas planejado."
             saldo_txt = f"Saldo: {int(saldo_hh)}h"
         else:
-            border_c = "#1f6feb" # Azul
+            border_c = "#1f6feb"
             titulo = "Equilibrado"
             texto = "O ritmo de trabalho segue alinhado ao avanço físico."
             saldo_txt = f"Saldo: {int(saldo_hh)}h"
@@ -255,7 +249,7 @@ st.write("")
 st.divider()
 
 # ---------------------------------------------------------
-# 8. SEÇÃO 2: COMPOSIÇÃO DE RESULTADO
+# SEÇÃO 2: COMPOSIÇÃO DE RESULTADO
 # ---------------------------------------------------------
 st.subheader("📊 Composição do Lucro")
 
@@ -295,7 +289,7 @@ st.write("")
 st.divider()
 
 # ---------------------------------------------------------
-# 9. SEÇÃO 3: DETALHAMENTO DE CUSTOS
+# SEÇÃO 3: DETALHAMENTO DE CUSTOS
 # ---------------------------------------------------------
 st.subheader("🔎 Detalhamento de Custos")
 
