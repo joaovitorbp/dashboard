@@ -2,21 +2,21 @@ import streamlit as st
 import pandas as pd
 
 # ---------------------------------------------------------
-# 1. CONFIGURAÇÃO VISUAL
+# 1. CONFIGURAÇÃO VISUAL (CSS)
 # ---------------------------------------------------------
 st.markdown("""
 <style>
     .stApp {background-color: #0e1117;}
     .block-container {padding-top: 2rem;}
     
-    /* Card Visual (HTML/CSS) */
+    /* Card Visual */
     .project-card {
         background-color: #1c1f26;
         border-radius: 8px;
         padding: 16px;
         margin-bottom: 10px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        border: 1px solid #30363d; /* Borda sutil padrão */
+        border: 1px solid #30363d;
     }
     .card-header {
         font-size: 1.1rem;
@@ -70,7 +70,7 @@ except FileNotFoundError:
     st.stop()
 
 # ---------------------------------------------------------
-# 3. LÓGICA DE DADOS (CRITICIDADE E MARGEM)
+# 3. LÓGICA DE DADOS
 # ---------------------------------------------------------
 META_MARGEM = 20.0
 
@@ -79,7 +79,6 @@ def calcular_dados_extras(row):
     lucro = row['Vendido'] - custo
     margem = (lucro / row['Vendido'] * 100) if row['Vendido'] > 0 else 0
     
-    # Lógica de Crítico: Margem Baixa OU Estouro de Horas
     hh_perc = (row['HH_Real_Qtd'] / row['HH_Orc_Qtd'] * 100) if row['HH_Orc_Qtd'] > 0 else 0
     fisico = row['Conclusao_%']
     
@@ -92,7 +91,7 @@ def calcular_dados_extras(row):
 df[['Margem_%', 'E_Critico']] = df.apply(calcular_dados_extras, axis=1)
 
 # ---------------------------------------------------------
-# 4. INTERFACE - CABEÇALHO
+# 4. INTERFACE
 # ---------------------------------------------------------
 st.title("🏢 Painel de Controle")
 st.markdown("Visão consolidada do portfólio de obras.")
@@ -111,9 +110,7 @@ k4.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Margem Média</div><
 
 st.divider()
 
-# ---------------------------------------------------------
-# 5. FILTROS REFORMULADOS
-# ---------------------------------------------------------
+# Filtros
 col_status, col_check, col_spacer = st.columns([2, 1.5, 3])
 
 with col_status:
@@ -125,7 +122,7 @@ with col_status:
     )
 
 with col_check:
-    st.write("") # Espaçamento para alinhar
+    st.write("") 
     ver_apenas_criticas = st.checkbox("⚠️ Apenas Obras Críticas")
 
 # Aplicar Filtros
@@ -141,28 +138,32 @@ if ver_apenas_criticas:
 
 st.write(f"Mostrando **{len(df_show)}** projetos")
 
-# ---------------------------------------------------------
-# 6. GRID DE CARDS COM NAVEGAÇÃO
-# ---------------------------------------------------------
+# Grid de Cards
 cols = st.columns(3)
 
 for index, row in df_show.iterrows():
-    with cols[index % 3]: # Distribui em 3 colunas
+    with cols[index % 3]:
         
-        # 1. Definição da Cor da Borda pelo AVANÇO FÍSICO (Conclusão)
+        # Variáveis de Visualização
         pct = row['Conclusao_%']
+        
+        # Cor da Borda (Baseada no Avanço)
         if pct >= 100:
-            border_color = "#238636" # Verde (Concluído)
+            border_color = "#238636" # Verde
         elif pct > 50:
-            border_color = "#1f6feb" # Azul (Avançado)
+            border_color = "#1f6feb" # Azul
         else:
-            border_color = "#8957e5" # Roxo (Inicial)
+            border_color = "#8957e5" # Roxo
 
-        # 2. Cor da Margem (Texto)
+        # Cor da Margem
         cor_margem = "#da3633" if row['Margem_%'] < META_MARGEM else "#2ea043"
+        
+        # Formatação de Valores
+        val_fmt = f"R$ {row['Vendido']/1000:,.0f}k"
+        margem_fmt = f"{row['Margem_%']:.1f}%"
 
-        # 3. HTML do Card (Sem emojis no texto, com Valor e Margem)
-        st.markdown(f"""
+        # HTML Seguro
+        card_html = f"""
         <div class="project-card" style="border-left: 5px solid {border_color};">
             <div class="card-header">{row['Projeto']}</div>
             <div class="card-sub">{row['Cliente']} | {row['Cidade']}</div>
@@ -178,18 +179,18 @@ for index, row in df_show.iterrows():
             <div class="card-metrics">
                 <div class="metric-box">
                     <div class="metric-label">VALOR</div>
-                    <div class="metric-val">R$ {row['Vendido']/1000:,.0f}k</div>
+                    <div class="metric-val">{val_fmt}</div>
                 </div>
                 <div class="metric-box">
                     <div class="metric-label">MARGEM</div>
-                    <div class="metric-val" style="color: {cor_margem};">{row['Margem_%']:.1f}%</div>
+                    <div class="metric-val" style="color: {cor_margem};">{margem_fmt}</div>
                 </div>
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """
+        st.markdown(card_html, unsafe_allow_html=True)
         
-        # 4. BOTÃO DE NAVEGAÇÃO
-        # Ao clicar, salvamos o ID na memória e trocamos de página
+        # Botão de Navegação
         if st.button(f"🔎 Detalhes", key=f"btn_{row['Projeto']}", use_container_width=True):
-            st.session_state["projeto_foco"] = row['Projeto'] # Salva na memória
-            st.switch_page("dashboard_detalhado.py") # Pula para a outra aba
+            st.session_state["projeto_foco"] = row['Projeto']
+            st.switch_page("dashboard_detalhado.py")
