@@ -1,29 +1,29 @@
 import streamlit as st
 import pandas as pd
-import textwrap
 
 # ---------------------------------------------------------
-# 1. CONFIGURAÇÃO VISUAL (CSS PREMIUM)
+# 1. CONFIGURAÇÃO VISUAL (CSS)
 # ---------------------------------------------------------
 st.markdown("""
 <style>
     .stApp {background-color: #0e1117;}
     .block-container {padding-top: 2rem;}
 
-    /* --- ESTILO DO CONTAINER DO CARD --- */
+    /* --- CONTAINER DO CARD --- */
     [data-testid="stVerticalBlockBorderWrapper"] {
         background-color: #161b22;
         border: 1px solid #30363d;
-        border-radius: 8px;
+        border-radius: 6px; /* Cantos levemente arredondados */
         padding: 0px !important;
-        transition: transform 0.2s, border-color 0.2s;
+        transition: all 0.2s ease-in-out;
     }
     [data-testid="stVerticalBlockBorderWrapper"]:hover {
         border-color: #58a6ff;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         transform: translateY(-2px);
     }
 
-    /* --- CABEÇALHO DO CARD --- */
+    /* --- CABEÇALHO --- */
     .card-header-box {
         padding: 15px 15px 10px 15px;
         border-bottom: 1px solid #21262d;
@@ -41,36 +41,36 @@ st.markdown("""
     .project-sub {
         color: #8b949e;
         font-size: 0.75rem;
+        font-weight: 400;
         display: flex;
         justify-content: space-between;
         align-items: center;
     }
 
-    /* --- BADGE DE STATUS --- */
+    /* --- BADGE DE STATUS (Sem emojis) --- */
     .status-badge {
         padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 0.65rem;
+        border-radius: 10px;
+        font-size: 0.6rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
 
-    /* --- CORPO DO CARD (MÉTRICAS) --- */
+    /* --- CORPO (MÉTRICAS) --- */
     .card-body-box {
         padding: 15px;
     }
     .metric-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 10px;
+        gap: 12px;
         margin-bottom: 15px;
     }
     .metric-item {
-        background-color: #0d1117;
+        background-color: #0d1117; /* Fundo mais escuro para destaque */
         padding: 8px;
-        border-radius: 6px;
-        text-align: center;
+        border-radius: 4px;
         border: 1px solid #30363d;
     }
     .metric-lbl {
@@ -81,51 +81,50 @@ st.markdown("""
         font-family: "Source Sans Pro", sans-serif;
     }
     .metric-val {
-        font-size: 1rem; /* Fonte Normal Ajustada */
-        font-weight: 700;
+        font-size: 0.95rem;
+        font-weight: 600;
         color: #e6edf3;
         font-family: "Source Sans Pro", sans-serif;
     }
 
-    /* --- BARRA DE PROGRESSO CUSTOMIZADA --- */
+    /* --- BARRA DE PROGRESSO --- */
     .progress-container {
         width: 100%;
         background-color: #21262d;
-        border-radius: 4px;
-        height: 6px;
-        margin-top: 5px;
+        border-radius: 2px;
+        height: 4px; /* Mais fina */
+        margin-top: 6px;
         overflow: hidden;
     }
     .progress-bar {
         height: 100%;
-        border-radius: 4px;
+        border-radius: 2px;
     }
     .progress-txt {
         font-size: 0.7rem;
         color: #8b949e;
-        margin-bottom: 4px;
+        margin-bottom: 2px;
         display: flex;
         justify-content: space-between;
-        font-family: "Source Sans Pro", sans-serif;
     }
 
-    /* --- BOTÃO ESTILIZADO (Rodapé) --- */
+    /* --- BOTÃO DISCRETO (Rodapé) --- */
     div[data-testid="stVerticalBlockBorderWrapper"] button {
         background-color: transparent;
-        color: #58a6ff;
+        color: #7d8590; /* Cinza discreto */
         border: none;
-        border-top: 1px solid #30363d;
-        border-radius: 0 0 8px 8px;
+        border-top: 1px solid #21262d; /* Linha divisória muito sutil */
+        border-radius: 0 0 6px 6px;
         width: 100%;
-        padding: 10px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        transition: background 0.2s;
+        padding: 8px;
+        font-size: 0.8rem;
+        font-weight: 400;
+        transition: all 0.2s;
         font-family: "Source Sans Pro", sans-serif;
     }
     div[data-testid="stVerticalBlockBorderWrapper"] button:hover {
-        background-color: #1f6feb20;
-        color: #58a6ff;
+        background-color: #1f242c;
+        color: #58a6ff; /* Azul ao passar o mouse */
     }
     
     div[data-testid="column"] { padding: 0 8px; }
@@ -183,7 +182,7 @@ df[['Margem_%', 'E_Critico']] = df.apply(calcular_dados_extras, axis=1)
 st.title("🏢 Painel de Controle")
 st.markdown("Visão consolidada do portfólio de obras.")
 
-# KPIs Globais (HTML em linha única para evitar erros)
+# KPIs Globais (Sem quebra de linha no HTML)
 k1, k2, k3, k4 = st.columns(4)
 k1.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Total Carteira</div><div class='big-kpi-val'>R$ {df['Vendido'].sum()/1e6:.1f}M</div></div>", unsafe_allow_html=True)
 k2.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Faturamento</div><div class='big-kpi-val'>R$ {df['Faturado'].sum()/1e6:.1f}M</div></div>", unsafe_allow_html=True)
@@ -211,39 +210,37 @@ cols = st.columns(3)
 for index, row in df_show.iterrows():
     with cols[index % 3]:
         
-        # Definições Visuais
+        # Variáveis Visuais
         pct = int(row['Conclusao_%'])
         
         if pct >= 100:
             cor_tema = "#238636" # Verde
-            txt_status = "CONCLUÍDO"
-            bg_badge = "rgba(35, 134, 54, 0.2)"
+            txt_status = "Concluído"
+            bg_badge = "rgba(35, 134, 54, 0.15)"
             color_badge = "#3fb950"
         elif pct > 50:
             cor_tema = "#1f6feb" # Azul
-            txt_status = "EM ANDAMENTO"
-            bg_badge = "rgba(31, 111, 235, 0.2)"
+            txt_status = "Em Andamento"
+            bg_badge = "rgba(31, 111, 235, 0.15)"
             color_badge = "#58a6ff"
         else:
             cor_tema = "#8957e5" # Roxo
-            txt_status = "INÍCIO"
-            bg_badge = "rgba(137, 87, 229, 0.2)"
+            txt_status = "Início"
+            bg_badge = "rgba(137, 87, 229, 0.15)"
             color_badge = "#d2a8ff"
 
         cor_margem = "#da3633" if row['Margem_%'] < META_MARGEM else "#3fb950"
         
-        # --- CARD CONTAINER ---
+        # --- CARD ---
         with st.container(border=True):
             
-            # Montagem do HTML usando Lista + Join (Isso evita o bug do código aparecer na tela)
-            
-            # HEADER
+            # HEADER (Sem Emojis, com Empresa | Cidade)
             html_header = [
-                f'<div class="card-header-box" style="border-left: 4px solid {cor_tema};">',
+                f'<div class="card-header-box" style="border-left: 3px solid {cor_tema};">',
                 f'<div class="project-title" title="{row["Projeto"]} - {row["Descricao"]}">{row["Projeto"]} - {row["Descricao"]}</div>',
                 '<div class="project-sub">',
-                f'<span>🏢 {row["Cliente"]}</span>',
-                f'<span class="status-badge" style="background-color: {bg_badge}; color: {color_badge}; border: 1px solid {cor_tema};">{txt_status}</span>',
+                f'<span>{row["Cliente"]} | {row["Cidade"]}</span>', # <--- MUDANÇA AQUI
+                f'<span class="status-badge" style="background-color: {bg_badge}; color: {color_badge};">{txt_status}</span>',
                 '</div>',
                 '</div>'
             ]
@@ -254,17 +251,17 @@ for index, row in df_show.iterrows():
                 '<div class="card-body-box">',
                 '<div class="metric-grid">',
                 '<div class="metric-item">',
-                '<div class="metric-lbl">VALOR TOTAL</div>',
+                '<div class="metric-lbl">Valor Total</div>',
                 f'<div class="metric-val">R$ {row["Vendido"]/1000:,.0f}k</div>',
                 '</div>',
                 '<div class="metric-item">',
-                '<div class="metric-lbl">MARGEM REAL</div>',
+                '<div class="metric-lbl">Margem Real</div>',
                 f'<div class="metric-val" style="color: {cor_margem};">{row["Margem_%"]:.1f}%</div>',
                 '</div>',
                 '</div>',
                 '<div class="progress-txt">',
                 '<span>Avanço Físico</span>',
-                f'<span style="color: {color_badge}; font-weight:bold;">{pct}%</span>',
+                f'<span style="color: {color_badge}; font-weight:600;">{pct}%</span>',
                 '</div>',
                 '<div class="progress-container">',
                 f'<div class="progress-bar" style="width: {pct}%; background-color: {cor_tema};"></div>',
@@ -273,7 +270,7 @@ for index, row in df_show.iterrows():
             ]
             st.markdown("".join(html_body), unsafe_allow_html=True)
 
-            # Botão de Ação
-            if st.button("ABRIR DASHBOARD DETALHADO", key=f"btn_{row['Projeto']}", use_container_width=True):
+            # BOTÃO (Nomenclatura Nova e Discreto)
+            if st.button("Acessar Detalhes", key=f"btn_{row['Projeto']}", use_container_width=True):
                 st.session_state["projeto_foco"] = row['Projeto']
                 st.switch_page("dashboard_detalhado.py")
