@@ -44,9 +44,11 @@ st.markdown("""
 # 2. FUNÇÕES ÚTEIS (FORMATAÇÃO BR)
 # ---------------------------------------------------------
 def format_currency(value):
+    if pd.isna(value): return "R$ 0,00"
     return f"R$ {value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 def format_percent(value):
+    if pd.isna(value): return "0,0%"
     return f"{value:.1f}%".replace(".", ",")
 
 @st.cache_data
@@ -93,7 +95,7 @@ with c_status:
 st.divider()
 
 # ---------------------------------------------------------
-# 6. KPI CARDS (NOMES ALTERADOS)
+# 6. KPI CARDS
 # ---------------------------------------------------------
 def criar_card(titulo, valor, cor_texto="#ffffff"):
     st.markdown(f"""<div class="kpi-card"><div class="kpi-label">{titulo}</div><div class="kpi-value" style="color:{cor_texto}">{valor}</div></div>""", unsafe_allow_html=True)
@@ -111,7 +113,7 @@ with k4: criar_card("Margem de Lucro", format_percent(margem_real_pct), cor_marg
 st.write("")
 
 # ---------------------------------------------------------
-# 7. SEÇÃO 1: EFICIÊNCIA OPERACIONAL (DIAGNÓSTICO NOVO)
+# 7. SEÇÃO 1: EFICIÊNCIA OPERACIONAL
 # ---------------------------------------------------------
 st.subheader("⚙️ Eficiência Operacional")
 
@@ -167,7 +169,6 @@ with st.container(border=True):
         
         saldo_hh = hh_orc - hh_real
         
-        # Estilo Clean Box
         if perc_hh > (dados['Conclusao_%'] + 10):
             border_c = "#da3633" # Vermelho
             titulo = "Consumo Crítico"
@@ -206,7 +207,7 @@ with st.container(border=True):
     
     if modo_vis == "Valores (R$)":
         vals = [dados['Vendido'], -dados['Impostos'], -dados['Mat_Real'], -dados['Desp_Real'], -dados['HH_Real_Vlr'], lucro_liquido]
-        text_vals = [f"R$ {v:,.0f}".replace(",", "X").replace(".", ",").replace("X", ".") for v in vals] # Formato manual BR simples
+        text_vals = [format_currency(v).replace("R$ ", "") for v in vals]
     else:
         base = dados['Vendido'] if dados['Vendido'] > 0 else 1
         vals = [100, -(dados['Impostos']/base)*100, -(dados['Mat_Real']/base)*100, -(dados['Desp_Real']/base)*100, -(dados['HH_Real_Vlr']/base)*100, (lucro_liquido/base)*100]
@@ -234,7 +235,7 @@ with st.container(border=True):
 st.write("")
 
 # ---------------------------------------------------------
-# 9. SEÇÃO 3: DETALHAMENTO DE CUSTOS (SEM EMOJIS NOS GRÁFICOS)
+# 9. SEÇÃO 3: DETALHAMENTO DE CUSTOS
 # ---------------------------------------------------------
 st.subheader("📉 Detalhamento de Custos")
 
@@ -273,9 +274,12 @@ def plot_row_fixed(titulo, orcado, real):
     )
     return fig
 
-# Títulos Limpos (Sem Emojis)
+# Gráficos Individuais
 with st.container(border=True):
     st.plotly_chart(plot_row_fixed("Materiais", dados['Mat_Orc'], dados['Mat_Real']), use_container_width=True, config={'displayModeBar': False})
 
 with st.container(border=True):
-    st.plotly_chart(plot_row_fixed("Des
+    st.plotly_chart(plot_row_fixed("Despesas", dados['Desp_Orc'], dados['Desp_Real']), use_container_width=True, config={'displayModeBar': False})
+
+with st.container(border=True):
+    st.plotly_chart(plot_row_fixed("Mão de Obra (R$)", dados['HH_Orc_Vlr'], dados['HH_Real_Vlr']), use_container_width=True, config={'displayModeBar': False})
