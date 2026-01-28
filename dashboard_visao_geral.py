@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import textwrap # <--- A VACINA CONTRA O PROBLEMA DE ESPAÇOS
 
 # ---------------------------------------------------------
 # 1. CONFIGURAÇÃO VISUAL (CSS)
@@ -104,6 +103,7 @@ media_margem = df['Margem_%'].mean()
 obras_ativas = len(df[df['Status'] == 'Em andamento'])
 
 k1, k2, k3, k4 = st.columns(4)
+# Usando concatenação simples para evitar quebras de linha no HTML dos KPIs
 k1.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Total em Carteira</div><div class='big-kpi-val'>R$ {total_carteira/1000000:.1f}M</div></div>", unsafe_allow_html=True)
 k2.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Faturamento Real</div><div class='big-kpi-val'>R$ {total_faturado/1000000:.1f}M</div></div>", unsafe_allow_html=True)
 k3.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Obras Ativas</div><div class='big-kpi-val'>{obras_ativas}</div></div>", unsafe_allow_html=True)
@@ -145,53 +145,51 @@ cols = st.columns(3)
 for index, row in df_show.iterrows():
     with cols[index % 3]:
         
-        # Variáveis de Visualização
+        # Variáveis
         pct = row['Conclusao_%']
         
-        # Cor da Borda (Baseada no Avanço)
         if pct >= 100:
-            border_color = "#238636" # Verde
+            border_color = "#238636"
         elif pct > 50:
-            border_color = "#1f6feb" # Azul
+            border_color = "#1f6feb"
         else:
-            border_color = "#8957e5" # Roxo
+            border_color = "#8957e5"
 
-        # Cor da Margem
         cor_margem = "#da3633" if row['Margem_%'] < META_MARGEM else "#2ea043"
-        
-        # Formatação de Valores
         val_fmt = f"R$ {row['Vendido']/1000:,.0f}k"
         margem_fmt = f"{row['Margem_%']:.1f}%"
 
-        # HTML COM TEXTWRAP (A CORREÇÃO PRINCIPAL)
-        # O textwrap.dedent remove a indentação da esquerda automaticamente
-        card_html = textwrap.dedent(f"""
-            <div class="project-card" style="border-left: 5px solid {border_color};">
-                <div class="card-header">{row['Projeto']}</div>
-                <div class="card-sub">{row['Cliente']} | {row['Cidade']}</div>
-                
-                <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#a0aec0; margin-bottom:5px;">
-                    <span>Avanço Físico</span>
-                    <span>{int(pct)}%</span>
-                </div>
-                <div style="background-color: #30363d; height: 6px; border-radius: 3px;">
-                    <div style="background-color: {border_color}; width: {pct}%; height: 100%; border-radius: 3px;"></div>
-                </div>
-
-                <div class="card-metrics">
-                    <div class="metric-box">
-                        <div class="metric-label">VALOR</div>
-                        <div class="metric-val">{val_fmt}</div>
-                    </div>
-                    <div class="metric-box">
-                        <div class="metric-label">MARGEM</div>
-                        <div class="metric-val" style="color: {cor_margem};">{margem_fmt}</div>
-                    </div>
-                </div>
-            </div>
-        """)
+        # --- CORREÇÃO TÉCNICA AQUI ---
+        # Montamos o HTML linha a linha em uma lista e juntamos tudo em uma única linha de texto.
+        # Isso impede que o Python insira quebras de linha (\n) ou espaços que quebrem o layout.
+        html_parts = [
+            f'<div class="project-card" style="border-left: 5px solid {border_color};">',
+            f'<div class="card-header">{row["Projeto"]}</div>',
+            f'<div class="card-sub">{row["Cliente"]} | {row["Cidade"]}</div>',
+            '<div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#a0aec0; margin-bottom:5px;">',
+            '<span>Avanço Físico</span>',
+            f'<span>{int(pct)}%</span>',
+            '</div>',
+            '<div style="background-color: #30363d; height: 6px; border-radius: 3px;">',
+            f'<div style="background-color: {border_color}; width: {pct}%; height: 100%; border-radius: 3px;"></div>',
+            '</div>',
+            '<div class="card-metrics">',
+            '<div class="metric-box">',
+            '<div class="metric-label">VALOR</div>',
+            f'<div class="metric-val">{val_fmt}</div>',
+            '</div>',
+            '<div class="metric-box">',
+            '<div class="metric-label">MARGEM</div>',
+            f'<div class="metric-val" style="color: {cor_margem};">{margem_fmt}</div>',
+            '</div>',
+            '</div>',
+            '</div>'
+        ]
         
-        st.markdown(card_html, unsafe_allow_html=True)
+        # Junta tudo numa string só, sem espaços extras
+        final_html = "".join(html_parts)
+        
+        st.markdown(final_html, unsafe_allow_html=True)
         
         # Botão de Navegação
         if st.button(f"🔎 Detalhes", key=f"btn_{row['Projeto']}", use_container_width=True):
