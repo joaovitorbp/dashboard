@@ -10,31 +10,38 @@ st.set_page_config(layout="wide", page_title="Dashboard Obras")
 st.markdown("""
 <style>
     .stApp {background-color: #0e1117;}
-    .block-container {padding-top: 2rem; padding-bottom: 3rem;}
+    .block-container {padding-top: 1rem; padding-bottom: 3rem;} /* Reduzi padding topo do app pois o card já tem margem */
     
     /* Remove barra de ferramentas do Plotly */
     .js-plotly-plot .plotly .modebar {display: none !important;}
     
-    /* --- ESTILO DO CABEÇALHO --- */
+    /* --- ESTILO DO CABEÇALHO (CORRIGIDO) --- */
     .header-box {
         background-color: #1c1f26;
         border-radius: 10px;
         padding: 20px;
-        /* A borda esquerda será definida dinamicamente no Python */
+        /* Definindo bordas fixas para Topo, Direita e Baixo */
         border-top: 1px solid #30363d;
         border-right: 1px solid #30363d;
         border-bottom: 1px solid #30363d;
-        margin-bottom: 20px;
+        /* Borda Esquerda será injetada pelo Python */
+        
+        /* CORREÇÃO DE CORTE: Margens generosas para evitar corte de sombra */
+        margin: 20px 2px 20px 2px; 
+        
         display: flex;
         justify-content: space-between;
         align-items: center;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        box-sizing: border-box; /* Garante que a borda não estoure o layout */
+        min-height: 80px; /* Garante altura mínima visual */
     }
     .header-title {
         color: #ffffff;
         font-size: 1.8rem;
         font-weight: 700;
         margin: 0;
+        line-height: 1.2;
     }
     .header-subtitle {
         color: #8b949e;
@@ -47,6 +54,7 @@ st.markdown("""
         border-radius: 20px;
         color: white;
         font-size: 0.9rem;
+        white-space: nowrap; /* Não quebra linha */
     }
 
     /* --- ESTILO DOS CARDS KPI --- */
@@ -57,6 +65,9 @@ st.markdown("""
         border: 1px solid #30363d;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); 
         height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
     .kpi-label {
         color: #a0aec0;
@@ -116,7 +127,7 @@ margem_real_pct = (lucro_liquido / dados['Vendido']) * 100 if dados['Vendido'] >
 META_MARGEM = 25.0
 
 # ---------------------------------------------------------
-# 5. HEADER (COM BORDA DINÂMICA)
+# 5. HEADER (COM BORDA LATERAL E MARGEM SEGURA)
 # ---------------------------------------------------------
 cor_map = {"Finalizado": "#238636", "Em andamento": "#1f6feb", "Não iniciado": "#8b949e"}
 cor_bg = cor_map.get(dados['Status'], "#30363d")
@@ -148,16 +159,13 @@ def criar_card_destaque(titulo, valor, cor_borda, cor_texto="#ffffff"):
 
 k1, k2, k3, k4 = st.columns(4)
 
-# Cores
-cor_cinza = "#8b949e" # Padronizado para Vendido e Faturado
+cor_neutra = "#8b949e" # Cinza para Vendido/Faturado
 cor_sucesso = "#2ea043"
 cor_erro = "#da3633"
 cor_dinamica = cor_sucesso if margem_real_pct >= META_MARGEM else cor_erro
 
-# Alteração aqui: Ambos agora usam cor_cinza
-with k1: criar_card_destaque("Valor Vendido", format_currency(dados['Vendido']), cor_cinza)
-with k2: criar_card_destaque("Valor Faturado", format_currency(dados['Faturado']), cor_cinza)
-
+with k1: criar_card_destaque("Valor Vendido", format_currency(dados['Vendido']), cor_neutra)
+with k2: criar_card_destaque("Valor Faturado", format_currency(dados['Faturado']), cor_neutra)
 with k3: criar_card_destaque("Lucro", format_currency(lucro_liquido), cor_dinamica, cor_dinamica)
 with k4: criar_card_destaque("Margem de Lucro", format_percent(margem_real_pct), cor_dinamica, cor_dinamica)
 
