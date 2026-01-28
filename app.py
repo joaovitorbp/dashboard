@@ -10,31 +10,32 @@ st.set_page_config(layout="wide", page_title="Dashboard Obras")
 st.markdown("""
 <style>
     .stApp {background-color: #0e1117;}
-    .block-container {padding-top: 1rem; padding-bottom: 3rem;} /* Reduzi padding topo do app pois o card já tem margem */
+    
+    /* CORREÇÃO CRÍTICA: Aumentei drasticamente o espaço superior */
+    .block-container {
+        padding-top: 5rem !important; 
+        padding-bottom: 3rem;
+    }
     
     /* Remove barra de ferramentas do Plotly */
     .js-plotly-plot .plotly .modebar {display: none !important;}
     
-    /* --- ESTILO DO CABEÇALHO (CORRIGIDO) --- */
+    /* --- ESTILO DO CABEÇALHO --- */
     .header-box {
         background-color: #1c1f26;
         border-radius: 10px;
         padding: 20px;
-        /* Definindo bordas fixas para Topo, Direita e Baixo */
+        /* Bordas fixas */
         border-top: 1px solid #30363d;
         border-right: 1px solid #30363d;
         border-bottom: 1px solid #30363d;
-        /* Borda Esquerda será injetada pelo Python */
         
-        /* CORREÇÃO DE CORTE: Margens generosas para evitar corte de sombra */
-        margin: 20px 2px 20px 2px; 
-        
+        margin-bottom: 20px;
         display: flex;
         justify-content: space-between;
         align-items: center;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-        box-sizing: border-box; /* Garante que a borda não estoure o layout */
-        min-height: 80px; /* Garante altura mínima visual */
+        box-sizing: border-box;
     }
     .header-title {
         color: #ffffff;
@@ -54,7 +55,7 @@ st.markdown("""
         border-radius: 20px;
         color: white;
         font-size: 0.9rem;
-        white-space: nowrap; /* Não quebra linha */
+        white-space: nowrap;
     }
 
     /* --- ESTILO DOS CARDS KPI --- */
@@ -127,7 +128,7 @@ margem_real_pct = (lucro_liquido / dados['Vendido']) * 100 if dados['Vendido'] >
 META_MARGEM = 25.0
 
 # ---------------------------------------------------------
-# 5. HEADER (COM BORDA LATERAL E MARGEM SEGURA)
+# 5. HEADER (COM BORDA LATERAL)
 # ---------------------------------------------------------
 cor_map = {"Finalizado": "#238636", "Em andamento": "#1f6feb", "Não iniciado": "#8b949e"}
 cor_bg = cor_map.get(dados['Status'], "#30363d")
@@ -159,7 +160,7 @@ def criar_card_destaque(titulo, valor, cor_borda, cor_texto="#ffffff"):
 
 k1, k2, k3, k4 = st.columns(4)
 
-cor_neutra = "#8b949e" # Cinza para Vendido/Faturado
+cor_neutra = "#8b949e"
 cor_sucesso = "#2ea043"
 cor_erro = "#da3633"
 cor_dinamica = cor_sucesso if margem_real_pct >= META_MARGEM else cor_erro
