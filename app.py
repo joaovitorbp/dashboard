@@ -5,7 +5,8 @@ import plotly.graph_objects as go
 # ---------------------------------------------------------
 # 1. CONFIGURAÇÃO E ESTILO
 # ---------------------------------------------------------
-st.set_page_config(layout="wide", page_title="Gestão de Obras", page_icon="🏗️")
+# Ajuste: Título novo e sem emoji na aba
+st.set_page_config(layout="wide", page_title="Dashboard Obras")
 
 st.markdown("""
 <style>
@@ -21,7 +22,7 @@ st.markdown("""
         border-radius: 10px;
         padding: 20px;
         border: 1px solid #30363d;
-        margin-bottom: 10px;
+        margin-bottom: 20px; /* Margem inferior para separar dos KPIs */
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -113,7 +114,7 @@ margem_real_pct = (lucro_liquido / dados['Vendido']) * 100 if dados['Vendido'] >
 META_MARGEM = 25.0
 
 # ---------------------------------------------------------
-# 5. HEADER (SEM EMOJIS)
+# 5. HEADER (SEM SEPARADOR ABAIXO)
 # ---------------------------------------------------------
 cor_map = {"Finalizado": "#238636", "Em andamento": "#1f6feb", "Não iniciado": "#8b949e"}
 cor_bg = cor_map.get(dados['Status'], "#30363d")
@@ -132,7 +133,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-st.divider() # SEPARADOR 1
+# OBS: st.divider() REMOVIDO DAQUI
 
 # ---------------------------------------------------------
 # 6. KPI CARDS
@@ -158,7 +159,7 @@ with k3: criar_card_destaque("Lucro", format_currency(lucro_liquido), cor_dinami
 with k4: criar_card_destaque("Margem de Lucro", format_percent(margem_real_pct), cor_dinamica, cor_dinamica)
 
 st.write("")
-st.divider() # SEPARADOR 2
+st.divider() # Separador 1
 
 # ---------------------------------------------------------
 # 7. SEÇÃO 1: EFICIÊNCIA OPERACIONAL
@@ -238,7 +239,7 @@ with st.container(border=True):
         """, unsafe_allow_html=True)
 
 st.write("")
-st.divider() # SEPARADOR 3
+st.divider() # Separador 2
 
 # ---------------------------------------------------------
 # 8. SEÇÃO 2: COMPOSIÇÃO DE RESULTADO
@@ -278,10 +279,10 @@ with st.container(border=True):
     st.plotly_chart(fig_water, use_container_width=True, config={'displayModeBar': False})
 
 st.write("")
-st.divider() # SEPARADOR 4
+st.divider() # Separador 3
 
 # ---------------------------------------------------------
-# 9. SEÇÃO 3: DETALHAMENTO DE CUSTOS (EMOJI LUPA 🔎)
+# 9. SEÇÃO 3: DETALHAMENTO DE CUSTOS
 # ---------------------------------------------------------
 st.subheader("🔎 Detalhamento de Custos")
 
