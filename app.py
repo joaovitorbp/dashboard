@@ -121,7 +121,6 @@ META_MARGEM = 25.0
 cor_map = {"Finalizado": "#238636", "Em andamento": "#1f6feb", "Não iniciado": "#8b949e"}
 cor_bg = cor_map.get(dados['Status'], "#30363d")
 
-# A mágica acontece aqui: style="border-left: 6px solid {cor_bg};"
 st.markdown(f"""
 <div class="header-box" style="border-left: 6px solid {cor_bg};">
     <div>
@@ -149,13 +148,16 @@ def criar_card_destaque(titulo, valor, cor_borda, cor_texto="#ffffff"):
 
 k1, k2, k3, k4 = st.columns(4)
 
-cor_neutra = "#3b82f6"
+# Cores
+cor_cinza = "#8b949e" # Padronizado para Vendido e Faturado
 cor_sucesso = "#2ea043"
 cor_erro = "#da3633"
 cor_dinamica = cor_sucesso if margem_real_pct >= META_MARGEM else cor_erro
 
-with k1: criar_card_destaque("Valor Vendido", format_currency(dados['Vendido']), cor_neutra)
-with k2: criar_card_destaque("Valor Faturado", format_currency(dados['Faturado']), "#8b949e")
+# Alteração aqui: Ambos agora usam cor_cinza
+with k1: criar_card_destaque("Valor Vendido", format_currency(dados['Vendido']), cor_cinza)
+with k2: criar_card_destaque("Valor Faturado", format_currency(dados['Faturado']), cor_cinza)
+
 with k3: criar_card_destaque("Lucro", format_currency(lucro_liquido), cor_dinamica, cor_dinamica)
 with k4: criar_card_destaque("Margem de Lucro", format_percent(margem_real_pct), cor_dinamica, cor_dinamica)
 
