@@ -10,9 +10,7 @@ st.set_page_config(layout="wide", page_title="Dashboard Obras")
 st.markdown("""
 <style>
     .stApp {background-color: #0e1117;}
-    
-    /* Ajuste: Aumentei um pouco o padding superior geral */
-    .block-container {padding-top: 3rem; padding-bottom: 3rem;}
+    .block-container {padding-top: 2rem; padding-bottom: 3rem;}
     
     /* Remove barra de ferramentas do Plotly */
     .js-plotly-plot .plotly .modebar {display: none !important;}
@@ -22,9 +20,10 @@ st.markdown("""
         background-color: #1c1f26;
         border-radius: 10px;
         padding: 20px;
-        border: 1px solid #30363d;
-        /* Correção: Margem superior para evitar cortes */
-        margin-top: 10px; 
+        /* A borda esquerda será definida dinamicamente no Python */
+        border-top: 1px solid #30363d;
+        border-right: 1px solid #30363d;
+        border-bottom: 1px solid #30363d;
         margin-bottom: 20px;
         display: flex;
         justify-content: space-between;
@@ -117,13 +116,14 @@ margem_real_pct = (lucro_liquido / dados['Vendido']) * 100 if dados['Vendido'] >
 META_MARGEM = 25.0
 
 # ---------------------------------------------------------
-# 5. HEADER
+# 5. HEADER (COM BORDA DINÂMICA)
 # ---------------------------------------------------------
 cor_map = {"Finalizado": "#238636", "Em andamento": "#1f6feb", "Não iniciado": "#8b949e"}
 cor_bg = cor_map.get(dados['Status'], "#30363d")
 
+# A mágica acontece aqui: style="border-left: 6px solid {cor_bg};"
 st.markdown(f"""
-<div class="header-box">
+<div class="header-box" style="border-left: 6px solid {cor_bg};">
     <div>
         <div class="header-title">{dados['Projeto']} - {dados['Descricao']}</div>
         <div class="header-subtitle">
@@ -160,7 +160,7 @@ with k3: criar_card_destaque("Lucro", format_currency(lucro_liquido), cor_dinami
 with k4: criar_card_destaque("Margem de Lucro", format_percent(margem_real_pct), cor_dinamica, cor_dinamica)
 
 st.write("")
-st.divider() # Separador 1
+st.divider()
 
 # ---------------------------------------------------------
 # 7. SEÇÃO 1: EFICIÊNCIA OPERACIONAL
@@ -240,7 +240,7 @@ with st.container(border=True):
         """, unsafe_allow_html=True)
 
 st.write("")
-st.divider() # Separador 2
+st.divider()
 
 # ---------------------------------------------------------
 # 8. SEÇÃO 2: COMPOSIÇÃO DE RESULTADO
@@ -280,7 +280,7 @@ with st.container(border=True):
     st.plotly_chart(fig_water, use_container_width=True, config={'displayModeBar': False})
 
 st.write("")
-st.divider() # Separador 3
+st.divider()
 
 # ---------------------------------------------------------
 # 9. SEÇÃO 3: DETALHAMENTO DE CUSTOS
