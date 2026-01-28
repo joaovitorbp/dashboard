@@ -105,12 +105,11 @@ with k4: criar_card("Margem de Lucro", format_percent(margem_real_pct), cor_marg
 st.write("")
 
 # ---------------------------------------------------------
-# 7. SEÇÃO 1: EFICIÊNCIA OPERACIONAL (ALINHAMENTO VERTICAL)
+# 7. SEÇÃO 1: EFICIÊNCIA OPERACIONAL
 # ---------------------------------------------------------
 st.subheader("⚙️ Eficiência Operacional")
 
 with st.container(border=True):
-    # AJUSTE: 'vertical_alignment="center"' centraliza o minicard no eixo Y
     col_gauges, col_spacer, col_diag = st.columns([5, 0.2, 3], vertical_alignment="center")
     
     with col_gauges:
@@ -156,7 +155,6 @@ with st.container(border=True):
         st.plotly_chart(fig_gauge, use_container_width=True, config={'displayModeBar': False})
 
     with col_diag:
-        # AJUSTE: Removido o título antigo e mantido apenas o card limpo
         saldo_hh = hh_orc - hh_real
         
         if perc_hh > (dados['Conclusao_%'] + 10):
@@ -225,9 +223,29 @@ with st.container(border=True):
 st.write("")
 
 # ---------------------------------------------------------
-# 9. SEÇÃO 3: DETALHAMENTO DE CUSTOS
+# 9. SEÇÃO 3: DETALHAMENTO DE CUSTOS (LEGENDA UNIFICADA)
 # ---------------------------------------------------------
-st.subheader("📉 Detalhamento de Custos")
+col_titulo, col_legenda = st.columns([2, 3], vertical_alignment="bottom")
+with col_titulo:
+    st.subheader("📉 Detalhamento de Custos")
+with col_legenda:
+    # Legenda HTML personalizada
+    st.markdown("""
+    <div style="display: flex; gap: 20px; font-size: 0.9rem; color: #8b949e; margin-bottom: 8px;">
+        <div style="display: flex; align-items: center;">
+            <span style="width: 12px; height: 12px; background-color: #30363d; display: inline-block; margin-right: 5px; border-radius: 2px;"></span>
+            Orçado (Meta)
+        </div>
+        <div style="display: flex; align-items: center;">
+            <span style="width: 12px; height: 12px; background-color: #1f6feb; display: inline-block; margin-right: 5px; border-radius: 2px;"></span>
+            Realizado (Dentro da Meta)
+        </div>
+        <div style="display: flex; align-items: center;">
+            <span style="width: 12px; height: 12px; background-color: #da3633; display: inline-block; margin-right: 5px; border-radius: 2px;"></span>
+            Realizado (Acima da Meta)
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 def plot_row_fixed(titulo, orcado, real):
     pct = (real / orcado * 100) if orcado > 0 else 0
@@ -235,6 +253,7 @@ def plot_row_fixed(titulo, orcado, real):
     
     fig = go.Figure()
     
+    # Barra Orçado
     fig.add_trace(go.Bar(
         y=[titulo], x=[orcado], name='Orçado', orientation='h', 
         marker_color='#30363d', 
@@ -242,6 +261,7 @@ def plot_row_fixed(titulo, orcado, real):
         cliponaxis=False
     ))
     
+    # Barra Realizado
     fig.add_trace(go.Bar(
         y=[titulo], x=[real], name='Realizado', orientation='h', 
         marker_color=cor_real, 
