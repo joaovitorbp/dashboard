@@ -12,17 +12,21 @@ st.markdown("""
     /* Card Visual */
     .project-card {
         background-color: #1c1f26;
-        border-radius: 8px;
+        border-radius: 8px 8px 0 0; /* Arredonda só em cima */
         padding: 16px;
-        margin-bottom: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        border: 1px solid #30363d;
+        border-top: 1px solid #30363d;
+        border-right: 1px solid #30363d;
+        border-left: 1px solid #30363d;
+        /* A borda de baixo fica por conta do botão */
     }
     .card-header {
         font-size: 1.1rem;
         font-weight: 700;
         color: white;
         margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .card-sub {
         font-size: 0.85rem;
@@ -32,7 +36,7 @@ st.markdown("""
     .card-metrics {
         display: flex;
         justify-content: space-between;
-        margin-top: 10px;
+        margin-top: 15px;
         padding-top: 10px;
         border-top: 1px solid #30363d;
         font-size: 0.9rem;
@@ -40,8 +44,8 @@ st.markdown("""
     .metric-box {
         text-align: center;
     }
-    .metric-label { font-size: 0.75rem; color: #8b949e; }
-    .metric-val { font-weight: 600; color: #e6edf3; }
+    .metric-label { font-size: 0.75rem; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; }
+    .metric-val { font-weight: 600; color: #e6edf3; font-size: 1rem; }
     
     /* KPIs do Topo */
     .big-kpi {
@@ -53,6 +57,12 @@ st.markdown("""
     }
     .big-kpi-val { font-size: 1.8rem; font-weight: bold; color: white; }
     .big-kpi-lbl { font-size: 0.9rem; color: #8b949e; }
+    
+    /* Ajuste para o botão parecer rodapé */
+    div[data-testid="stVerticalBlock"] > div > button {
+        border-radius: 0 0 8px 8px !important;
+        border-top: none !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -103,7 +113,6 @@ media_margem = df['Margem_%'].mean()
 obras_ativas = len(df[df['Status'] == 'Em andamento'])
 
 k1, k2, k3, k4 = st.columns(4)
-# Usando concatenação simples para evitar quebras de linha no HTML dos KPIs
 k1.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Total em Carteira</div><div class='big-kpi-val'>R$ {total_carteira/1000000:.1f}M</div></div>", unsafe_allow_html=True)
 k2.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Faturamento Real</div><div class='big-kpi-val'>R$ {total_faturado/1000000:.1f}M</div></div>", unsafe_allow_html=True)
 k3.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Obras Ativas</div><div class='big-kpi-val'>{obras_ativas}</div></div>", unsafe_allow_html=True)
@@ -111,20 +120,14 @@ k4.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Margem Média</div><
 
 st.divider()
 
-# Filtros
-col_status, col_check, col_spacer = st.columns([2, 1.5, 3])
-
-with col_status:
-    filtro_status = st.radio(
-        "Filtrar por Status:",
-        ["Todas", "Em andamento", "Finalizadas"],
-        horizontal=True,
-        label_visibility="collapsed"
-    )
-
-with col_check:
-    st.write("") 
-    ver_apenas_criticas = st.checkbox("⚠️ Apenas Obras Críticas")
+# ---------------------------------------------------------
+# 5. FILTROS (INTEGRADOS EM UMA ÚNICA LINHA)
+# ---------------------------------------------------------
+filtro_status = st.radio(
+    "Filtrar Visualização:",
+    ["Todas", "Em andamento", "Finalizadas", "🚨 Apenas Críticas"],
+    horizontal=True
+)
 
 # Aplicar Filtros
 df_show = df.copy()
@@ -133,13 +136,15 @@ if filtro_status == "Em andamento":
     df_show = df_show[df_show['Status'] == 'Em andamento']
 elif filtro_status == "Finalizadas":
     df_show = df_show[df_show['Status'] == 'Finalizado']
-
-if ver_apenas_criticas:
+elif filtro_status == "🚨 Apenas Críticas":
     df_show = df_show[df_show['E_Critico'] == True]
 
 st.write(f"Mostrando **{len(df_show)}** projetos")
+st.write("") # Espaço extra
 
-# Grid de Cards
+# ---------------------------------------------------------
+# 6. GRID DE CARDS
+# ---------------------------------------------------------
 cols = st.columns(3)
 
 for index, row in df_show.iterrows():
@@ -158,14 +163,17 @@ for index, row in df_show.iterrows():
         cor_margem = "#da3633" if row['Margem_%'] < META_MARGEM else "#2ea043"
         val_fmt = f"R$ {row['Vendido']/1000:,.0f}k"
         margem_fmt = f"{row['Margem_%']:.1f}%"
+        
+        # ITEM 3: Descrição concatenada no título
+        titulo_card = f"{row['Projeto']} - {row['Descricao']}"
 
-        # --- CORREÇÃO TÉCNICA AQUI ---
-        # Montamos o HTML linha a linha em uma lista e juntamos tudo em uma única linha de texto.
-        # Isso impede que o Python insira quebras de linha (\n) ou espaços que quebrem o layout.
+        # HTML (Visual do Card - Parte Superior)
         html_parts = [
             f'<div class="project-card" style="border-left: 5px solid {border_color};">',
-            f'<div class="card-header">{row["Projeto"]}</div>',
+            f'<div class="card-header" title="{titulo_card}">{titulo_card}</div>',
             f'<div class="card-sub">{row["Cliente"]} | {row["Cidade"]}</div>',
+            
+            # Barra de Progresso
             '<div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#a0aec0; margin-bottom:5px;">',
             '<span>Avanço Físico</span>',
             f'<span>{int(pct)}%</span>',
@@ -173,6 +181,8 @@ for index, row in df_show.iterrows():
             '<div style="background-color: #30363d; height: 6px; border-radius: 3px;">',
             f'<div style="background-color: {border_color}; width: {pct}%; height: 100%; border-radius: 3px;"></div>',
             '</div>',
+
+            # Métricas
             '<div class="card-metrics">',
             '<div class="metric-box">',
             '<div class="metric-label">VALOR</div>',
@@ -186,12 +196,9 @@ for index, row in df_show.iterrows():
             '</div>'
         ]
         
-        # Junta tudo numa string só, sem espaços extras
-        final_html = "".join(html_parts)
+        st.markdown("".join(html_parts), unsafe_allow_html=True)
         
-        st.markdown(final_html, unsafe_allow_html=True)
-        
-        # Botão de Navegação
-        if st.button(f"🔎 Detalhes", key=f"btn_{row['Projeto']}", use_container_width=True):
+        # ITEM 2: Botão transformado em Rodapé
+        if st.button("Abrir Painel ➔", key=f"btn_{row['Projeto']}", use_container_width=True):
             st.session_state["projeto_foco"] = row['Projeto']
             st.switch_page("dashboard_detalhado.py")
