@@ -5,13 +5,14 @@ import plotly.graph_objects as go
 # ---------------------------------------------------------
 # 1. CONFIGURAÇÃO E ESTILO
 # ---------------------------------------------------------
-# Ajuste: Título novo e sem emoji na aba
 st.set_page_config(layout="wide", page_title="Dashboard Obras")
 
 st.markdown("""
 <style>
     .stApp {background-color: #0e1117;}
-    .block-container {padding-top: 2rem; padding-bottom: 3rem;}
+    
+    /* Ajuste: Aumentei um pouco o padding superior geral */
+    .block-container {padding-top: 3rem; padding-bottom: 3rem;}
     
     /* Remove barra de ferramentas do Plotly */
     .js-plotly-plot .plotly .modebar {display: none !important;}
@@ -22,7 +23,9 @@ st.markdown("""
         border-radius: 10px;
         padding: 20px;
         border: 1px solid #30363d;
-        margin-bottom: 20px; /* Margem inferior para separar dos KPIs */
+        /* Correção: Margem superior para evitar cortes */
+        margin-top: 10px; 
+        margin-bottom: 20px;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -114,7 +117,7 @@ margem_real_pct = (lucro_liquido / dados['Vendido']) * 100 if dados['Vendido'] >
 META_MARGEM = 25.0
 
 # ---------------------------------------------------------
-# 5. HEADER (SEM SEPARADOR ABAIXO)
+# 5. HEADER
 # ---------------------------------------------------------
 cor_map = {"Finalizado": "#238636", "Em andamento": "#1f6feb", "Não iniciado": "#8b949e"}
 cor_bg = cor_map.get(dados['Status'], "#30363d")
@@ -132,8 +135,6 @@ st.markdown(f"""
     </div>
 </div>
 """, unsafe_allow_html=True)
-
-# OBS: st.divider() REMOVIDO DAQUI
 
 # ---------------------------------------------------------
 # 6. KPI CARDS
