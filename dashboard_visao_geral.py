@@ -9,16 +9,22 @@ st.markdown("""
     .stApp {background-color: #0e1117;}
     .block-container {padding-top: 2rem;}
     
-    /* Card Visual */
+    /* --- ESTILO DO CARD (Parte Superior HTML) --- */
     .project-card {
         background-color: #1c1f26;
-        border-radius: 8px 8px 0 0; /* Arredonda só em cima */
         padding: 16px;
+        
+        /* Bordas: Arredonda em cima, QUADRADO em baixo */
+        border-radius: 8px 8px 0 0; 
+        
         border-top: 1px solid #30363d;
-        border-right: 1px solid #30363d;
         border-left: 1px solid #30363d;
-        /* A borda de baixo fica por conta do botão */
+        border-right: 1px solid #30363d;
+        border-bottom: none; /* Sem borda embaixo para colar no botão */
+        
+        margin-bottom: -5px; /* Puxa o botão para cima (Truque Visual) */
     }
+    
     .card-header {
         font-size: 1.1rem;
         font-weight: 700;
@@ -28,11 +34,8 @@ st.markdown("""
         overflow: hidden;
         text-overflow: ellipsis;
     }
-    .card-sub {
-        font-size: 0.85rem;
-        color: #8b949e;
-        margin-bottom: 12px;
-    }
+    .card-sub { font-size: 0.85rem; color: #8b949e; margin-bottom: 12px; }
+    
     .card-metrics {
         display: flex;
         justify-content: space-between;
@@ -41,13 +44,11 @@ st.markdown("""
         border-top: 1px solid #30363d;
         font-size: 0.9rem;
     }
-    .metric-box {
-        text-align: center;
-    }
+    .metric-box { text-align: center; }
     .metric-label { font-size: 0.75rem; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; }
     .metric-val { font-weight: 600; color: #e6edf3; font-size: 1rem; }
     
-    /* KPIs do Topo */
+    /* --- KPIs do Topo --- */
     .big-kpi {
         background-color: #161b22;
         padding: 15px;
@@ -57,11 +58,34 @@ st.markdown("""
     }
     .big-kpi-val { font-size: 1.8rem; font-weight: bold; color: white; }
     .big-kpi-lbl { font-size: 0.9rem; color: #8b949e; }
+
+    /* --- ESTILO DO BOTÃO (Parte Inferior do Card) --- */
+    /* Isso transforma o botão padrão do Streamlit no rodapé do card */
+    div[data-testid="stVerticalBlock"] > div > div > div > div > button {
+        background-color: #1c1f26;
+        color: #58a6ff; /* Azul link */
+        font-weight: 600;
+        width: 100%;
+        
+        /* Bordas: QUADRADO em cima, Arredondado em baixo */
+        border-radius: 0 0 8px 8px;
+        
+        border-top: 1px solid #30363d; /* Linha divisória sutil */
+        border-left: 1px solid #30363d;
+        border-right: 1px solid #30363d;
+        border-bottom: 1px solid #30363d;
+        
+        transition: all 0.3s;
+    }
+    div[data-testid="stVerticalBlock"] > div > div > div > div > button:hover {
+        background-color: #21262d; /* Ligeiramente mais claro no hover */
+        border-color: #8b949e;
+        color: white;
+    }
     
-    /* Ajuste para o botão parecer rodapé */
-    div[data-testid="stVerticalBlock"] > div > button {
-        border-radius: 0 0 8px 8px !important;
-        border-top: none !important;
+    /* Remove padding padrão das colunas para os cards ficarem justos */
+    div[data-testid="column"] {
+        padding: 0 10px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -121,7 +145,7 @@ k4.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Margem Média</div><
 st.divider()
 
 # ---------------------------------------------------------
-# 5. FILTROS (INTEGRADOS EM UMA ÚNICA LINHA)
+# 5. FILTROS
 # ---------------------------------------------------------
 filtro_status = st.radio(
     "Filtrar Visualização:",
@@ -140,10 +164,10 @@ elif filtro_status == "🚨 Apenas Críticas":
     df_show = df_show[df_show['E_Critico'] == True]
 
 st.write(f"Mostrando **{len(df_show)}** projetos")
-st.write("") # Espaço extra
+st.write("") 
 
 # ---------------------------------------------------------
-# 6. GRID DE CARDS
+# 6. GRID DE CARDS COM DESIGN "SEAMLESS"
 # ---------------------------------------------------------
 cols = st.columns(3)
 
@@ -163,11 +187,9 @@ for index, row in df_show.iterrows():
         cor_margem = "#da3633" if row['Margem_%'] < META_MARGEM else "#2ea043"
         val_fmt = f"R$ {row['Vendido']/1000:,.0f}k"
         margem_fmt = f"{row['Margem_%']:.1f}%"
-        
-        # ITEM 3: Descrição concatenada no título
         titulo_card = f"{row['Projeto']} - {row['Descricao']}"
 
-        # HTML (Visual do Card - Parte Superior)
+        # HTML (Topo do Card)
         html_parts = [
             f'<div class="project-card" style="border-left: 5px solid {border_color};">',
             f'<div class="card-header" title="{titulo_card}">{titulo_card}</div>',
@@ -198,7 +220,8 @@ for index, row in df_show.iterrows():
         
         st.markdown("".join(html_parts), unsafe_allow_html=True)
         
-        # ITEM 2: Botão transformado em Rodapé
-        if st.button("Abrir Painel ➔", key=f"btn_{row['Projeto']}", use_container_width=True):
+        # Botão (Rodapé do Card)
+        # O estilo CSS lá em cima faz ele grudar no HTML e ter cantos redondos em baixo
+        if st.button("ABRIR DETALHE ➜", key=f"btn_{row['Projeto']}", use_container_width=True):
             st.session_state["projeto_foco"] = row['Projeto']
             st.switch_page("dashboard_detalhado.py")
