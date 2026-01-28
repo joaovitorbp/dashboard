@@ -26,14 +26,6 @@ st.markdown("""
     .kpi-label {color: #8b949e; font-size: 0.9rem; margin-bottom: 5px;}
     .kpi-value {font-size: 1.8rem; font-weight: 600; color: #ffffff;}
     
-    /* Estilo Diagnóstico */
-    .diag-box {
-        background-color: #161b22;
-        border-left: 4px solid #30363d;
-        padding: 15px;
-        border-radius: 4px;
-    }
-    
     /* Títulos */
     h1, h2, h3 {color: #f0f6fc !important;}
     p, label, span, div {color: #e6edf3 !important;}
@@ -41,7 +33,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 2. FUNÇÕES ÚTEIS (FORMATAÇÃO BR)
+# 2. FUNÇÕES ÚTEIS
 # ---------------------------------------------------------
 def format_currency(value):
     if pd.isna(value): return "R$ 0,00"
@@ -113,12 +105,13 @@ with k4: criar_card("Margem de Lucro", format_percent(margem_real_pct), cor_marg
 st.write("")
 
 # ---------------------------------------------------------
-# 7. SEÇÃO 1: EFICIÊNCIA OPERACIONAL
+# 7. SEÇÃO 1: EFICIÊNCIA OPERACIONAL (ALINHAMENTO VERTICAL)
 # ---------------------------------------------------------
 st.subheader("⚙️ Eficiência Operacional")
 
 with st.container(border=True):
-    col_gauges, col_spacer, col_diag = st.columns([5, 0.2, 3])
+    # AJUSTE: 'vertical_alignment="center"' centraliza o minicard no eixo Y
+    col_gauges, col_spacer, col_diag = st.columns([5, 0.2, 3], vertical_alignment="center")
     
     with col_gauges:
         fig_gauge = go.Figure()
@@ -163,10 +156,7 @@ with st.container(border=True):
         st.plotly_chart(fig_gauge, use_container_width=True, config={'displayModeBar': False})
 
     with col_diag:
-        st.write("")
-        st.write("")
-        st.markdown("**Diagnóstico de Produtividade**")
-        
+        # AJUSTE: Removido o título antigo e mantido apenas o card limpo
         saldo_hh = hh_orc - hh_real
         
         if perc_hh > (dados['Conclusao_%'] + 10):
@@ -274,7 +264,6 @@ def plot_row_fixed(titulo, orcado, real):
     )
     return fig
 
-# Gráficos Individuais
 with st.container(border=True):
     st.plotly_chart(plot_row_fixed("Materiais", dados['Mat_Orc'], dados['Mat_Real']), use_container_width=True, config={'displayModeBar': False})
 
