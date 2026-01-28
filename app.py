@@ -223,29 +223,9 @@ with st.container(border=True):
 st.write("")
 
 # ---------------------------------------------------------
-# 9. SEÇÃO 3: DETALHAMENTO DE CUSTOS (LEGENDA UNIFICADA)
+# 9. SEÇÃO 3: DETALHAMENTO DE CUSTOS (COM LEGENDA NATIVA)
 # ---------------------------------------------------------
-col_titulo, col_legenda = st.columns([2, 3], vertical_alignment="bottom")
-with col_titulo:
-    st.subheader("📉 Detalhamento de Custos")
-with col_legenda:
-    # Legenda HTML personalizada
-    st.markdown("""
-    <div style="display: flex; gap: 20px; font-size: 0.9rem; color: #8b949e; margin-bottom: 8px;">
-        <div style="display: flex; align-items: center;">
-            <span style="width: 12px; height: 12px; background-color: #30363d; display: inline-block; margin-right: 5px; border-radius: 2px;"></span>
-            Orçado (Meta)
-        </div>
-        <div style="display: flex; align-items: center;">
-            <span style="width: 12px; height: 12px; background-color: #1f6feb; display: inline-block; margin-right: 5px; border-radius: 2px;"></span>
-            Realizado (Dentro da Meta)
-        </div>
-        <div style="display: flex; align-items: center;">
-            <span style="width: 12px; height: 12px; background-color: #da3633; display: inline-block; margin-right: 5px; border-radius: 2px;"></span>
-            Realizado (Acima da Meta)
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+st.subheader("📉 Detalhamento de Custos")
 
 def plot_row_fixed(titulo, orcado, real):
     pct = (real / orcado * 100) if orcado > 0 else 0
@@ -253,7 +233,7 @@ def plot_row_fixed(titulo, orcado, real):
     
     fig = go.Figure()
     
-    # Barra Orçado
+    # Orçado
     fig.add_trace(go.Bar(
         y=[titulo], x=[orcado], name='Orçado', orientation='h', 
         marker_color='#30363d', 
@@ -261,7 +241,7 @@ def plot_row_fixed(titulo, orcado, real):
         cliponaxis=False
     ))
     
-    # Barra Realizado
+    # Realizado
     fig.add_trace(go.Bar(
         y=[titulo], x=[real], name='Realizado', orientation='h', 
         marker_color=cor_real, 
@@ -279,8 +259,16 @@ def plot_row_fixed(titulo, orcado, real):
         paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
         xaxis=dict(showgrid=True, gridcolor='#262730', showticklabels=False, range=[0, max_val], fixedrange=True),
         yaxis=dict(showticklabels=False, fixedrange=True),
-        showlegend=False,
-        font=dict(color='white')
+        font=dict(color='white'),
+        # LEGENDA ATIVADA E DISCRETA
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom", y=1.02,
+            xanchor="right", x=1,
+            font=dict(size=12, color="#8b949e"),
+            bgcolor="rgba(0,0,0,0)"
+        )
     )
     return fig
 
