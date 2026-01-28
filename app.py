@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 # ---------------------------------------------------------
-# 1. CONFIGURAÇÃO E ESTILO (DESIGN "HIGH CONTRAST")
+# 1. CONFIGURAÇÃO E ESTILO
 # ---------------------------------------------------------
 st.set_page_config(layout="wide", page_title="Gestão de Obras", page_icon="🏗️")
 
@@ -15,13 +15,13 @@ st.markdown("""
     /* Remove barra de ferramentas do Plotly */
     .js-plotly-plot .plotly .modebar {display: none !important;}
     
-    /* --- ESTILO DO CABEÇALHO (NOVO) --- */
+    /* --- ESTILO DO CABEÇALHO --- */
     .header-box {
-        background-color: #1c1f26; /* Cinza destaque */
+        background-color: #1c1f26;
         border-radius: 10px;
         padding: 20px;
         border: 1px solid #30363d;
-        margin-bottom: 20px;
+        margin-bottom: 10px;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -46,18 +46,17 @@ st.markdown("""
         font-size: 0.9rem;
     }
 
-    /* --- ESTILO DOS CARDS KPI (NOVO COM BORDA COLORIDA) --- */
+    /* --- ESTILO DOS CARDS KPI --- */
     .kpi-card {
         background-color: #1c1f26;
         border-radius: 8px;
         padding: 20px;
         border: 1px solid #30363d;
-        /* Sombra para dar profundidade 3D */
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); 
         height: 100%;
     }
     .kpi-label {
-        color: #a0aec0; /* Cinza claro */
+        color: #a0aec0;
         font-size: 0.95rem;
         font-weight: 500;
         text-transform: uppercase;
@@ -65,7 +64,7 @@ st.markdown("""
         margin-bottom: 8px;
     }
     .kpi-value {
-        font-size: 2.0rem; /* Aumentei a fonte */
+        font-size: 2.0rem;
         font-weight: 700;
         color: #ffffff;
     }
@@ -114,19 +113,17 @@ margem_real_pct = (lucro_liquido / dados['Vendido']) * 100 if dados['Vendido'] >
 META_MARGEM = 25.0
 
 # ---------------------------------------------------------
-# 5. HEADER (NOVO DESIGN "HERO SECTION")
+# 5. HEADER (SEM EMOJIS)
 # ---------------------------------------------------------
-# Cores do Status
 cor_map = {"Finalizado": "#238636", "Em andamento": "#1f6feb", "Não iniciado": "#8b949e"}
 cor_bg = cor_map.get(dados['Status'], "#30363d")
 
-# Renderiza o Cabeçalho como um bloco HTML único para dar destaque
 st.markdown(f"""
 <div class="header-box">
     <div>
         <div class="header-title">{dados['Projeto']} - {dados['Descricao']}</div>
         <div class="header-subtitle">
-            🏢 <b>Cliente:</b> {dados['Cliente']} &nbsp;&nbsp;|&nbsp;&nbsp; 📍 <b>Local:</b> {dados['Cidade']}
+            <b>Cliente:</b> {dados['Cliente']} &nbsp;&nbsp;|&nbsp;&nbsp; <b>Local:</b> {dados['Cidade']}
         </div>
     </div>
     <div class="header-status" style="background-color: {cor_bg};">
@@ -135,8 +132,10 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+st.divider() # SEPARADOR 1
+
 # ---------------------------------------------------------
-# 6. KPI CARDS (COM BORDAS COLORIDAS)
+# 6. KPI CARDS
 # ---------------------------------------------------------
 def criar_card_destaque(titulo, valor, cor_borda, cor_texto="#ffffff"):
     st.markdown(f"""
@@ -148,21 +147,18 @@ def criar_card_destaque(titulo, valor, cor_borda, cor_texto="#ffffff"):
 
 k1, k2, k3, k4 = st.columns(4)
 
-# Lógica de Cores
-cor_neutra = "#3b82f6"   # Azul padrão
-cor_sucesso = "#2ea043"  # Verde
-cor_erro = "#da3633"     # Vermelho
-
-# Define cor dinâmica para Lucro e Margem
+cor_neutra = "#3b82f6"
+cor_sucesso = "#2ea043"
+cor_erro = "#da3633"
 cor_dinamica = cor_sucesso if margem_real_pct >= META_MARGEM else cor_erro
 
 with k1: criar_card_destaque("Valor Vendido", format_currency(dados['Vendido']), cor_neutra)
-with k2: criar_card_destaque("Valor Faturado", format_currency(dados['Faturado']), "#8b949e") # Cinza/Prata
+with k2: criar_card_destaque("Valor Faturado", format_currency(dados['Faturado']), "#8b949e")
 with k3: criar_card_destaque("Lucro", format_currency(lucro_liquido), cor_dinamica, cor_dinamica)
 with k4: criar_card_destaque("Margem de Lucro", format_percent(margem_real_pct), cor_dinamica, cor_dinamica)
 
 st.write("")
-st.write("")
+st.divider() # SEPARADOR 2
 
 # ---------------------------------------------------------
 # 7. SEÇÃO 1: EFICIÊNCIA OPERACIONAL
@@ -242,6 +238,7 @@ with st.container(border=True):
         """, unsafe_allow_html=True)
 
 st.write("")
+st.divider() # SEPARADOR 3
 
 # ---------------------------------------------------------
 # 8. SEÇÃO 2: COMPOSIÇÃO DE RESULTADO
@@ -281,11 +278,12 @@ with st.container(border=True):
     st.plotly_chart(fig_water, use_container_width=True, config={'displayModeBar': False})
 
 st.write("")
+st.divider() # SEPARADOR 4
 
 # ---------------------------------------------------------
-# 9. SEÇÃO 3: DETALHAMENTO DE CUSTOS (LEGENDA NATIVA)
+# 9. SEÇÃO 3: DETALHAMENTO DE CUSTOS (EMOJI LUPA 🔎)
 # ---------------------------------------------------------
-st.subheader("📉 Detalhamento de Custos")
+st.subheader("🔎 Detalhamento de Custos")
 
 def plot_row_fixed(titulo, orcado, real):
     pct = (real / orcado * 100) if orcado > 0 else 0
@@ -293,7 +291,6 @@ def plot_row_fixed(titulo, orcado, real):
     
     fig = go.Figure()
     
-    # Orçado
     fig.add_trace(go.Bar(
         y=[titulo], x=[orcado], name='Orçado', orientation='h', 
         marker_color='#30363d', 
@@ -301,7 +298,6 @@ def plot_row_fixed(titulo, orcado, real):
         cliponaxis=False
     ))
     
-    # Realizado
     fig.add_trace(go.Bar(
         y=[titulo], x=[real], name='Realizado', orientation='h', 
         marker_color=cor_real, 
