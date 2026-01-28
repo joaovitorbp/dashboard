@@ -1,31 +1,4 @@
-streamlit
+streamlit>=1.36.0
 pandas
 plotly
 openpyxl
-
-
-Certo, vamos lá:
-
-
-
-1 - Quero que o select list seja com base no número do projeto
-
-
-
-2 - No cabeçalho mostrar o número do projeto e depois a descrição
-
-
-
-3 - Os gráficos não quero que apareça aquelas opções de zoom, redimensionar, pan, entre outros, quero que sejam fixos
-
-
-
-4 - Dê cor a margem e ao lucro nos cards principais, conforme a margem mesmo
-
-
-
-5 - Gostei dos novos gráficos da eficiência operacional, porem acho que a parte do diagnóstico chamou um pouco mais a atenção, dê uma alterada nela, mas não mude o formato, coloque um espaçador entre ela e o gráfico
-
-
-
-6 - Dê mais detalhe a aba de detalhamento de custo, ficou muito simplificado, caso precise pode colocar os gráficos em linhas
