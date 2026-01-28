@@ -162,32 +162,32 @@ for index, row in df_show.iterrows():
         val_fmt = f"R$ {row['Vendido']/1000:,.0f}k"
         margem_fmt = f"{row['Margem_%']:.1f}%"
 
-        # HTML Seguro
+        # HTML Seguro (IMPORTANTE: Sem espaços no início das linhas de HTML)
         card_html = f"""
-        <div class="project-card" style="border-left: 5px solid {border_color};">
-            <div class="card-header">{row['Projeto']}</div>
-            <div class="card-sub">{row['Cliente']} | {row['Cidade']}</div>
-            
-            <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#a0aec0; margin-bottom:5px;">
-                <span>Avanço Físico</span>
-                <span>{int(pct)}%</span>
-            </div>
-            <div style="background-color: #30363d; height: 6px; border-radius: 3px;">
-                <div style="background-color: {border_color}; width: {pct}%; height: 100%; border-radius: 3px;"></div>
-            </div>
+<div class="project-card" style="border-left: 5px solid {border_color};">
+    <div class="card-header">{row['Projeto']}</div>
+    <div class="card-sub">{row['Cliente']} | {row['Cidade']}</div>
+    
+    <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#a0aec0; margin-bottom:5px;">
+        <span>Avanço Físico</span>
+        <span>{int(pct)}%</span>
+    </div>
+    <div style="background-color: #30363d; height: 6px; border-radius: 3px;">
+        <div style="background-color: {border_color}; width: {pct}%; height: 100%; border-radius: 3px;"></div>
+    </div>
 
-            <div class="card-metrics">
-                <div class="metric-box">
-                    <div class="metric-label">VALOR</div>
-                    <div class="metric-val">{val_fmt}</div>
-                </div>
-                <div class="metric-box">
-                    <div class="metric-label">MARGEM</div>
-                    <div class="metric-val" style="color: {cor_margem};">{margem_fmt}</div>
-                </div>
-            </div>
+    <div class="card-metrics">
+        <div class="metric-box">
+            <div class="metric-label">VALOR</div>
+            <div class="metric-val">{val_fmt}</div>
         </div>
-        """
+        <div class="metric-box">
+            <div class="metric-label">MARGEM</div>
+            <div class="metric-val" style="color: {cor_margem};">{margem_fmt}</div>
+        </div>
+    </div>
+</div>
+"""
         st.markdown(card_html, unsafe_allow_html=True)
         
         # Botão de Navegação
