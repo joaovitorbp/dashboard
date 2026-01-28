@@ -9,46 +9,62 @@ st.markdown("""
     .stApp {background-color: #0e1117;}
     .block-container {padding-top: 2rem;}
     
-    /* --- ESTILO DO CARD (Parte Superior HTML) --- */
-    .project-card {
+    /* Estiliza o Container Nativo para parecer um Card Escuro */
+    [data-testid="stVerticalBlockBorderWrapper"] {
         background-color: #1c1f26;
-        padding: 16px;
-        
-        /* Bordas: Arredonda em cima, QUADRADO em baixo */
-        border-radius: 8px 8px 0 0; 
-        
-        border-top: 1px solid #30363d;
-        border-left: 1px solid #30363d;
-        border-right: 1px solid #30363d;
-        border-bottom: none; /* Sem borda embaixo para colar no botão */
-        
-        margin-bottom: -5px; /* Puxa o botão para cima (Truque Visual) */
+        border-color: #30363d;
+        padding: 15px;
     }
     
-    .card-header {
-        font-size: 1.1rem;
-        font-weight: 700;
+    /* Tira o padding extra de dentro das colunas */
+    [data-testid="column"] {
+        padding: 0px;
+    }
+
+    /* Estilo dos Textos Personalizados */
+    .card-title {
         color: white;
-        margin-bottom: 4px;
+        font-weight: 700;
+        font-size: 1.05rem;
+        margin-bottom: 2px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
-    .card-sub { font-size: 0.85rem; color: #8b949e; margin-bottom: 12px; }
-    
-    .card-metrics {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 15px;
-        padding-top: 10px;
-        border-top: 1px solid #30363d;
-        font-size: 0.9rem;
+    .card-subtitle {
+        color: #8b949e;
+        font-size: 0.8rem;
+        margin-bottom: 8px;
     }
-    .metric-box { text-align: center; }
-    .metric-label { font-size: 0.75rem; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; }
-    .metric-val { font-weight: 600; color: #e6edf3; font-size: 1rem; }
-    
-    /* --- KPIs do Topo --- */
+    .metric-label {
+        font-size: 0.7rem;
+        color: #8b949e;
+        text-transform: uppercase;
+    }
+    .metric-value {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #e6edf3;
+    }
+
+    /* Botão Pequeno e Personalizado */
+    div[data-testid="stVerticalBlockBorderWrapper"] button {
+        border: 1px solid #30363d;
+        background-color: #21262d;
+        color: #58a6ff;
+        font-size: 0.8rem;
+        padding: 4px 10px;
+        height: auto;
+        min-height: 0px;
+        line-height: 1.2;
+    }
+    div[data-testid="stVerticalBlockBorderWrapper"] button:hover {
+        border-color: #8b949e;
+        background-color: #30363d;
+        color: white;
+    }
+
+    /* KPIs do Topo */
     .big-kpi {
         background-color: #161b22;
         padding: 15px;
@@ -58,35 +74,6 @@ st.markdown("""
     }
     .big-kpi-val { font-size: 1.8rem; font-weight: bold; color: white; }
     .big-kpi-lbl { font-size: 0.9rem; color: #8b949e; }
-
-    /* --- ESTILO DO BOTÃO (Parte Inferior do Card) --- */
-    /* Isso transforma o botão padrão do Streamlit no rodapé do card */
-    div[data-testid="stVerticalBlock"] > div > div > div > div > button {
-        background-color: #1c1f26;
-        color: #58a6ff; /* Azul link */
-        font-weight: 600;
-        width: 100%;
-        
-        /* Bordas: QUADRADO em cima, Arredondado em baixo */
-        border-radius: 0 0 8px 8px;
-        
-        border-top: 1px solid #30363d; /* Linha divisória sutil */
-        border-left: 1px solid #30363d;
-        border-right: 1px solid #30363d;
-        border-bottom: 1px solid #30363d;
-        
-        transition: all 0.3s;
-    }
-    div[data-testid="stVerticalBlock"] > div > div > div > div > button:hover {
-        background-color: #21262d; /* Ligeiramente mais claro no hover */
-        border-color: #8b949e;
-        color: white;
-    }
-    
-    /* Remove padding padrão das colunas para os cards ficarem justos */
-    div[data-testid="column"] {
-        padding: 0 10px;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -144,16 +131,13 @@ k4.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Margem Média</div><
 
 st.divider()
 
-# ---------------------------------------------------------
-# 5. FILTROS
-# ---------------------------------------------------------
+# Filtros
 filtro_status = st.radio(
     "Filtrar Visualização:",
     ["Todas", "Em andamento", "Finalizadas", "🚨 Apenas Críticas"],
     horizontal=True
 )
 
-# Aplicar Filtros
 df_show = df.copy()
 
 if filtro_status == "Em andamento":
@@ -167,61 +151,55 @@ st.write(f"Mostrando **{len(df_show)}** projetos")
 st.write("") 
 
 # ---------------------------------------------------------
-# 6. GRID DE CARDS COM DESIGN "SEAMLESS"
+# 6. GRID DE CARDS (HÍBRIDO)
 # ---------------------------------------------------------
 cols = st.columns(3)
 
 for index, row in df_show.iterrows():
     with cols[index % 3]:
         
-        # Variáveis
+        # Definição de Cores
         pct = row['Conclusao_%']
-        
         if pct >= 100:
-            border_color = "#238636"
+            bar_color = "#238636" # Verde
         elif pct > 50:
-            border_color = "#1f6feb"
+            bar_color = "#1f6feb" # Azul
         else:
-            border_color = "#8957e5"
+            bar_color = "#8957e5" # Roxo
 
         cor_margem = "#da3633" if row['Margem_%'] < META_MARGEM else "#2ea043"
-        val_fmt = f"R$ {row['Vendido']/1000:,.0f}k"
-        margem_fmt = f"{row['Margem_%']:.1f}%"
-        titulo_card = f"{row['Projeto']} - {row['Descricao']}"
+        titulo_completo = f"{row['Projeto']} - {row['Descricao']}"
 
-        # HTML (Topo do Card)
-        html_parts = [
-            f'<div class="project-card" style="border-left: 5px solid {border_color};">',
-            f'<div class="card-header" title="{titulo_card}">{titulo_card}</div>',
-            f'<div class="card-sub">{row["Cliente"]} | {row["Cidade"]}</div>',
+        # --- INÍCIO DO CARD ---
+        with st.container(border=True):
             
-            # Barra de Progresso
-            '<div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#a0aec0; margin-bottom:5px;">',
-            '<span>Avanço Físico</span>',
-            f'<span>{int(pct)}%</span>',
-            '</div>',
-            '<div style="background-color: #30363d; height: 6px; border-radius: 3px;">',
-            f'<div style="background-color: {border_color}; width: {pct}%; height: 100%; border-radius: 3px;"></div>',
-            '</div>',
+            # 1. Barra Colorida Superior (Simula a borda colorida)
+            st.markdown(f"""
+                <div style="height: 4px; background-color: {bar_color}; margin: -15px -15px 10px -15px;"></div>
+                <div class="card-title" title="{titulo_completo}">{titulo_completo}</div>
+                <div class="card-subtitle">{row['Cliente']} | {row['Cidade']}</div>
+            """, unsafe_allow_html=True)
 
-            # Métricas
-            '<div class="card-metrics">',
-            '<div class="metric-box">',
-            '<div class="metric-label">VALOR</div>',
-            f'<div class="metric-val">{val_fmt}</div>',
-            '</div>',
-            '<div class="metric-box">',
-            '<div class="metric-label">MARGEM</div>',
-            f'<div class="metric-val" style="color: {cor_margem};">{margem_fmt}</div>',
-            '</div>',
-            '</div>',
-            '</div>'
-        ]
-        
-        st.markdown("".join(html_parts), unsafe_allow_html=True)
-        
-        # Botão (Rodapé do Card)
-        # O estilo CSS lá em cima faz ele grudar no HTML e ter cantos redondos em baixo
-        if st.button("ABRIR DETALHE ➜", key=f"btn_{row['Projeto']}", use_container_width=True):
-            st.session_state["projeto_foco"] = row['Projeto']
-            st.switch_page("dashboard_detalhado.py")
+            # 2. Barra de Progresso Nativa
+            st.progress(int(pct) / 100, text=f"Avanço: {int(pct)}%")
+            
+            # 3. Grid Interno: Métricas na Esquerda | Botão na Direita
+            c_val, c_mar, c_btn = st.columns([1.2, 1.2, 0.8])
+            
+            with c_val:
+                st.markdown(f"""
+                <div class="metric-label">VALOR</div>
+                <div class="metric-value">R$ {row['Vendido']/1000:,.0f}k</div>
+                """, unsafe_allow_html=True)
+                
+            with c_mar:
+                st.markdown(f"""
+                <div class="metric-label">MARGEM</div>
+                <div class="metric-value" style="color: {cor_margem};">{row['Margem_%']:.1f}%</div>
+                """, unsafe_allow_html=True)
+            
+            with c_btn:
+                st.write("") # Espaço para alinhar verticalmente
+                if st.button("Abrir ➚", key=f"btn_{row['Projeto']}", use_container_width=True):
+                    st.session_state["projeto_foco"] = row['Projeto']
+                    st.switch_page("dashboard_detalhado.py")
