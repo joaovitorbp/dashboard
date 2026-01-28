@@ -11,7 +11,7 @@ st.markdown("""
 <style>
     .stApp {background-color: #0e1117;}
     
-    /* CORREÇÃO CRÍTICA: Aumentei drasticamente o espaço superior */
+    /* Espaçamento superior para evitar cortes */
     .block-container {
         padding-top: 5rem !important; 
         padding-bottom: 3rem;
@@ -128,7 +128,7 @@ margem_real_pct = (lucro_liquido / dados['Vendido']) * 100 if dados['Vendido'] >
 META_MARGEM = 25.0
 
 # ---------------------------------------------------------
-# 5. HEADER (COM BORDA LATERAL)
+# 5. HEADER
 # ---------------------------------------------------------
 cor_map = {"Finalizado": "#238636", "Em andamento": "#1f6feb", "Não iniciado": "#8b949e"}
 cor_bg = cor_map.get(dados['Status'], "#30363d")
@@ -226,20 +226,21 @@ with st.container(border=True):
     with col_diag:
         saldo_hh = hh_orc - hh_real
         
+        # LÓGICA DE TEXTOS ATUALIZADA
         if perc_hh > (dados['Conclusao_%'] + 10):
-            border_c = "#da3633"
-            titulo = "Consumo Crítico"
-            texto = f"O consumo de horas ({perc_hh:.0f}%) ultrapassou o avanço físico em mais de 10%."
+            border_c = "#da3633" # Vermelho
+            titulo = "Baixa Eficiência"
+            texto = "O gasto de horas ultrapassou o avanço físico em mais de 10%."
             saldo_txt = f"Excedente: {int(hh_real - hh_orc)}h"
         elif perc_hh < dados['Conclusao_%']:
-            border_c = "#238636"
-            titulo = "Eficiência Alta"
-            texto = "A obra está avançada em relação ao consumo de horas planejado."
+            border_c = "#238636" # Verde
+            titulo = "Alta Eficiência"
+            texto = "A obra está avançada em relação ao gasto de horas planejado."
             saldo_txt = f"Saldo: {int(saldo_hh)}h"
         else:
-            border_c = "#1f6feb"
+            border_c = "#1f6feb" # Azul
             titulo = "Equilibrado"
-            texto = "O ritmo de trabalho segue alinhado ao cronograma físico."
+            texto = "O ritmo de trabalho segue alinhado ao avanço físico."
             saldo_txt = f"Saldo: {int(saldo_hh)}h"
 
         st.markdown(f"""
