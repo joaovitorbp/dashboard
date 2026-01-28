@@ -12,7 +12,7 @@ st.markdown("""
     .stApp {background-color: #0e1117;}
     .block-container {padding-top: 2rem; padding-bottom: 3rem;}
     
-    /* Remove padding dos gráficos Plotly */
+    /* Remove barra de ferramentas do Plotly */
     .js-plotly-plot .plotly .modebar {display: none !important;}
     
     /* Estilo para os Cards Personalizados (HTML) */
@@ -217,5 +217,94 @@ with st.container(border=True):
     
     labels = ["Vendido", "Impostos", "Materiais", "Despesas", "Mão de Obra", "Lucro"]
     
+    # --- CORREÇÃO DO ERRO AQUI ---
     if modo_vis == "Valores (R$)":
-        vals = [dados['Vendido'], -dados['Impostos
+        vals = [
+            dados['Vendido'], 
+            -dados['Impostos'], 
+            -dados['Mat_Real'], 
+            -dados['Desp_Real'], 
+            -dados['HH_Real_Vlr'], 
+            lucro_liquido
+        ]
+        text_vals = [f"R$ {v/1000:.1f}k" for v in vals]
+    else:
+        base = dados['Vendido'] if dados['Vendido'] > 0 else 1
+        vals = [
+            100, 
+            -(dados['Impostos']/base)*100, 
+            -(dados['Mat_Real']/base)*100, 
+            -(dados['Desp_Real']/base)*100, 
+            -(dados['HH_Real_Vlr']/base)*100, 
+            (lucro_liquido/base)*100
+        ]
+        text_vals = [f"{v:.1f}%" for v in vals]
+    # -----------------------------
+
+    fig_water = go.Figure(go.Waterfall(
+        orientation = "v", measure = ["relative"]*5 + ["total"],
+        x = labels, y = vals, text = text_vals, textposition = "outside",
+        connector = {"line":{"color":"#484f58"}},
+        decreasing = {"marker":{"color":"#da3633"}},
+        increasing = {"marker":{"color":"#238636"}},
+        totals = {"marker":{"color":"#1f6feb"}}
+    ))
+    
+    fig_water.update_layout(
+        height=320, 
+        margin=dict(t=40, b=0, l=0, r=0), # Margem superior para o texto não bater
+        paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+        yaxis=dict(showgrid=True, gridcolor='#30363d', zeroline=False, fixedrange=True),
+        xaxis=dict(tickfont=dict(color='white'), fixedrange=True),
+        font=dict(color='white')
+    )
+    st.plotly_chart(fig_water, use_container_width=True, config={'displayModeBar': False})
+
+st.write("")
+
+# ---------------------------------------------------------
+# 9. SEÇÃO 3: DETALHAMENTO DE CUSTOS
+# ---------------------------------------------------------
+st.subheader("📉 Detalhamento de Custos")
+
+def plot_row_fixed(titulo, orcado, real):
+    pct = (real / orcado * 100) if orcado > 0 else 0
+    cor_real = "#da3633" if real > orcado else "#1f6feb"
+    
+    fig = go.Figure()
+    
+    fig.add_trace(go.Bar(
+        y=[titulo], x=[orcado], name='Orçado', orientation='h', 
+        marker_color='#30363d', text=[f"R$ {orcado:,.0f}"], textposition='auto'
+    ))
+    
+    fig.add_trace(go.Bar(
+        y=[titulo], x=[real], name='Realizado', orientation='h', 
+        marker_color=cor_real, text=[f"R$ {real:,.0f}"], textposition='outside',
+        cliponaxis=False 
+    ))
+
+    # Ajuste para evitar cortes
+    max_val = max(orcado, real) * 1.2
+    
+    fig.update_layout(
+        title=dict(text=f"<b>{titulo}</b> <span style='color:#8b949e; font-size:14px'>- Consumo: {pct:.1f}%</span>", x=0),
+        barmode='group',
+        height=130,
+        margin=dict(l=0, r=40, t=30, b=10),
+        paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+        xaxis=dict(showgrid=True, gridcolor='#262730', showticklabels=False, range=[0, max_val], fixedrange=True),
+        yaxis=dict(showticklabels=False, fixedrange=True),
+        showlegend=False,
+        font=dict(color='white')
+    )
+    return fig
+
+with st.container(border=True):
+    st.plotly_chart(plot_row_fixed("📦 Materiais", dados['Mat_Orc'], dados['Mat_Real']), use_container_width=True, config={'displayModeBar': False})
+
+with st.container(border=True):
+    st.plotly_chart(plot_row_fixed("🚗 Despesas", dados['Desp_Orc'], dados['Desp_Real']), use_container_width=True, config={'displayModeBar': False})
+
+with st.container(border=True):
+    st.plotly_chart(plot_row_fixed("👷 Mão de Obra (R$)", dados['HH_Orc_Vlr'], dados['HH_Real_Vlr']), use_container_width=True, config={'displayModeBar': False})
