@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 # ---------------------------------------------------------
-# 1. CONFIGURAÇÃO E ESTILO (CSS DARK MODE REFINADO)
+# 1. CONFIGURAÇÃO E ESTILO
 # ---------------------------------------------------------
 st.set_page_config(layout="wide", page_title="Gestão de Obras", page_icon="🏗️")
 
@@ -15,7 +15,7 @@ st.markdown("""
     /* Remove barra de ferramentas do Plotly */
     .js-plotly-plot .plotly .modebar {display: none !important;}
     
-    /* Estilo para os Cards Personalizados (HTML) */
+    /* Estilo Cards KPI */
     .kpi-card {
         background-color: #1c1f26;
         border: 1px solid #2d333b;
@@ -23,16 +23,12 @@ st.markdown("""
         padding: 15px;
         text-align: left;
     }
-    .kpi-label {
-        color: #8b949e;
-        font-size: 0.9rem;
-        margin-bottom: 5px;
-    }
-    .kpi-value {
-        font-size: 1.8rem;
-        font-weight: 600;
-        color: #ffffff;
-    }
+    .kpi-label {color: #8b949e; font-size: 0.9rem; margin-bottom: 5px;}
+    .kpi-value {font-size: 1.8rem; font-weight: 600; color: #ffffff;}
+    
+    /* Títulos */
+    h1, h2, h3 {color: #f0f6fc !important;}
+    p, label, span, div {color: #e6edf3 !important;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -41,6 +37,7 @@ st.markdown("""
 # ---------------------------------------------------------
 @st.cache_data
 def load_data():
+    # Certifique-se de ter o arquivo dados_obras_v5.xlsx na pasta
     return pd.read_excel("dados_obras_v5.xlsx")
 
 try:
@@ -53,11 +50,8 @@ except FileNotFoundError:
 # 3. SIDEBAR
 # ---------------------------------------------------------
 st.sidebar.title("Navegação")
-
-# Lista baseada apenas no NÚMERO do projeto
 lista_projetos = sorted(df_raw['Projeto'].unique())
 id_projeto = st.sidebar.selectbox("Selecione o Projeto:", lista_projetos)
-
 dados = df_raw[df_raw['Projeto'] == id_projeto].iloc[0]
 
 # ---------------------------------------------------------
@@ -69,10 +63,9 @@ margem_real_pct = (lucro_liquido / dados['Vendido']) * 100 if dados['Vendido'] >
 META_MARGEM = 25.0
 
 # ---------------------------------------------------------
-# 5. HEADER (AJUSTADO)
+# 5. HEADER
 # ---------------------------------------------------------
 c_head, c_status = st.columns([3, 1])
-
 with c_head:
     st.title(f"{dados['Projeto']} - {dados['Descricao']}")
     st.markdown(f"**Cliente:** {dados['Cliente']} | **Local:** {dados['Cidade']}")
@@ -80,64 +73,32 @@ with c_head:
 with c_status:
     st.write("")
     st.write("")
-    # Status Formatado (Pílula Elegante)
     cor_map = {"Finalizado": "#238636", "Em andamento": "#1f6feb", "Não iniciado": "#8b949e"}
     cor_bg = cor_map.get(dados['Status'], "#30363d")
-    
-    st.markdown(f"""
-        <div style="
-            background-color: {cor_bg}; 
-            color: white;
-            padding: 6px 12px; 
-            border-radius: 20px; 
-            text-align: center;
-            font-weight: 600;
-            font-size: 0.9rem;
-            display: inline-block;
-            float: right;
-        ">
-            {dados['Status'].upper()}
-        </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"""<div style="background-color:{cor_bg};color:white;padding:6px 12px;border-radius:20px;text-align:center;font-weight:600;display:inline-block;float:right;">{dados['Status'].upper()}</div>""", unsafe_allow_html=True)
 
 st.divider()
 
 # ---------------------------------------------------------
-# 6. KPI CARDS (CUSTOMIZADOS E LIMPOS)
+# 6. KPI CARDS
 # ---------------------------------------------------------
-# Função para criar card HTML
 def criar_card(titulo, valor, cor_texto="#ffffff"):
-    st.markdown(f"""
-    <div class="kpi-card">
-        <div class="kpi-label">{titulo}</div>
-        <div class="kpi-value" style="color: {cor_texto}">{valor}</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"""<div class="kpi-card"><div class="kpi-label">{titulo}</div><div class="kpi-value" style="color:{cor_texto}">{valor}</div></div>""", unsafe_allow_html=True)
 
 k1, k2, k3, k4 = st.columns(4)
+with k1: criar_card("💰 Contrato", f"R$ {dados['Vendido']:,.0f}")
+with k2: criar_card("📝 Faturado", f"R$ {dados['Faturado']:,.0f}")
 
-with k1:
-    criar_card("💰 Contrato", f"R$ {dados['Vendido']:,.0f}")
+cor_lucro = "#2ea043" if lucro_liquido >= 0 else "#da3633"
+cor_margem = "#2ea043" if margem_real_pct >= META_MARGEM else "#da3633"
 
-with k2:
-    criar_card("📝 Faturado", f"R$ {dados['Faturado']:,.0f}")
-
-# Definindo cores dinâmicas para Lucro e Margem
-cor_positiva = "#2ea043" # Verde
-cor_negativa = "#da3633" # Vermelho
-cor_lucro = cor_positiva if lucro_liquido >= 0 else cor_negativa
-cor_margem = cor_positiva if margem_real_pct >= META_MARGEM else cor_negativa
-
-with k3:
-    criar_card("💵 Lucro Real", f"R$ {lucro_liquido:,.0f}", cor_lucro)
-
-with k4:
-    criar_card("📈 Margem Real", f"{margem_real_pct:.1f}%", cor_margem)
+with k3: criar_card("💵 Lucro Real", f"R$ {lucro_liquido:,.0f}", cor_lucro)
+with k4: criar_card("📈 Margem Real", f"{margem_real_pct:.1f}%", cor_margem)
 
 st.write("")
 
 # ---------------------------------------------------------
-# 7. SEÇÃO 1: EFICIÊNCIA OPERACIONAL
+# 7. SEÇÃO 1: EFICIÊNCIA OPERACIONAL (Ajuste de Margens)
 # ---------------------------------------------------------
 st.subheader("⚙️ Eficiência Operacional")
 
@@ -177,14 +138,17 @@ with st.container(border=True):
             }
         ))
         
+        # AJUSTE 2: Aumentar margens para evitar cortes
         fig_gauge.update_layout(
-            height=200, margin=dict(t=30, b=0, l=10, r=10), 
+            height=220, 
+            margin=dict(t=40, b=20, l=30, r=30), 
             paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"},
             xaxis={'fixedrange': True}, yaxis={'fixedrange': True}
         )
         st.plotly_chart(fig_gauge, use_container_width=True, config={'displayModeBar': False})
 
     with col_diag:
+        st.write("")
         st.write("")
         st.markdown("##### 🩺 Diagnóstico")
         
@@ -194,7 +158,7 @@ with st.container(border=True):
             st.markdown(f"Desvio: **{int(hh_real - hh_orc)}h** excedentes.")
         elif perc_hh < dados['Conclusao_%']:
             st.markdown(f"🟢 **EFICIENTE:** Obra avançada com economia.")
-            st.markdown(f"Saldo atual: **{int(saldo_hh)}h** disponíveis.")
+            st.markdown(f"Saldo: **{int(saldo_hh)}h** disponíveis.")
         else:
             st.markdown(f"🔵 **EQUILIBRADO:** Ritmo alinhado ao planejado.")
             st.markdown(f"Saldo: **{int(saldo_hh)}h**.")
@@ -202,44 +166,22 @@ with st.container(border=True):
 st.write("")
 
 # ---------------------------------------------------------
-# 8. SEÇÃO 2: COMPOSIÇÃO DE RESULTADO (CASCATA)
+# 8. SEÇÃO 2: COMPOSIÇÃO DE RESULTADO (Ajuste de Margens)
 # ---------------------------------------------------------
 st.subheader("📊 Composição do Lucro")
 
 with st.container(border=True):
-    # Toggle acima do gráfico
-    modo_vis = st.radio(
-        "Unidade de Medida:", 
-        ["Percentual (%)", "Valores (R$)"], 
-        horizontal=True,
-        label_visibility="collapsed"
-    )
+    modo_vis = st.radio("Unidade de Medida:", ["Percentual (%)", "Valores (R$)"], horizontal=True, label_visibility="collapsed")
     
     labels = ["Vendido", "Impostos", "Materiais", "Despesas", "Mão de Obra", "Lucro"]
     
-    # --- CORREÇÃO DO ERRO AQUI ---
     if modo_vis == "Valores (R$)":
-        vals = [
-            dados['Vendido'], 
-            -dados['Impostos'], 
-            -dados['Mat_Real'], 
-            -dados['Desp_Real'], 
-            -dados['HH_Real_Vlr'], 
-            lucro_liquido
-        ]
+        vals = [dados['Vendido'], -dados['Impostos'], -dados['Mat_Real'], -dados['Desp_Real'], -dados['HH_Real_Vlr'], lucro_liquido]
         text_vals = [f"R$ {v/1000:.1f}k" for v in vals]
     else:
         base = dados['Vendido'] if dados['Vendido'] > 0 else 1
-        vals = [
-            100, 
-            -(dados['Impostos']/base)*100, 
-            -(dados['Mat_Real']/base)*100, 
-            -(dados['Desp_Real']/base)*100, 
-            -(dados['HH_Real_Vlr']/base)*100, 
-            (lucro_liquido/base)*100
-        ]
+        vals = [100, -(dados['Impostos']/base)*100, -(dados['Mat_Real']/base)*100, -(dados['Desp_Real']/base)*100, -(dados['HH_Real_Vlr']/base)*100, (lucro_liquido/base)*100]
         text_vals = [f"{v:.1f}%" for v in vals]
-    # -----------------------------
 
     fig_water = go.Figure(go.Waterfall(
         orientation = "v", measure = ["relative"]*5 + ["total"],
@@ -247,12 +189,13 @@ with st.container(border=True):
         connector = {"line":{"color":"#484f58"}},
         decreasing = {"marker":{"color":"#da3633"}},
         increasing = {"marker":{"color":"#238636"}},
-        totals = {"marker":{"color":"#1f6feb"}}
+        totals = {"marker":{"color":"#1f6feb"}},
+        cliponaxis = False # IMPORTANTE: Evita cortar texto no topo
     ))
     
+    # AJUSTE 2: Margem superior maior
     fig_water.update_layout(
-        height=320, 
-        margin=dict(t=40, b=0, l=0, r=0), # Margem superior para o texto não bater
+        height=320, margin=dict(t=50, b=10, l=10, r=10),
         paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
         yaxis=dict(showgrid=True, gridcolor='#30363d', zeroline=False, fixedrange=True),
         xaxis=dict(tickfont=dict(color='white'), fixedrange=True),
@@ -263,7 +206,7 @@ with st.container(border=True):
 st.write("")
 
 # ---------------------------------------------------------
-# 9. SEÇÃO 3: DETALHAMENTO DE CUSTOS
+# 9. SEÇÃO 3: DETALHAMENTO DE CUSTOS (Ajuste de Texto)
 # ---------------------------------------------------------
 st.subheader("📉 Detalhamento de Custos")
 
@@ -273,25 +216,29 @@ def plot_row_fixed(titulo, orcado, real):
     
     fig = go.Figure()
     
+    # AJUSTE 1: Texto OUTSIDE para ambos para padronizar
     fig.add_trace(go.Bar(
         y=[titulo], x=[orcado], name='Orçado', orientation='h', 
-        marker_color='#30363d', text=[f"R$ {orcado:,.0f}"], textposition='auto'
+        marker_color='#30363d', 
+        text=[f"R$ {orcado:,.0f}"], textposition='outside', # Texto fora
+        cliponaxis=False
     ))
     
     fig.add_trace(go.Bar(
         y=[titulo], x=[real], name='Realizado', orientation='h', 
-        marker_color=cor_real, text=[f"R$ {real:,.0f}"], textposition='outside',
+        marker_color=cor_real, 
+        text=[f"R$ {real:,.0f}"], textposition='outside', # Texto fora
         cliponaxis=False 
     ))
 
-    # Ajuste para evitar cortes
-    max_val = max(orcado, real) * 1.2
+    # Aumentar range do eixo X para caber os dois textos externos
+    max_val = max(orcado, real) * 1.35 
     
     fig.update_layout(
         title=dict(text=f"<b>{titulo}</b> <span style='color:#8b949e; font-size:14px'>- Consumo: {pct:.1f}%</span>", x=0),
         barmode='group',
-        height=130,
-        margin=dict(l=0, r=40, t=30, b=10),
+        height=140,
+        margin=dict(l=0, r=20, t=30, b=10),
         paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
         xaxis=dict(showgrid=True, gridcolor='#262730', showticklabels=False, range=[0, max_val], fixedrange=True),
         yaxis=dict(showticklabels=False, fixedrange=True),
