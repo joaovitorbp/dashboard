@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import textwrap
 
 # ---------------------------------------------------------
 # 1. CONFIGURAÇÃO VISUAL (CSS PREMIUM)
@@ -11,15 +12,15 @@ st.markdown("""
 
     /* --- ESTILO DO CONTAINER DO CARD --- */
     [data-testid="stVerticalBlockBorderWrapper"] {
-        background-color: #161b22; /* Fundo mais escuro */
+        background-color: #161b22;
         border: 1px solid #30363d;
         border-radius: 8px;
-        padding: 0px !important; /* Removemos padding padrão para controlar via CSS interno */
+        padding: 0px !important;
         transition: transform 0.2s, border-color 0.2s;
     }
     [data-testid="stVerticalBlockBorderWrapper"]:hover {
-        border-color: #58a6ff; /* Borda azul ao passar o mouse */
-        transform: translateY(-2px); /* Leve flutuação */
+        border-color: #58a6ff;
+        transform: translateY(-2px);
     }
 
     /* --- CABEÇALHO DO CARD --- */
@@ -29,6 +30,7 @@ st.markdown("""
     }
     .project-title {
         color: white;
+        font-family: "Source Sans Pro", sans-serif;
         font-weight: 700;
         font-size: 1rem;
         white-space: nowrap;
@@ -76,12 +78,13 @@ st.markdown("""
         color: #8b949e;
         text-transform: uppercase;
         margin-bottom: 2px;
+        font-family: "Source Sans Pro", sans-serif;
     }
     .metric-val {
-        font-family: 'Courier New', Courier, monospace; /* Fonte técnica */
-        font-size: 0.95rem;
+        font-size: 1rem; /* Fonte Normal Ajustada */
         font-weight: 700;
         color: #e6edf3;
+        font-family: "Source Sans Pro", sans-serif;
     }
 
     /* --- BARRA DE PROGRESSO CUSTOMIZADA --- */
@@ -96,7 +99,6 @@ st.markdown("""
     .progress-bar {
         height: 100%;
         border-radius: 4px;
-        transition: width 0.5s ease-in-out;
     }
     .progress-txt {
         font-size: 0.7rem;
@@ -104,6 +106,7 @@ st.markdown("""
         margin-bottom: 4px;
         display: flex;
         justify-content: space-between;
+        font-family: "Source Sans Pro", sans-serif;
     }
 
     /* --- BOTÃO ESTILIZADO (Rodapé) --- */
@@ -112,19 +115,19 @@ st.markdown("""
         color: #58a6ff;
         border: none;
         border-top: 1px solid #30363d;
-        border-radius: 0 0 8px 8px; /* Arredonda só em baixo */
+        border-radius: 0 0 8px 8px;
         width: 100%;
         padding: 10px;
         font-size: 0.85rem;
         font-weight: 600;
         transition: background 0.2s;
+        font-family: "Source Sans Pro", sans-serif;
     }
     div[data-testid="stVerticalBlockBorderWrapper"] button:hover {
-        background-color: #1f6feb20; /* Azul bem clarinho no fundo */
+        background-color: #1f6feb20;
         color: #58a6ff;
     }
     
-    /* Remove padding interno das colunas do Streamlit */
     div[data-testid="column"] { padding: 0 8px; }
 
     /* KPIs Globais */
@@ -135,8 +138,8 @@ st.markdown("""
         border: 1px solid #30363d;
         text-align: center;
     }
-    .big-kpi-val { font-size: 1.8rem; font-weight: bold; color: white; }
-    .big-kpi-lbl { font-size: 0.9rem; color: #8b949e; }
+    .big-kpi-val { font-size: 1.8rem; font-weight: bold; color: white; font-family: "Source Sans Pro", sans-serif; }
+    .big-kpi-lbl { font-size: 0.9rem; color: #8b949e; font-family: "Source Sans Pro", sans-serif; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -180,7 +183,7 @@ df[['Margem_%', 'E_Critico']] = df.apply(calcular_dados_extras, axis=1)
 st.title("🏢 Painel de Controle")
 st.markdown("Visão consolidada do portfólio de obras.")
 
-# KPIs Globais
+# KPIs Globais (HTML em linha única para evitar erros)
 k1, k2, k3, k4 = st.columns(4)
 k1.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Total Carteira</div><div class='big-kpi-val'>R$ {df['Vendido'].sum()/1e6:.1f}M</div></div>", unsafe_allow_html=True)
 k2.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Faturamento</div><div class='big-kpi-val'>R$ {df['Faturado'].sum()/1e6:.1f}M</div></div>", unsafe_allow_html=True)
@@ -201,7 +204,7 @@ st.write(f"**{len(df_show)}** projetos encontrados")
 st.write("")
 
 # ---------------------------------------------------------
-# 5. GRID DE CARDS (REWORK)
+# 5. GRID DE CARDS
 # ---------------------------------------------------------
 cols = st.columns(3)
 
@@ -211,7 +214,6 @@ for index, row in df_show.iterrows():
         # Definições Visuais
         pct = int(row['Conclusao_%'])
         
-        # Cores e Status
         if pct >= 100:
             cor_tema = "#238636" # Verde
             txt_status = "CONCLUÍDO"
@@ -233,47 +235,45 @@ for index, row in df_show.iterrows():
         # --- CARD CONTAINER ---
         with st.container(border=True):
             
-            # PARTE 1: Cabeçalho (Título + Badge)
-            # Usamos CSS flexbox inline para alinhar Cliente e Status
-            html_header = f"""
-            <div class="card-header-box" style="border-left: 4px solid {cor_tema};">
-                <div class="project-title" title="{row['Projeto']} - {row['Descricao']}">{row['Projeto']} - {row['Descricao']}</div>
-                <div class="project-sub">
-                    <span>🏢 {row['Cliente']}</span>
-                    <span class="status-badge" style="background-color: {bg_badge}; color: {color_badge}; border: 1px solid {cor_tema};">
-                        {txt_status}
-                    </span>
-                </div>
-            </div>
-            """
-            st.markdown(html_header, unsafe_allow_html=True)
+            # Montagem do HTML usando Lista + Join (Isso evita o bug do código aparecer na tela)
             
-            # PARTE 2: Corpo (Métricas + Progresso)
-            html_body = f"""
-            <div class="card-body-box">
-                <div class="metric-grid">
-                    <div class="metric-item">
-                        <div class="metric-lbl">VALOR TOTAL</div>
-                        <div class="metric-val">R$ {row['Vendido']/1000:,.0f}k</div>
-                    </div>
-                    <div class="metric-item">
-                        <div class="metric-lbl">MARGEM REAL</div>
-                        <div class="metric-val" style="color: {cor_margem};">{row['Margem_%']:.1f}%</div>
-                    </div>
-                </div>
+            # HEADER
+            html_header = [
+                f'<div class="card-header-box" style="border-left: 4px solid {cor_tema};">',
+                f'<div class="project-title" title="{row["Projeto"]} - {row["Descricao"]}">{row["Projeto"]} - {row["Descricao"]}</div>',
+                '<div class="project-sub">',
+                f'<span>🏢 {row["Cliente"]}</span>',
+                f'<span class="status-badge" style="background-color: {bg_badge}; color: {color_badge}; border: 1px solid {cor_tema};">{txt_status}</span>',
+                '</div>',
+                '</div>'
+            ]
+            st.markdown("".join(html_header), unsafe_allow_html=True)
+            
+            # BODY
+            html_body = [
+                '<div class="card-body-box">',
+                '<div class="metric-grid">',
+                '<div class="metric-item">',
+                '<div class="metric-lbl">VALOR TOTAL</div>',
+                f'<div class="metric-val">R$ {row["Vendido"]/1000:,.0f}k</div>',
+                '</div>',
+                '<div class="metric-item">',
+                '<div class="metric-lbl">MARGEM REAL</div>',
+                f'<div class="metric-val" style="color: {cor_margem};">{row["Margem_%"]:.1f}%</div>',
+                '</div>',
+                '</div>',
+                '<div class="progress-txt">',
+                '<span>Avanço Físico</span>',
+                f'<span style="color: {color_badge}; font-weight:bold;">{pct}%</span>',
+                '</div>',
+                '<div class="progress-container">',
+                f'<div class="progress-bar" style="width: {pct}%; background-color: {cor_tema};"></div>',
+                '</div>',
+                '</div>'
+            ]
+            st.markdown("".join(html_body), unsafe_allow_html=True)
 
-                <div class="progress-txt">
-                    <span>Avanço Físico</span>
-                    <span style="color: {color_badge}; font-weight:bold;">{pct}%</span>
-                </div>
-                <div class="progress-container">
-                    <div class="progress-bar" style="width: {pct}%; background-color: {cor_tema};"></div>
-                </div>
-            </div>
-            """
-            st.markdown(html_body, unsafe_allow_html=True)
-
-            # PARTE 3: Botão de Ação (Full Width no rodapé)
+            # Botão de Ação
             if st.button("ABRIR DASHBOARD DETALHADO", key=f"btn_{row['Projeto']}", use_container_width=True):
                 st.session_state["projeto_foco"] = row['Projeto']
                 st.switch_page("dashboard_detalhado.py")
