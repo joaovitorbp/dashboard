@@ -52,28 +52,38 @@ st.markdown("""
         font-family: "Source Sans Pro", sans-serif;
     }
 
-    /* --- CORPO --- */
+    /* --- CORPO (Grid 2x2) --- */
     .card-body-box {
         padding: 16px 16px 0px 16px;
     }
-    .metrics-row {
-        display: flex;
-        gap: 20px;
+    
+    /* Grid para organizar 4 métricas */
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* 2 Colunas Iguais */
+        gap: 12px; /* Espaço entre elas */
         margin-bottom: 15px;
     }
-    .metric-group {
+    
+    .metric-item {
+        background-color: #0d1117;
+        border: 1px solid #30363d;
+        border-radius: 6px;
+        padding: 8px 12px;
         display: flex;
         flex-direction: column;
     }
+
     .metric-lbl {
-        font-size: 0.7rem;
+        font-size: 0.65rem;
         color: #8b949e;
         text-transform: uppercase;
         font-family: "Source Sans Pro", sans-serif;
-        margin-bottom: 2px;
+        margin-bottom: 4px;
+        letter-spacing: 0.5px;
     }
     .metric-val {
-        font-size: 1.1rem;
+        font-size: 1rem;
         font-weight: 600;
         color: #e6edf3;
         font-family: "Source Sans Pro", sans-serif;
@@ -81,7 +91,7 @@ st.markdown("""
 
     /* --- PROGRESSO --- */
     .progress-wrapper {
-        margin-bottom: 15px; /* Espaço entre barra e rodapé */
+        margin-bottom: 15px;
     }
     .progress-header {
         display: flex;
@@ -102,19 +112,17 @@ st.markdown("""
         border-radius: 2px;
     }
 
-    /* --- RODAPÉ DE ALINHAMENTO MILIMÉTRICO --- */
-    
-    /* Wrapper que segura o badge */
+    /* --- RODAPÉ --- */
     .badge-wrapper {
-        height: 32px;            /* Altura TRAVADA igual ao botão */
+        height: 32px;
         display: flex;
-        align-items: center;     /* Isso força o centro vertical absoluto */
+        align-items: center;
     }
     
     .status-badge {
         padding: 0 10px;
-        height: 22px;            /* Altura visual da pílula */
-        line-height: 22px;       /* Centraliza texto verticalmente dentro da pílula */
+        height: 24px;
+        line-height: 24px;
         border-radius: 4px;
         font-size: 0.65rem;
         font-weight: 700;
@@ -124,26 +132,19 @@ st.markdown("""
         font-family: "Source Sans Pro", sans-serif;
     }
 
-    /* Botão com altura forçada para bater com o wrapper do badge */
     div[data-testid="stVerticalBlockBorderWrapper"] button {
         background-color: #21262d;
         color: #e6edf3;
         border: 1px solid #30363d;
         border-radius: 6px;
         width: 100%;
-        
-        height: 32px !important;      /* Altura TRAVADA */
+        height: 32px !important;
         min-height: 32px !important;
-        margin: 0 !important;         /* Remove margens que empurram pra cima/baixo */
-        padding: 0 !important;        /* Remove padding interno */
-        
+        margin: 0 !important;
+        padding: 0 !important;
         font-size: 0.8rem;
         font-weight: 600;
         font-family: "Source Sans Pro", sans-serif;
-        
-        display: flex;
-        align-items: center;
-        justify-content: center;
     }
     div[data-testid="stVerticalBlockBorderWrapper"] button:hover {
         background-color: #1f6feb;
@@ -151,7 +152,7 @@ st.markdown("""
         color: white;
     }
     
-    div[data-testid="column"] { padding: 0 5px; }
+    div[data-testid="column"] { padding: 0 6px; }
 
     /* KPIs Globais */
     .big-kpi {
@@ -243,33 +244,49 @@ cols = st.columns(3)
 for index, row in df_show.iterrows():
     with cols[index % 3]:
         
-        # Dados e Cores
+        # --- CÁLCULOS E CORES ---
         pct = int(row['Conclusao_%'])
         status_raw = str(row['Status']).strip()
         
+        # Cálculo de Consumo de Horas (%)
+        if row['HH_Orc_Qtd'] > 0:
+            pct_horas = (row['HH_Real_Qtd'] / row['HH_Orc_Qtd']) * 100
+        else:
+            pct_horas = 0
+            
+        # Cálculo de Consumo de Materiais (%)
+        if row['Mat_Orc'] > 0:
+            pct_mat = (row['Mat_Real'] / row['Mat_Orc']) * 100
+        else:
+            pct_mat = 0
+
+        # Cores de Status
         if status_raw == "Finalizado":
-            cor_tema = "#238636"
+            cor_tema = "#238636" # Verde
             bg_badge = "rgba(35, 134, 54, 0.2)"
             color_badge = "#3fb950"
         elif status_raw == "Apresentado":
-            cor_tema = "#1f6feb"
+            cor_tema = "#1f6feb" # Azul
             bg_badge = "rgba(31, 111, 235, 0.2)"
             color_badge = "#58a6ff"
         elif status_raw == "Em andamento":
-            cor_tema = "#d29922"
+            cor_tema = "#d29922" # Laranja
             bg_badge = "rgba(210, 153, 34, 0.2)"
             color_badge = "#e3b341"
         else: # Não iniciado
-            cor_tema = "#da3633"
+            cor_tema = "#da3633" # Vermelho
             bg_badge = "rgba(218, 54, 51, 0.2)"
             color_badge = "#f85149"
 
-        cor_margem = "#da3633" if row['Margem_%'] < META_MARGEM else "#3fb950"
+        # Cores Condicionais das Métricas
+        cor_margem = "#da3633" if row['Margem_%'] < META_MARGEM else "#3fb950" # Vermelho se baixa
+        cor_horas = "#da3633" if pct_horas > 100 else "#e6edf3" # Vermelho se estourou
+        cor_mat = "#da3633" if pct_mat > 100 else "#e6edf3" # Vermelho se estourou
         
-        # --- CARD ---
+        # --- ESTRUTURA DO CARD ---
         with st.container(border=True):
             
-            # HEADER
+            # 1. HEADER
             html_header = [
                 '<div class="card-header-stack">',
                 f'<div class="project-title" title="{row["Projeto"]} - {row["Descricao"]}">{row["Projeto"]} - {row["Descricao"]}</div>',
@@ -278,26 +295,38 @@ for index, row in df_show.iterrows():
             ]
             st.markdown("".join(html_header), unsafe_allow_html=True)
 
-            # BODY
+            # 2. BODY (Grid 2x2 + Progresso)
             html_body = [
                 '<div class="card-body-box">',
                 
-                # Métricas
-                '<div class="metrics-row">',
-                    '<div class="metric-group">',
+                # GRID 2x2
+                '<div class="metrics-grid">',
+                    # Item 1: Valor
+                    '<div class="metric-item">',
                         '<span class="metric-lbl">Valor</span>',
                         f'<span class="metric-val">R$ {row["Vendido"]/1000:,.0f}k</span>',
                     '</div>',
-                    '<div class="metric-group">',
+                    # Item 2: Margem
+                    '<div class="metric-item">',
                         '<span class="metric-lbl">Margem</span>',
                         f'<span class="metric-val" style="color: {cor_margem};">{row["Margem_%"]:.1f}%</span>',
                     '</div>',
+                    # Item 3: Horas Consumidas
+                    '<div class="metric-item">',
+                        '<span class="metric-lbl">% Horas</span>',
+                        f'<span class="metric-val" style="color: {cor_horas};">{pct_horas:.0f}%</span>',
+                    '</div>',
+                    # Item 4: Materiais Consumidos
+                    '<div class="metric-item">',
+                        '<span class="metric-lbl">% Material</span>',
+                        f'<span class="metric-val" style="color: {cor_mat};">{pct_mat:.0f}%</span>',
+                    '</div>',
                 '</div>',
 
-                # Progresso
+                # Barra de Progresso
                 '<div class="progress-wrapper">',
                     '<div class="progress-header">',
-                        '<span>Progresso</span>',
+                        '<span>Avanço Físico</span>',
                         f'<span style="color: {color_badge}; font-weight:bold;">{pct}%</span>',
                     '</div>',
                     '<div class="progress-track">',
@@ -308,7 +337,7 @@ for index, row in df_show.iterrows():
             ]
             st.markdown("".join(html_body), unsafe_allow_html=True)
 
-            # FOOTER ALINHADO (Usando CSS para travar a altura)
+            # 3. FOOTER
             col_left, col_right = st.columns([1.5, 1], vertical_alignment="center")
             
             with col_left:
@@ -325,4 +354,4 @@ for index, row in df_show.iterrows():
                     st.session_state["projeto_foco"] = row['Projeto']
                     st.switch_page("dashboard_detalhado.py")
             
-            st.write("") # Respiro final
+            st.write("")
