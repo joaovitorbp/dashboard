@@ -81,7 +81,7 @@ st.markdown("""
 
     /* --- PROGRESSO --- */
     .progress-wrapper {
-        margin-bottom: 12px;
+        margin-bottom: 15px; /* Espaço entre barra e rodapé */
     }
     .progress-header {
         display: flex;
@@ -102,30 +102,29 @@ st.markdown("""
         border-radius: 2px;
     }
 
-    /* --- RODAPÉ ALINHADO --- */
+    /* --- RODAPÉ DE ALINHAMENTO MILIMÉTRICO --- */
     
-    /* Container do Badge (Força alinhamento vertical exato) */
+    /* Wrapper que segura o badge */
     .badge-wrapper {
+        height: 32px;            /* Altura TRAVADA igual ao botão */
         display: flex;
-        align-items: center;     /* Centraliza verticalmente */
-        height: 32px;            /* Mesma altura do botão */
+        align-items: center;     /* Isso força o centro vertical absoluto */
     }
     
     .status-badge {
-        padding: 0px 12px;       /* Padding lateral */
-        height: 24px;            /* Altura visual da pílula */
-        line-height: 24px;       /* Centraliza texto na pílula */
-        border-radius: 12px;
+        padding: 0 10px;
+        height: 22px;            /* Altura visual da pílula */
+        line-height: 22px;       /* Centraliza texto verticalmente dentro da pílula */
+        border-radius: 4px;
         font-size: 0.65rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
         white-space: nowrap;
-        display: inline-block;
         font-family: "Source Sans Pro", sans-serif;
     }
 
-    /* Botão (Força altura para igualar o container do badge) */
+    /* Botão com altura forçada para bater com o wrapper do badge */
     div[data-testid="stVerticalBlockBorderWrapper"] button {
         background-color: #21262d;
         color: #e6edf3;
@@ -133,18 +132,15 @@ st.markdown("""
         border-radius: 6px;
         width: 100%;
         
-        /* ALINHAMENTO MILIMÉTRICO */
-        height: 32px !important;      /* Altura fixa */
+        height: 32px !important;      /* Altura TRAVADA */
         min-height: 32px !important;
-        padding: 0px !important;      /* Remove padding interno para não engordar */
-        line-height: 1 !important;    /* Texto centralizado */
+        margin: 0 !important;         /* Remove margens que empurram pra cima/baixo */
+        padding: 0 !important;        /* Remove padding interno */
         
         font-size: 0.8rem;
         font-weight: 600;
-        margin-top: 0px; 
         font-family: "Source Sans Pro", sans-serif;
         
-        /* Flex para centralizar o texto/ícone dentro do botão */
         display: flex;
         align-items: center;
         justify-content: center;
@@ -155,7 +151,6 @@ st.markdown("""
         color: white;
     }
     
-    /* Ajuste fino das colunas do rodapé */
     div[data-testid="column"] { padding: 0 5px; }
 
     /* KPIs Globais */
@@ -274,7 +269,7 @@ for index, row in df_show.iterrows():
         # --- CARD ---
         with st.container(border=True):
             
-            # 1. HEADER
+            # HEADER
             html_header = [
                 '<div class="card-header-stack">',
                 f'<div class="project-title" title="{row["Projeto"]} - {row["Descricao"]}">{row["Projeto"]} - {row["Descricao"]}</div>',
@@ -283,7 +278,7 @@ for index, row in df_show.iterrows():
             ]
             st.markdown("".join(html_header), unsafe_allow_html=True)
 
-            # 2. BODY
+            # BODY
             html_body = [
                 '<div class="card-body-box">',
                 
@@ -313,9 +308,7 @@ for index, row in df_show.iterrows():
             ]
             st.markdown("".join(html_body), unsafe_allow_html=True)
 
-            # 3. FOOTER ALINHADO
-            # O truque aqui é usar uma div .badge-wrapper com altura fixa de 32px
-            # e forçar o botão a ter também altura de 32px no CSS.
+            # FOOTER ALINHADO (Usando CSS para travar a altura)
             col_left, col_right = st.columns([1.5, 1], vertical_alignment="center")
             
             with col_left:
@@ -332,4 +325,4 @@ for index, row in df_show.iterrows():
                     st.session_state["projeto_foco"] = row['Projeto']
                     st.switch_page("dashboard_detalhado.py")
             
-            st.write("") # Espaço final para respiro
+            st.write("") # Respiro final
