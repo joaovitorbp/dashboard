@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import textwrap
 
 # ---------------------------------------------------------
 # 1. CONFIGURAÇÃO VISUAL (CSS)
@@ -13,12 +14,12 @@ st.markdown("""
     [data-testid="stVerticalBlockBorderWrapper"] {
         background-color: #161b22;
         border: 1px solid #30363d;
-        border-radius: 6px; /* Cantos levemente arredondados */
+        border-radius: 6px;
         padding: 0px !important;
         transition: all 0.2s ease-in-out;
     }
     [data-testid="stVerticalBlockBorderWrapper"]:hover {
-        border-color: #58a6ff;
+        border-color: #8b949e; /* Borda cinza clara ao passar o mouse */
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         transform: translateY(-2px);
     }
@@ -47,7 +48,7 @@ st.markdown("""
         align-items: center;
     }
 
-    /* --- BADGE DE STATUS (Sem emojis) --- */
+    /* --- BADGE DE STATUS --- */
     .status-badge {
         padding: 2px 8px;
         border-radius: 10px;
@@ -68,7 +69,7 @@ st.markdown("""
         margin-bottom: 15px;
     }
     .metric-item {
-        background-color: #0d1117; /* Fundo mais escuro para destaque */
+        background-color: #0d1117;
         padding: 8px;
         border-radius: 4px;
         border: 1px solid #30363d;
@@ -92,7 +93,7 @@ st.markdown("""
         width: 100%;
         background-color: #21262d;
         border-radius: 2px;
-        height: 4px; /* Mais fina */
+        height: 4px;
         margin-top: 6px;
         overflow: hidden;
     }
@@ -111,9 +112,9 @@ st.markdown("""
     /* --- BOTÃO DISCRETO (Rodapé) --- */
     div[data-testid="stVerticalBlockBorderWrapper"] button {
         background-color: transparent;
-        color: #7d8590; /* Cinza discreto */
+        color: #7d8590;
         border: none;
-        border-top: 1px solid #21262d; /* Linha divisória muito sutil */
+        border-top: 1px solid #21262d;
         border-radius: 0 0 6px 6px;
         width: 100%;
         padding: 8px;
@@ -124,7 +125,7 @@ st.markdown("""
     }
     div[data-testid="stVerticalBlockBorderWrapper"] button:hover {
         background-color: #1f242c;
-        color: #58a6ff; /* Azul ao passar o mouse */
+        color: white;
     }
     
     div[data-testid="column"] { padding: 0 8px; }
@@ -182,7 +183,7 @@ df[['Margem_%', 'E_Critico']] = df.apply(calcular_dados_extras, axis=1)
 st.title("🏢 Painel de Controle")
 st.markdown("Visão consolidada do portfólio de obras.")
 
-# KPIs Globais (Sem quebra de linha no HTML)
+# KPIs Globais
 k1, k2, k3, k4 = st.columns(4)
 k1.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Total Carteira</div><div class='big-kpi-val'>R$ {df['Vendido'].sum()/1e6:.1f}M</div></div>", unsafe_allow_html=True)
 k2.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Faturamento</div><div class='big-kpi-val'>R$ {df['Faturado'].sum()/1e6:.1f}M</div></div>", unsafe_allow_html=True)
@@ -191,13 +192,23 @@ k4.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Margem Média</div><
 
 st.divider()
 
-# Filtros
-filtro_status = st.radio("Visualização:", ["Todas", "Em andamento", "Finalizadas", "🚨 Críticas"], horizontal=True)
+# Filtros Atualizados para as novas categorias
+status_options = ["Todas", "Não iniciado", "Em andamento", "Apresentado", "Finalizado", "🚨 Críticas"]
+filtro_status = st.radio("Visualização:", status_options, horizontal=True)
 
 df_show = df.copy()
-if filtro_status == "Em andamento": df_show = df_show[df_show['Status'] == 'Em andamento']
-elif filtro_status == "Finalizadas": df_show = df_show[df_show['Status'] == 'Finalizado']
-elif filtro_status == "🚨 Críticas": df_show = df_show[df_show['E_Critico'] == True]
+
+# Lógica de Filtragem (Case Insensitive para segurança)
+if filtro_status == "Não iniciado": 
+    df_show = df_show[df_show['Status'].str.strip().str.lower() == 'não iniciado']
+elif filtro_status == "Em andamento":
+    df_show = df_show[df_show['Status'] == 'Em andamento']
+elif filtro_status == "Apresentado":
+    df_show = df_show[df_show['Status'] == 'Apresentado']
+elif filtro_status == "Finalizado":
+    df_show = df_show[df_show['Status'] == 'Finalizado']
+elif filtro_status == "🚨 Críticas":
+    df_show = df_show[df_show['E_Critico'] == True]
 
 st.write(f"**{len(df_show)}** projetos encontrados")
 st.write("")
@@ -212,35 +223,41 @@ for index, row in df_show.iterrows():
         
         # Variáveis Visuais
         pct = int(row['Conclusao_%'])
+        status_raw = str(row['Status']).strip()
         
-        if pct >= 100:
-            cor_tema = "#238636" # Verde
-            txt_status = "Concluído"
+        # --- DEFINIÇÃO DE CORES ESTRITA ---
+        if status_raw == "Finalizado":
+            cor_tema = "#238636" # Verde (Green)
             bg_badge = "rgba(35, 134, 54, 0.15)"
             color_badge = "#3fb950"
-        elif pct > 50:
-            cor_tema = "#1f6feb" # Azul
-            txt_status = "Em Andamento"
+        
+        elif status_raw == "Apresentado":
+            cor_tema = "#1f6feb" # Azul (Blue)
             bg_badge = "rgba(31, 111, 235, 0.15)"
             color_badge = "#58a6ff"
-        else:
-            cor_tema = "#8957e5" # Roxo
-            txt_status = "Início"
-            bg_badge = "rgba(137, 87, 229, 0.15)"
-            color_badge = "#d2a8ff"
+            
+        elif status_raw == "Em andamento":
+            cor_tema = "#d29922" # Laranjado (Orange)
+            bg_badge = "rgba(210, 153, 34, 0.15)"
+            color_badge = "#e3b341"
+            
+        else: # Default: Não iniciado (Red)
+            cor_tema = "#da3633" # Vermelho (Red)
+            bg_badge = "rgba(218, 54, 51, 0.15)"
+            color_badge = "#f85149"
 
         cor_margem = "#da3633" if row['Margem_%'] < META_MARGEM else "#3fb950"
         
         # --- CARD ---
         with st.container(border=True):
             
-            # HEADER (Sem Emojis, com Empresa | Cidade)
+            # HEADER
             html_header = [
                 f'<div class="card-header-box" style="border-left: 3px solid {cor_tema};">',
                 f'<div class="project-title" title="{row["Projeto"]} - {row["Descricao"]}">{row["Projeto"]} - {row["Descricao"]}</div>',
                 '<div class="project-sub">',
-                f'<span>{row["Cliente"]} | {row["Cidade"]}</span>', # <--- MUDANÇA AQUI
-                f'<span class="status-badge" style="background-color: {bg_badge}; color: {color_badge};">{txt_status}</span>',
+                f'<span>{row["Cliente"]} | {row["Cidade"]}</span>',
+                f'<span class="status-badge" style="background-color: {bg_badge}; color: {color_badge};">{status_raw.upper()}</span>',
                 '</div>',
                 '</div>'
             ]
@@ -270,7 +287,7 @@ for index, row in df_show.iterrows():
             ]
             st.markdown("".join(html_body), unsafe_allow_html=True)
 
-            # BOTÃO (Nomenclatura Nova e Discreto)
+            # BOTÃO
             if st.button("Acessar Detalhes", key=f"btn_{row['Projeto']}", use_container_width=True):
                 st.session_state["projeto_foco"] = row['Projeto']
                 st.switch_page("dashboard_detalhado.py")
