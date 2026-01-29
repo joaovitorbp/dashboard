@@ -3,156 +3,114 @@ import pandas as pd
 import textwrap
 
 # ---------------------------------------------------------
-# 1. CONFIGURAÇÃO VISUAL (CSS)
+# 1. CONFIGURAÇÃO VISUAL (CSS - MODO LISTA)
 # ---------------------------------------------------------
 st.markdown("""
 <style>
     .stApp {background-color: #0e1117;}
     .block-container {padding-top: 2rem;}
 
-    /* --- CONTAINER DO CARD --- */
+    /* --- CONTAINER DA LINHA (ROW) --- */
     [data-testid="stVerticalBlockBorderWrapper"] {
         background-color: #161b22;
         border: 1px solid #30363d;
-        border-radius: 12px;
+        border-radius: 8px;
         padding: 0px !important;
-        transition: all 0.2s ease-in-out;
+        transition: all 0.2s;
     }
     [data-testid="stVerticalBlockBorderWrapper"]:hover {
         border-color: #7d8590;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-        transform: translateY(-3px);
+        background-color: #1c2128;
     }
 
-    /* --- CABEÇALHO --- */
-    .card-header-stack {
-        padding: 16px 16px 12px 16px;
-        border-bottom: 1px solid #21262d;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-    .project-title {
-        color: white;
+    /* --- TIPOGRAFIA DA LISTA --- */
+    .row-title {
         font-family: "Source Sans Pro", sans-serif;
+        color: white;
         font-weight: 700;
-        font-size: 1.1rem;
-        line-height: 1.2;
+        font-size: 0.95rem;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        margin-bottom: 2px;
     }
-    .client-sub {
-        font-size: 0.85rem;
+    .row-sub {
+        font-family: "Source Sans Pro", sans-serif;
         color: #8b949e;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-weight: 400;
-        font-family: "Source Sans Pro", sans-serif;
-    }
-
-    /* --- CORPO (Grid 2x2) --- */
-    .card-body-box {
-        padding: 16px 16px 0px 16px;
-    }
-    
-    /* Grid para organizar 4 métricas */
-    .metrics-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr; /* 2 Colunas Iguais */
-        gap: 12px; /* Espaço entre elas */
-        margin-bottom: 15px;
-    }
-    
-    .metric-item {
-        background-color: #0d1117;
-        border: 1px solid #30363d;
-        border-radius: 6px;
-        padding: 8px 12px;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .metric-lbl {
-        font-size: 0.65rem;
-        color: #8b949e;
-        text-transform: uppercase;
-        font-family: "Source Sans Pro", sans-serif;
-        margin-bottom: 4px;
-        letter-spacing: 0.5px;
-    }
-    .metric-val {
-        font-size: 1rem;
-        font-weight: 600;
-        color: #e6edf3;
-        font-family: "Source Sans Pro", sans-serif;
-    }
-
-    /* --- PROGRESSO --- */
-    .progress-wrapper {
-        margin-bottom: 15px;
-    }
-    .progress-header {
-        display: flex;
-        justify-content: space-between;
         font-size: 0.75rem;
-        color: #8b949e;
-        margin-bottom: 4px;
-    }
-    .progress-track {
-        background-color: #21262d;
-        height: 4px;
-        width: 100%;
-        border-radius: 2px;
-        overflow: hidden;
-    }
-    .progress-fill {
-        height: 100%;
-        border-radius: 2px;
-    }
-
-    /* --- RODAPÉ --- */
-    .badge-wrapper {
-        height: 32px;
         display: flex;
         align-items: center;
+        gap: 6px;
     }
-    
-    .status-badge {
-        padding: 0 10px;
-        height: 24px;
-        line-height: 24px;
+
+    /* --- BADGE DE STATUS (Pequeno) --- */
+    .mini-badge {
+        padding: 2px 8px;
         border-radius: 4px;
-        font-size: 0.65rem;
+        font-size: 0.6rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
         white-space: nowrap;
-        font-family: "Source Sans Pro", sans-serif;
     }
 
+    /* --- MÉTRICAS (Compactas) --- */
+    .metric-box {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        height: 100%;
+    }
+    .metric-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.8rem;
+        margin-bottom: 2px;
+    }
+    .lbl { color: #8b949e; font-size: 0.7rem; margin-right: 8px; }
+    .val { color: #e6edf3; font-weight: 600; }
+
+    /* --- PROGRESSO --- */
+    .prog-box {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        height: 100%;
+        padding-right: 10px;
+    }
+    .prog-track {
+        background-color: #30363d;
+        height: 6px;
+        width: 100%;
+        border-radius: 3px;
+        overflow: hidden;
+        margin-top: 4px;
+    }
+    .prog-fill { height: 100%; border-radius: 3px; }
+    .prog-text { font-size: 0.75rem; color: #8b949e; display: flex; justify-content: space-between; }
+
+    /* --- BOTÃO (Compacto) --- */
     div[data-testid="stVerticalBlockBorderWrapper"] button {
-        background-color: #21262d;
-        color: #e6edf3;
+        background-color: transparent;
+        color: #58a6ff;
         border: 1px solid #30363d;
         border-radius: 6px;
-        width: 100%;
-        height: 32px !important;
-        min-height: 32px !important;
-        margin: 0 !important;
-        padding: 0 !important;
+        height: 35px;
         font-size: 0.8rem;
         font-weight: 600;
-        font-family: "Source Sans Pro", sans-serif;
+        margin-top: 5px; /* Alinha verticalmente com o resto */
     }
     div[data-testid="stVerticalBlockBorderWrapper"] button:hover {
         background-color: #1f6feb;
-        border-color: #1f6feb;
         color: white;
+        border-color: #1f6feb;
     }
+
+    div[data-testid="column"] { padding: 0 5px; }
     
-    div[data-testid="column"] { padding: 0 6px; }
+    /* Remove padding vertical extra dentro dos containers */
+    .element-container { margin-bottom: 0px !important; }
 
     /* KPIs Globais */
     .big-kpi {
@@ -205,7 +163,6 @@ df[['Margem_%', 'E_Critico']] = df.apply(calcular_dados_extras, axis=1)
 # 4. INTERFACE
 # ---------------------------------------------------------
 st.title("🏢 Painel de Controle")
-st.markdown("Visão consolidada do portfólio de obras.")
 
 # KPIs Globais
 k1, k2, k3, k4 = st.columns(4)
@@ -234,124 +191,108 @@ elif filtro_status == "🚨 Críticas":
     df_show = df_show[df_show['E_Critico'] == True]
 
 st.write(f"**{len(df_show)}** projetos encontrados")
-st.write("")
+
+# Cabeçalho da Lista (Opcional, para dar cara de tabela)
+h1, h2, h3, h4, h5, h6 = st.columns([0.1, 2.5, 1.5, 1.5, 2, 1])
+h2.caption("PROJETO / CLIENTE")
+h3.caption("FINANCEIRO")
+h4.caption("EFICIÊNCIA")
+h5.caption("PROGRESSO")
+h6.caption("AÇÃO")
 
 # ---------------------------------------------------------
-# 5. GRID DE CARDS
+# 5. LISTA DE PROJETOS (LAYOUT HORIZONTAL)
 # ---------------------------------------------------------
-cols = st.columns(3)
-
 for index, row in df_show.iterrows():
-    with cols[index % 3]:
+    
+    # --- CÁLCULOS E CORES ---
+    pct = int(row['Conclusao_%'])
+    status_raw = str(row['Status']).strip()
+    
+    if row['HH_Orc_Qtd'] > 0: pct_horas = (row['HH_Real_Qtd'] / row['HH_Orc_Qtd']) * 100
+    else: pct_horas = 0
         
-        # --- CÁLCULOS E CORES ---
-        pct = int(row['Conclusao_%'])
-        status_raw = str(row['Status']).strip()
+    if row['Mat_Orc'] > 0: pct_mat = (row['Mat_Real'] / row['Mat_Orc']) * 100
+    else: pct_mat = 0
+
+    # Cores de Status
+    if status_raw == "Finalizado":
+        cor_tema = "#238636"
+        bg_badge = "rgba(35, 134, 54, 0.2)"
+        color_badge = "#3fb950"
+    elif status_raw == "Apresentado":
+        cor_tema = "#1f6feb"
+        bg_badge = "rgba(31, 111, 235, 0.2)"
+        color_badge = "#58a6ff"
+    elif status_raw == "Em andamento":
+        cor_tema = "#d29922"
+        bg_badge = "rgba(210, 153, 34, 0.2)"
+        color_badge = "#e3b341"
+    else: 
+        cor_tema = "#da3633"
+        bg_badge = "rgba(218, 54, 51, 0.2)"
+        color_badge = "#f85149"
+
+    cor_margem = "#da3633" if row['Margem_%'] < META_MARGEM else "#3fb950"
+    cor_horas = "#da3633" if pct_horas > 100 else "#e6edf3"
+    cor_mat = "#da3633" if pct_mat > 100 else "#e6edf3"
+
+    # --- ROW CONTAINER ---
+    with st.container(border=True):
         
-        # Cálculo de Consumo de Horas (%)
-        if row['HH_Orc_Qtd'] > 0:
-            pct_horas = (row['HH_Real_Qtd'] / row['HH_Orc_Qtd']) * 100
-        else:
-            pct_horas = 0
-            
-        # Cálculo de Consumo de Materiais (%)
-        if row['Mat_Orc'] > 0:
-            pct_mat = (row['Mat_Real'] / row['Mat_Orc']) * 100
-        else:
-            pct_mat = 0
+        # Colunas: 
+        # C1: Faixa Colorida (Status)
+        # C2: Info (Nome, Cliente, Badge)
+        # C3: Financeiro (Valor, Margem)
+        # C4: Eficiência (%Horas, %Mat)
+        # C5: Progresso (Barra)
+        # C6: Botão
+        c_strip, c_info, c_fin, c_efi, c_prog, c_btn = st.columns([0.1, 2.5, 1.5, 1.5, 2, 1], vertical_alignment="center")
 
-        # Cores de Status
-        if status_raw == "Finalizado":
-            cor_tema = "#238636" # Verde
-            bg_badge = "rgba(35, 134, 54, 0.2)"
-            color_badge = "#3fb950"
-        elif status_raw == "Apresentado":
-            cor_tema = "#1f6feb" # Azul
-            bg_badge = "rgba(31, 111, 235, 0.2)"
-            color_badge = "#58a6ff"
-        elif status_raw == "Em andamento":
-            cor_tema = "#d29922" # Laranja
-            bg_badge = "rgba(210, 153, 34, 0.2)"
-            color_badge = "#e3b341"
-        else: # Não iniciado
-            cor_tema = "#da3633" # Vermelho
-            bg_badge = "rgba(218, 54, 51, 0.2)"
-            color_badge = "#f85149"
+        # Coluna 1: Faixa lateral
+        with c_strip:
+            st.markdown(f"<div style='height: 45px; width: 4px; background-color: {cor_tema}; border-radius: 2px;'></div>", unsafe_allow_html=True)
 
-        # Cores Condicionais das Métricas
-        cor_margem = "#da3633" if row['Margem_%'] < META_MARGEM else "#3fb950" # Vermelho se baixa
-        cor_horas = "#da3633" if pct_horas > 100 else "#e6edf3" # Vermelho se estourou
-        cor_mat = "#da3633" if pct_mat > 100 else "#e6edf3" # Vermelho se estourou
-        
-        # --- ESTRUTURA DO CARD ---
-        with st.container(border=True):
-            
-            # 1. HEADER
-            html_header = [
-                '<div class="card-header-stack">',
-                f'<div class="project-title" title="{row["Projeto"]} - {row["Descricao"]}">{row["Projeto"]} - {row["Descricao"]}</div>',
-                f'<div class="client-sub"><span>{row["Cliente"]}</span> <span>|</span> <span>{row["Cidade"]}</span></div>',
-                '</div>'
-            ]
-            st.markdown("".join(html_header), unsafe_allow_html=True)
-
-            # 2. BODY (Grid 2x2 + Progresso)
-            html_body = [
-                '<div class="card-body-box">',
-                
-                # GRID 2x2
-                '<div class="metrics-grid">',
-                    # Item 1: Valor
-                    '<div class="metric-item">',
-                        '<span class="metric-lbl">Valor</span>',
-                        f'<span class="metric-val">R$ {row["Vendido"]/1000:,.0f}k</span>',
-                    '</div>',
-                    # Item 2: Margem
-                    '<div class="metric-item">',
-                        '<span class="metric-lbl">Margem</span>',
-                        f'<span class="metric-val" style="color: {cor_margem};">{row["Margem_%"]:.1f}%</span>',
-                    '</div>',
-                    # Item 3: Horas Consumidas
-                    '<div class="metric-item">',
-                        '<span class="metric-lbl">% Horas</span>',
-                        f'<span class="metric-val" style="color: {cor_horas};">{pct_horas:.0f}%</span>',
-                    '</div>',
-                    # Item 4: Materiais Consumidos
-                    '<div class="metric-item">',
-                        '<span class="metric-lbl">% Material</span>',
-                        f'<span class="metric-val" style="color: {cor_mat};">{pct_mat:.0f}%</span>',
-                    '</div>',
-                '</div>',
-
-                # Barra de Progresso
-                '<div class="progress-wrapper">',
-                    '<div class="progress-header">',
-                        '<span>Avanço Físico</span>',
-                        f'<span style="color: {color_badge}; font-weight:bold;">{pct}%</span>',
-                    '</div>',
-                    '<div class="progress-track">',
-                        f'<div class="progress-fill" style="width: {pct}%; background-color: {cor_tema};"></div>',
-                    '</div>',
-                '</div>',
-                '</div>'
-            ]
-            st.markdown("".join(html_body), unsafe_allow_html=True)
-
-            # 3. FOOTER
-            col_left, col_right = st.columns([1.5, 1], vertical_alignment="center")
-            
-            with col_left:
-                st.markdown(f"""
-                <div class="badge-wrapper">
-                    <div class="status-badge" style="background-color: {bg_badge}; color: {color_badge}; border: 1px solid {cor_tema};">
-                        {status_raw}
-                    </div>
+        # Coluna 2: Informações Principais
+        with c_info:
+            st.markdown(f"""
+                <div class="row-title" title="{row['Descricao']}">{row['Projeto']}</div>
+                <div class="row-sub">
+                    <span>{row['Cliente']}</span>
+                    <span style="color: #30363d;">|</span>
+                    <span class="mini-badge" style="background-color: {bg_badge}; color: {color_badge};">{status_raw}</span>
                 </div>
-                """, unsafe_allow_html=True)
-                
-            with col_right:
-                if st.button("Detalhes ➜", key=f"btn_{row['Projeto']}", use_container_width=True):
-                    st.session_state["projeto_foco"] = row['Projeto']
-                    st.switch_page("dashboard_detalhado.py")
+            """, unsafe_allow_html=True)
+
+        # Coluna 3: Financeiro
+        with c_fin:
+            st.markdown(f"""
+                <div class="metric-box">
+                    <div class="metric-row"><span class="lbl">VAL</span> <span class="val">R$ {row['Vendido']/1000:,.0f}k</span></div>
+                    <div class="metric-row"><span class="lbl">MRG</span> <span class="val" style="color: {cor_margem}">{row['Margem_%']:.1f}%</span></div>
+                </div>
+            """, unsafe_allow_html=True)
+
+        # Coluna 4: Eficiência
+        with c_efi:
+            st.markdown(f"""
+                <div class="metric-box">
+                    <div class="metric-row"><span class="lbl">HRS</span> <span class="val" style="color: {cor_horas}">{pct_horas:.0f}%</span></div>
+                    <div class="metric-row"><span class="lbl">MAT</span> <span class="val" style="color: {cor_mat}">{pct_mat:.0f}%</span></div>
+                </div>
+            """, unsafe_allow_html=True)
             
-            st.write("")
+        # Coluna 5: Barra de Progresso
+        with c_prog:
+            st.markdown(f"""
+                <div class="prog-box">
+                    <div class="prog-text"><span>Avanço</span> <span style="color:{color_badge}; font-weight:bold;">{pct}%</span></div>
+                    <div class="prog-track"><div class="prog-fill" style="width: {pct}%; background-color: {cor_tema};"></div></div>
+                </div>
+            """, unsafe_allow_html=True)
+
+        # Coluna 6: Botão
+        with c_btn:
+            if st.button("Ver ➜", key=f"btn_{row['Projeto']}", use_container_width=True):
+                st.session_state["projeto_foco"] = row['Projeto']
+                st.switch_page("dashboard_detalhado.py")
