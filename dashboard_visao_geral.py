@@ -24,7 +24,7 @@ st.markdown("""
         transform: translateY(-3px);
     }
 
-    /* --- CABEÇALHO (Título + Cliente) --- */
+    /* --- CABEÇALHO --- */
     .card-header-stack {
         padding: 16px 16px 12px 16px;
         border-bottom: 1px solid #21262d;
@@ -47,14 +47,14 @@ st.markdown("""
         color: #8b949e;
         display: flex;
         align-items: center;
-        gap: 8px; /* Espaço entre cliente e cidade */
+        gap: 8px;
         font-weight: 400;
         font-family: "Source Sans Pro", sans-serif;
     }
 
-    /* --- CORPO (Métricas) --- */
+    /* --- CORPO --- */
     .card-body-box {
-        padding: 16px 16px 0px 16px; /* Padding bottom 0 pois o footer cuida do resto */
+        padding: 16px 16px 0px 16px;
     }
     .metrics-row {
         display: flex;
@@ -81,7 +81,7 @@ st.markdown("""
 
     /* --- PROGRESSO --- */
     .progress-wrapper {
-        margin-bottom: 10px;
+        margin-bottom: 12px;
     }
     .progress-header {
         display: flex;
@@ -102,12 +102,21 @@ st.markdown("""
         border-radius: 2px;
     }
 
-    /* --- RODAPÉ (Badge e Botão) --- */
-    /* Badge de Status */
+    /* --- RODAPÉ ALINHADO --- */
+    
+    /* Container do Badge (Força alinhamento vertical exato) */
+    .badge-wrapper {
+        display: flex;
+        align-items: center;     /* Centraliza verticalmente */
+        height: 32px;            /* Mesma altura do botão */
+    }
+    
     .status-badge {
-        padding: 5px 12px;
-        border-radius: 6px;
-        font-size: 0.7rem; /* Fonte um pouco maior para equilibrar */
+        padding: 0px 12px;       /* Padding lateral */
+        height: 24px;            /* Altura visual da pílula */
+        line-height: 24px;       /* Centraliza texto na pílula */
+        border-radius: 12px;
+        font-size: 0.65rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
@@ -116,18 +125,29 @@ st.markdown("""
         font-family: "Source Sans Pro", sans-serif;
     }
 
-    /* Botão (Ajuste fino de altura e fonte) */
+    /* Botão (Força altura para igualar o container do badge) */
     div[data-testid="stVerticalBlockBorderWrapper"] button {
         background-color: #21262d;
         color: #e6edf3;
         border: 1px solid #30363d;
         border-radius: 6px;
         width: 100%;
-        height: 34px; /* Altura fixa para alinhar com badge */
+        
+        /* ALINHAMENTO MILIMÉTRICO */
+        height: 32px !important;      /* Altura fixa */
+        min-height: 32px !important;
+        padding: 0px !important;      /* Remove padding interno para não engordar */
+        line-height: 1 !important;    /* Texto centralizado */
+        
         font-size: 0.8rem;
         font-weight: 600;
         margin-top: 0px; 
         font-family: "Source Sans Pro", sans-serif;
+        
+        /* Flex para centralizar o texto/ícone dentro do botão */
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     div[data-testid="stVerticalBlockBorderWrapper"] button:hover {
         background-color: #1f6feb;
@@ -135,7 +155,7 @@ st.markdown("""
         color: white;
     }
     
-    /* Remove padding lateral extra das colunas para alinhar perfeitamente */
+    /* Ajuste fino das colunas do rodapé */
     div[data-testid="column"] { padding: 0 5px; }
 
     /* KPIs Globais */
@@ -221,7 +241,7 @@ st.write(f"**{len(df_show)}** projetos encontrados")
 st.write("")
 
 # ---------------------------------------------------------
-# 5. GRID DE CARDS (ALINHAMENTO PERFEITO)
+# 5. GRID DE CARDS
 # ---------------------------------------------------------
 cols = st.columns(3)
 
@@ -233,28 +253,28 @@ for index, row in df_show.iterrows():
         status_raw = str(row['Status']).strip()
         
         if status_raw == "Finalizado":
-            cor_tema = "#238636" # Verde
+            cor_tema = "#238636"
             bg_badge = "rgba(35, 134, 54, 0.2)"
             color_badge = "#3fb950"
         elif status_raw == "Apresentado":
-            cor_tema = "#1f6feb" # Azul
+            cor_tema = "#1f6feb"
             bg_badge = "rgba(31, 111, 235, 0.2)"
             color_badge = "#58a6ff"
         elif status_raw == "Em andamento":
-            cor_tema = "#d29922" # Laranja
+            cor_tema = "#d29922"
             bg_badge = "rgba(210, 153, 34, 0.2)"
             color_badge = "#e3b341"
         else: # Não iniciado
-            cor_tema = "#da3633" # Vermelho
+            cor_tema = "#da3633"
             bg_badge = "rgba(218, 54, 51, 0.2)"
             color_badge = "#f85149"
 
         cor_margem = "#da3633" if row['Margem_%'] < META_MARGEM else "#3fb950"
         
-        # --- ESTRUTURA DO CARD ---
+        # --- CARD ---
         with st.container(border=True):
             
-            # 1. HEADER (Sem Emojis)
+            # 1. HEADER
             html_header = [
                 '<div class="card-header-stack">',
                 f'<div class="project-title" title="{row["Projeto"]} - {row["Descricao"]}">{row["Projeto"]} - {row["Descricao"]}</div>',
@@ -293,15 +313,18 @@ for index, row in df_show.iterrows():
             ]
             st.markdown("".join(html_body), unsafe_allow_html=True)
 
-            # 3. FOOTER (Colunas ALINHADAS VERTICALMENTE)
-            # vertical_alignment="center" garante que o badge e o botão fiquem no mesmo eixo Y
+            # 3. FOOTER ALINHADO
+            # O truque aqui é usar uma div .badge-wrapper com altura fixa de 32px
+            # e forçar o botão a ter também altura de 32px no CSS.
             col_left, col_right = st.columns([1.5, 1], vertical_alignment="center")
             
             with col_left:
                 st.markdown(f"""
+                <div class="badge-wrapper">
                     <div class="status-badge" style="background-color: {bg_badge}; color: {color_badge}; border: 1px solid {cor_tema};">
                         {status_raw}
                     </div>
+                </div>
                 """, unsafe_allow_html=True)
                 
             with col_right:
@@ -309,5 +332,4 @@ for index, row in df_show.iterrows():
                     st.session_state["projeto_foco"] = row['Projeto']
                     st.switch_page("dashboard_detalhado.py")
             
-            # Espaço extra no fim do card para respiro
-            st.write("")
+            st.write("") # Espaço final para respiro
