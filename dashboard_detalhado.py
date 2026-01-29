@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 # ---------------------------------------------------------
-# ESTILO CSS (Visual Limpo e Nova Fonte)
+# ESTILO CSS BLINDADO (Original)
 # ---------------------------------------------------------
 st.markdown("""
 <style>
@@ -16,72 +16,68 @@ st.markdown("""
     
     .js-plotly-plot .plotly .modebar {display: none !important;}
     
-    /* --- HEADER DA OBRA --- */
     .header-box {
-        background-color: #161b22;
-        border-radius: 8px;
+        background-color: #1c1f26;
+        border-radius: 10px;
         padding: 20px;
-        border: 1px solid #30363d;
+        border-top: 1px solid #30363d;
+        border-right: 1px solid #30363d;
+        border-bottom: 1px solid #30363d;
         margin-bottom: 20px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        box-sizing: border-box;
     }
     .header-title {
         color: #ffffff;
-        font-family: "Source Sans Pro", sans-serif;
-        font-size: 1.5rem;
+        font-size: 1.8rem;
         font-weight: 700;
         margin: 0;
         line-height: 1.2;
     }
     .header-subtitle {
         color: #8b949e;
-        font-family: "Source Sans Pro", sans-serif;
-        font-size: 0.9rem;
+        font-size: 1rem;
         margin-top: 5px;
     }
-    .header-badge {
-        font-weight: 700;
-        padding: 4px 12px;
-        border-radius: 12px;
+    .header-status {
+        font-weight: 600;
+        padding: 8px 16px;
+        border-radius: 20px;
         color: white;
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        font-family: "Source Sans Pro", sans-serif;
-        letter-spacing: 0.5px;
+        font-size: 0.9rem;
+        white-space: nowrap;
     }
 
-    /* --- CARDS KPI --- */
     .kpi-card {
-        background-color: #161b22;
-        border-radius: 6px;
+        background-color: #1c1f26;
+        border-radius: 8px;
         padding: 20px;
         border: 1px solid #30363d;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); 
         height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: center;
     }
     .kpi-label {
-        color: #8b949e;
-        font-size: 0.75rem;
-        font-weight: 400;
+        color: #a0aec0;
+        font-size: 0.95rem;
+        font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        margin-bottom: 5px;
-        font-family: "Source Sans Pro", sans-serif;
+        margin-bottom: 8px;
     }
     .kpi-value {
-        font-size: 1.6rem;
+        font-size: 2.0rem;
         font-weight: 700;
         color: #ffffff;
-        font-family: "Source Sans Pro", sans-serif;
     }
     
-    h1, h2, h3 { color: #f0f6fc !important; font-family: "Source Sans Pro", sans-serif; }
-    p, label, span, div { font-family: "Source Sans Pro", sans-serif; }
+    h1, h2, h3 {color: #f0f6fc !important;}
+    p, label, span, div {color: #e6edf3 !important;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -112,7 +108,7 @@ except FileNotFoundError:
 st.sidebar.markdown("### Seleção de Obra")
 lista_projetos = sorted(df_raw['Projeto'].unique())
 
-# Recupera o projeto da memória (se houver)
+# Tenta recuperar qual projeto foi clicado na Home
 index_padrao = 0
 if "projeto_foco" in st.session_state:
     try:
@@ -129,35 +125,24 @@ dados = df_raw[df_raw['Projeto'] == id_projeto].iloc[0]
 custo_total = dados['Mat_Real'] + dados['Desp_Real'] + dados['HH_Real_Vlr'] + dados['Impostos']
 lucro_liquido = dados['Vendido'] - custo_total
 margem_real_pct = (lucro_liquido / dados['Vendido']) * 100 if dados['Vendido'] > 0 else 0
-META_MARGEM = 20.0 
+META_MARGEM = 25.0
 
 # ---------------------------------------------------------
-# LÓGICA DE CORES (STATUS)
+# HEADER
 # ---------------------------------------------------------
-status_raw = str(dados['Status']).strip()
+cor_map = {"Finalizado": "#238636", "Em andamento": "#1f6feb", "Não iniciado": "#8b949e"}
+cor_bg = cor_map.get(dados['Status'], "#30363d")
 
-if status_raw == "Finalizado":
-    cor_status = "#238636" # Verde
-elif status_raw == "Apresentado":
-    cor_status = "#1f6feb" # Azul
-elif status_raw == "Em andamento":
-    cor_status = "#d29922" # Laranja
-else:
-    cor_status = "#da3633" # Vermelho (Não iniciado)
-
-# ---------------------------------------------------------
-# HEADER (COM COR DO STATUS)
-# ---------------------------------------------------------
 st.markdown(f"""
-<div class="header-box" style="border-left: 4px solid {cor_status};">
+<div class="header-box" style="border-left: 6px solid {cor_bg};">
     <div>
         <div class="header-title">{dados['Projeto']} - {dados['Descricao']}</div>
         <div class="header-subtitle">
-            {dados['Cliente']} | {dados['Cidade']}
+            <b>Cliente:</b> {dados['Cliente']} &nbsp;&nbsp;|&nbsp;&nbsp; <b>Local:</b> {dados['Cidade']}
         </div>
     </div>
-    <div class="header-badge" style="background-color: {cor_status};">
-        {status_raw.upper()}
+    <div class="header-status" style="background-color: {cor_bg};">
+        {dados['Status'].upper()}
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -165,9 +150,9 @@ st.markdown(f"""
 # ---------------------------------------------------------
 # KPI CARDS
 # ---------------------------------------------------------
-def criar_card_destaque(titulo, valor, cor_texto="#ffffff"):
+def criar_card_destaque(titulo, valor, cor_borda, cor_texto="#ffffff"):
     st.markdown(f"""
-    <div class="kpi-card">
+    <div class="kpi-card" style="border-left: 5px solid {cor_borda};">
         <div class="kpi-label">{titulo}</div>
         <div class="kpi-value" style="color: {cor_texto}">{valor}</div>
     </div>
@@ -175,23 +160,23 @@ def criar_card_destaque(titulo, valor, cor_texto="#ffffff"):
 
 k1, k2, k3, k4 = st.columns(4)
 
-cor_neutra = "#e6edf3"
-cor_sucesso = "#3fb950"
+cor_neutra = "#8b949e"
+cor_sucesso = "#2ea043"
 cor_erro = "#da3633"
 cor_dinamica = cor_sucesso if margem_real_pct >= META_MARGEM else cor_erro
 
 with k1: criar_card_destaque("Valor Vendido", format_currency(dados['Vendido']), cor_neutra)
 with k2: criar_card_destaque("Valor Faturado", format_currency(dados['Faturado']), cor_neutra)
-with k3: criar_card_destaque("Lucro Real", format_currency(lucro_liquido), cor_dinamica)
-with k4: criar_card_destaque("Margem Real", format_percent(margem_real_pct), cor_dinamica)
+with k3: criar_card_destaque("Lucro", format_currency(lucro_liquido), cor_dinamica, cor_dinamica)
+with k4: criar_card_destaque("Margem de Lucro", format_percent(margem_real_pct), cor_dinamica, cor_dinamica)
 
 st.write("")
 st.divider()
 
 # ---------------------------------------------------------
-# SEÇÃO 1: EFICIÊNCIA OPERACIONAL (Layout Original)
+# SEÇÃO 1: EFICIÊNCIA OPERACIONAL
 # ---------------------------------------------------------
-st.subheader("Eficiência Operacional")
+st.subheader("⚙️ Eficiência Operacional")
 
 with st.container(border=True):
     col_gauges, col_spacer, col_diag = st.columns([5, 0.2, 3], vertical_alignment="center")
@@ -199,41 +184,42 @@ with st.container(border=True):
     with col_gauges:
         fig_gauge = go.Figure()
 
-        # Gauge 1: Físico (Cor baseada no Status)
+        # Gauge 1: Físico
         fig_gauge.add_trace(go.Indicator(
             mode = "gauge+number", value = dados['Conclusao_%'],
-            title = {'text': "Avanço Físico", 'font': {'size': 14, 'color': '#8b949e'}},
+            title = {'text': "Avanço Físico", 'font': {'size': 14}},
             domain = {'x': [0, 0.45], 'y': [0, 1]},
-            number = {'suffix': "%", 'font': {'color': 'white'}},
+            number = {'suffix': "%"},
             gauge = {
-                'axis': {'range': [0, 100], 'tickcolor': "#161b22"},
-                'bar': {'color': cor_status}, # <--- Usa a cor do status da obra
-                'bgcolor': "#0d1117", 'borderwidth': 1, 'bordercolor': "#30363d"
+                'axis': {'range': [0, 100], 'tickcolor': "white"},
+                'bar': {'color': "#238636"}, 
+                'bgcolor': "#0d1117", 'borderwidth': 2, 'bordercolor': "#30363d"
             }
         ))
 
-        # Gauge 2: Horas (Eficiência)
+        # Gauge 2: Horas
         hh_orc = dados['HH_Orc_Qtd']
         hh_real = dados['HH_Real_Qtd']
         perc_hh = (hh_real / hh_orc * 100) if hh_orc > 0 else 0
-        cor_hh = "#da3633" if perc_hh > (dados['Conclusao_%'] + 10) else "#3fb950"
+        cor_hh = "#da3633" if perc_hh > (dados['Conclusao_%'] + 10) else "#1f6feb"
 
         fig_gauge.add_trace(go.Indicator(
             mode = "gauge+number", value = perc_hh,
-            title = {'text': "Consumo Horas", 'font': {'size': 14, 'color': '#8b949e'}},
+            title = {'text': "Consumo Horas", 'font': {'size': 14}},
             domain = {'x': [0.55, 1], 'y': [0, 1]},
-            number = {'suffix': "%", 'valueformat': ".1f", 'font': {'color': 'white'}},
+            number = {'suffix': "%", 'valueformat': ".1f"},
             gauge = {
-                'axis': {'range': [0, max(100, perc_hh)], 'tickcolor': "#161b22"},
+                'axis': {'range': [0, max(100, perc_hh)], 'tickcolor': "white"},
                 'bar': {'color': cor_hh},
-                'bgcolor': "#0d1117", 'borderwidth': 1, 'bordercolor': "#30363d",
+                'bgcolor': "#0d1117", 'borderwidth': 2, 'bordercolor': "#30363d",
                 'threshold': {'line': {'color': "white", 'width': 3}, 'thickness': 0.75, 'value': dados['Conclusao_%']}
             }
         ))
         
         fig_gauge.update_layout(
-            height=200, margin=dict(t=30, b=10, l=30, r=30), 
-            paper_bgcolor='rgba(0,0,0,0)', font={'family': "Source Sans Pro"}
+            height=220, margin=dict(t=40, b=20, l=30, r=30), 
+            paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"},
+            xaxis={'fixedrange': True}, yaxis={'fixedrange': True}
         )
         st.plotly_chart(fig_gauge, use_container_width=True, config={'displayModeBar': False})
 
@@ -243,21 +229,24 @@ with st.container(border=True):
         if perc_hh > (dados['Conclusao_%'] + 10):
             border_c = "#da3633" 
             titulo = "Baixa Eficiência"
-            texto = "Gasto de horas acima do avanço físico."
+            texto = "O gasto de horas ultrapassou o avanço físico em mais de 10%."
+            saldo_txt = f"Excedente: {int(hh_real - hh_orc)}h"
         elif perc_hh < dados['Conclusao_%']:
-            border_c = "#3fb950"
+            border_c = "#238636"
             titulo = "Alta Eficiência"
-            texto = "Obra avançada com economia de horas."
+            texto = "A obra está avançada em relação ao gasto de horas planejado."
+            saldo_txt = f"Saldo: {int(saldo_hh)}h"
         else:
             border_c = "#1f6feb"
             titulo = "Equilibrado"
-            texto = "Ritmo alinhado ao planejado."
+            texto = "O ritmo de trabalho segue alinhado ao avanço físico."
+            saldo_txt = f"Saldo: {int(saldo_hh)}h"
 
         st.markdown(f"""
-        <div style="background-color: #161b22; border-left: 3px solid {border_c}; padding: 15px; border-radius: 4px;">
-            <strong style="color: {border_c}; font-size: 1rem;">{titulo}</strong><br>
-            <span style="color: #8b949e; font-size: 0.85rem;">{texto}</span><br><br>
-            <span style="color: white; font-weight:bold;">Saldo: {int(saldo_hh)}h</span>
+        <div style="background-color: #161b22; border-left: 4px solid {border_c}; padding: 15px; border-radius: 4px;">
+            <strong style="color: {border_c}; font-size: 1.1rem;">{titulo}</strong><br>
+            <span style="color: #8b949e; font-size: 0.9rem;">{texto}</span><br><br>
+            <strong style="color: white;">{saldo_txt}</strong>
         </div>
         """, unsafe_allow_html=True)
 
@@ -265,9 +254,9 @@ st.write("")
 st.divider()
 
 # ---------------------------------------------------------
-# SEÇÃO 2: COMPOSIÇÃO DE RESULTADO (Waterfall Original)
+# SEÇÃO 2: COMPOSIÇÃO DE RESULTADO
 # ---------------------------------------------------------
-st.subheader("Composição do Lucro")
+st.subheader("📊 Composição do Lucro")
 
 with st.container(border=True):
     modo_vis = st.radio("Unidade de Medida:", ["Percentual (%)", "Valores (R$)"], horizontal=True, label_visibility="collapsed")
@@ -297,7 +286,7 @@ with st.container(border=True):
         paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
         yaxis=dict(showgrid=True, gridcolor='#30363d', zeroline=False, fixedrange=True),
         xaxis=dict(tickfont=dict(color='white'), fixedrange=True),
-        font=dict(color='white', family="Source Sans Pro")
+        font=dict(color='white')
     )
     st.plotly_chart(fig_water, use_container_width=True, config={'displayModeBar': False})
 
@@ -305,9 +294,9 @@ st.write("")
 st.divider()
 
 # ---------------------------------------------------------
-# SEÇÃO 3: DETALHAMENTO DE CUSTOS (Barras Horizontais Originais)
+# SEÇÃO 3: DETALHAMENTO DE CUSTOS
 # ---------------------------------------------------------
-st.subheader("Detalhamento de Custos")
+st.subheader("🔎 Detalhamento de Custos")
 
 def plot_row_fixed(titulo, orcado, real):
     pct = (real / orcado * 100) if orcado > 0 else 0
@@ -317,7 +306,7 @@ def plot_row_fixed(titulo, orcado, real):
     
     fig.add_trace(go.Bar(
         y=[titulo], x=[orcado], name='Orçado', orientation='h', 
-        marker_color='#21262d', 
+        marker_color='#30363d', 
         text=[format_currency(orcado)], textposition='outside',
         cliponaxis=False
     ))
@@ -339,7 +328,7 @@ def plot_row_fixed(titulo, orcado, real):
         paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
         xaxis=dict(showgrid=True, gridcolor='#262730', showticklabels=False, range=[0, max_val], fixedrange=True),
         yaxis=dict(showticklabels=False, fixedrange=True),
-        font=dict(color='white', family="Source Sans Pro"),
+        font=dict(color='white'),
         showlegend=True,
         legend=dict(
             orientation="h",
