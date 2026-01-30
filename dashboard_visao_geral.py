@@ -3,14 +3,14 @@ import pandas as pd
 import textwrap
 
 # ---------------------------------------------------------
-# 1. CONFIGURAÇÃO VISUAL (CSS AGRESSIVO)
+# 1. CONFIGURAÇÃO VISUAL (CSS - TILES MODERNOS)
 # ---------------------------------------------------------
 st.markdown("""
 <style>
     .stApp {background-color: #0e1117;}
     .block-container {padding-top: 2rem;}
 
-    /* --- CARD CONTAINER --- */
+    /* --- CONTAINER DO CARD --- */
     [data-testid="stVerticalBlockBorderWrapper"] {
         background-color: #161b22;
         border: 1px solid #30363d;
@@ -24,7 +24,9 @@ st.markdown("""
     }
 
     /* --- HEADER --- */
-    .tile-header { padding: 15px 15px 10px 15px; }
+    .tile-header {
+        padding: 15px 15px 10px 15px;
+    }
     .tile-title {
         color: white;
         font-family: "Source Sans Pro", sans-serif;
@@ -41,9 +43,9 @@ st.markdown("""
         font-family: "Source Sans Pro", sans-serif;
     }
 
-    /* --- DATA STRIP (Métricas) --- */
+    /* --- DATA STRIP (4 Métricas em Linha) --- */
     .data-strip {
-        background-color: #0d1117;
+        background-color: #0d1117; /* Fundo mais escuro */
         border-top: 1px solid #21262d;
         border-bottom: 1px solid #21262d;
         padding: 10px 15px;
@@ -55,9 +57,13 @@ st.markdown("""
         display: flex;
         flex-direction: column;
         align-items: center;
-        width: 25%;
+        width: 25%; /* 4 colunas iguais */
     }
-    .data-col:not(:last-child) { border-right: 1px solid #30363d; }
+    /* Bordas verticais entre as métricas */
+    .data-col:not(:last-child) {
+        border-right: 1px solid #30363d;
+    }
+    
     .data-lbl {
         font-size: 0.6rem;
         color: #8b949e;
@@ -71,67 +77,71 @@ st.markdown("""
         font-family: "Source Sans Pro", sans-serif;
     }
 
-    /* --- PROGRESS BAR --- */
-    .progress-container {
-        padding: 10px 15px 5px 15px;
+    /* --- FOOTER --- */
+    .tile-footer {
+        padding: 10px 15px;
     }
     .progress-track {
         background-color: #21262d;
         height: 4px;
         border-radius: 2px;
         width: 100%;
+        margin-bottom: 10px;
         overflow: hidden;
     }
     .progress-fill { height: 100%; border-radius: 2px; }
-
-    /* --- BADGE STATUS --- */
+    
+    .footer-row {
+        display: flex;
+        justify-content: space-between; /* Garante badge na esq e % na dir */
+        align-items: center;
+    }
     .badge-status {
         font-size: 0.65rem;
         font-weight: 700;
         text-transform: uppercase;
-        padding: 3px 8px;
+        padding: 2px 8px;
         border-radius: 4px;
         letter-spacing: 0.5px;
-        display: inline-block;
-        white-space: nowrap;
-    }
-
-    /* --- TEXTO PORCENTAGEM (Direita) --- */
-    .pct-text {
-        font-size: 0.8rem;
-        font-weight: 700;
-        text-align: right;
-        font-family: "Source Sans Pro", sans-serif;
-        line-height: 1;
-        margin-bottom: 2px; /* Espaço entre % e botão */
-        display: block;
-    }
-
-    /* --- BOTÃO MICRO (CSS FORÇADO) --- */
-    /* Alvo: Qualquer botão dentro de um wrapper de bloco vertical (card) */
-    [data-testid="stVerticalBlockBorderWrapper"] button {
-        background-color: transparent !important;
-        color: #58a6ff !important;
-        border: 1px solid #30363d !important;
-        border-radius: 4px !important;
-        
-        /* Forçando Compactação Extrema */
-        font-size: 0.7rem !important;
-        padding: 0px !important;
-        height: 26px !important;       /* Altura fixa */
-        min-height: 26px !important;   /* Sobrescreve padrão do Streamlit */
-        line-height: 26px !important;  /* Centraliza texto verticalmente */
-        
-        width: 100%;
-        margin: 0px !important;
-    }
-    [data-testid="stVerticalBlockBorderWrapper"] button:hover {
-        background-color: #1f6feb !important;
-        color: white !important;
-        border-color: #1f6feb !important;
     }
     
-    div[data-testid="column"] { padding: 0 5px; }
+    /* Porcentagem na direita */
+    .footer-pct {
+        font-size: 0.75rem;
+        font-weight: 700;
+        font-family: "Source Sans Pro", sans-serif;
+    }
+
+    /* --- BOTÃO MICRO (Link Style) + SCALE --- */
+    div[data-testid="stVerticalBlockBorderWrapper"] button {
+        background-color: transparent;
+        color: #58a6ff;
+        border: 1px solid transparent;
+        border-radius: 4px;
+        
+        /* Ajustes base */
+        font-size: 0.65rem !important;
+        padding: 0px 8px !important;
+        height: 22px !important;
+        min-height: 22px !important;
+        line-height: 1 !important;
+        
+        margin: 0;
+        width: 100%;
+        float: right;
+
+        /* --- AQUI ESTÁ O SCALE SOLICITADO --- */
+        transform: scale(0.85);       /* Reduz para 85% do tamanho original */
+        transform-origin: right top;  /* Mantém ancorado no canto superior direito do container dele */
+    }
+    
+    div[data-testid="stVerticalBlockBorderWrapper"] button:hover {
+        background-color: #1f242c;
+        border-color: #30363d;
+        text-decoration: none;
+    }
+    
+    div[data-testid="column"] { padding: 0 8px; }
 
     /* KPIs Globais */
     .big-kpi {
@@ -213,7 +223,7 @@ st.write(f"**{len(df_show)}** projetos encontrados")
 st.write("")
 
 # ---------------------------------------------------------
-# 5. GRID DE CARDS (TILES V4 - FINAL)
+# 5. GRID DE CARDS (LAYOUT TILES)
 # ---------------------------------------------------------
 cols = st.columns(3)
 
@@ -224,6 +234,7 @@ for index, row in df_show.iterrows():
         pct = int(row['Conclusao_%'])
         status_raw = str(row['Status']).strip()
         
+        # % Consumos
         if row['HH_Orc_Qtd'] > 0: pct_horas = (row['HH_Real_Qtd'] / row['HH_Orc_Qtd']) * 100
         else: pct_horas = 0
         
@@ -232,22 +243,23 @@ for index, row in df_show.iterrows():
 
         # Cores Status
         if status_raw == "Finalizado":
-            cor_tema = "#238636"
+            cor_tema = "#238636" # Verde
             bg_badge = "rgba(35, 134, 54, 0.2)"
             color_badge = "#3fb950"
         elif status_raw == "Apresentado":
-            cor_tema = "#1f6feb"
+            cor_tema = "#1f6feb" # Azul
             bg_badge = "rgba(31, 111, 235, 0.2)"
             color_badge = "#58a6ff"
         elif status_raw == "Em andamento":
-            cor_tema = "#d29922"
+            cor_tema = "#d29922" # Laranja
             bg_badge = "rgba(210, 153, 34, 0.2)"
             color_badge = "#e3b341"
         else: 
-            cor_tema = "#da3633"
+            cor_tema = "#da3633" # Vermelho
             bg_badge = "rgba(218, 54, 51, 0.2)"
             color_badge = "#f85149"
 
+        # Cores Métricas
         cor_margem = "#da3633" if row['Margem_%'] < META_MARGEM else "#3fb950"
         cor_horas = "#da3633" if pct_horas > 100 else "#e6edf3"
         cor_mat = "#da3633" if pct_mat > 100 else "#e6edf3"
@@ -255,7 +267,8 @@ for index, row in df_show.iterrows():
         # --- CARD CONTAINER ---
         with st.container(border=True):
             
-            # 1. Header
+            # 1. Título e Cliente (Header Limpo)
+            # A cor da borda esquerda indica o status discretamente
             st.markdown(f"""
             <div class="tile-header" style="border-left: 3px solid {cor_tema}">
                 <div class="tile-title" title="{row['Projeto']} - {row['Descricao']}">{row['Projeto']} - {row['Descricao']}</div>
@@ -263,7 +276,8 @@ for index, row in df_show.iterrows():
             </div>
             """, unsafe_allow_html=True)
 
-            # 2. Data Strip
+            # 2. Faixa de Dados (Data Strip)
+            # 4 Colunas compactas na horizontal
             st.markdown(f"""
             <div class="data-strip">
                 <div class="data-col">
@@ -285,35 +299,22 @@ for index, row in df_show.iterrows():
             </div>
             """, unsafe_allow_html=True)
 
-            # 3. Barra de Progresso
+            # 3. Rodapé (Progresso + Badge + Botão Texto)
             st.markdown(f"""
-            <div class="progress-container">
+            <div class="tile-footer">
                 <div class="progress-track">
                     <div class="progress-fill" style="width: {pct}%; background-color: {cor_tema};"></div>
+                </div>
+                <div class="footer-row">
+                    <span class="badge-status" style="background-color: {bg_badge}; color: {color_badge}">{status_raw}</span>
+                    <span class="footer-pct" style="color: {color_badge}">{pct}%</span>
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
-            # 4. Rodapé (Badge Esq | Ações Dir)
-            # vertical_alignment="bottom" alinha tudo pela base
-            c_badge, c_spacer, c_right = st.columns([2.8, 0.2, 1], vertical_alignment="bottom")
-            
-            with c_badge:
-                # Badge fixo na esquerda inferior, com padding para afastar da borda
-                st.markdown(f"""
-                <div style="padding-left: 15px; padding-bottom: 12px;">
-                    <span class="badge-status" style="background-color: {bg_badge}; color: {color_badge}">{status_raw}</span>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            with c_right:
-                # Texto % (Alinhado à direita e encostado no botão)
-                st.markdown(f"""<span class="pct-text" style="color: {color_badge}; width: 100%;">{pct}%</span>""", unsafe_allow_html=True)
-                
-                # Botão (CSS agora força ele a ser pequeno)
+            # Botão de Ação (Abaixo, alinhado à direita nativamente pelo Streamlit)
+            col_spacer, col_btn = st.columns([2, 1])
+            with col_btn:
                 if st.button("Abrir ↗", key=f"btn_{row['Projeto']}", use_container_width=True):
                     st.session_state["projeto_foco"] = row['Projeto']
                     st.switch_page("dashboard_detalhado.py")
-            
-            # Espaço extra para garantir que o container feche bonito
-            st.write("")
