@@ -80,16 +80,16 @@ st.markdown("""
     .big-kpi-val { font-size: 1.8rem; font-weight: bold; color: white; font-family: "Source Sans Pro", sans-serif; }
     .big-kpi-lbl { font-size: 0.9rem; color: #8b949e; font-family: "Source Sans Pro", sans-serif; }
 
-/* --- Customização das Tags do Multiselect (Cinza Neutro) --- */
+/* --- Customização das Tags do Multiselect (Cinza Neutro + Texto Branco) --- */
     span[data-baseweb="tag"] {
         background-color: #30363d !important; /* Fundo Cinza Neutro */
-        color: #e6edf3 !important;            /* Texto Claro */
-        border: 1px solid #8b949e;            /* Borda sutil para contraste */
+        color: white !important;              /* Texto Branco */
+        border: 1px solid #8b949e;            /* Borda sutil */
     }
     
     /* Cor do X para fechar a tag */
     span[data-baseweb="tag"] svg {
-        fill: #e6edf3 !important;
+        fill: white !important;
     }
 </style>
 """, unsafe_allow_html=True)
