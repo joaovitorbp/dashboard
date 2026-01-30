@@ -86,8 +86,10 @@ st.markdown("""
 # ---------------------------------------------------------
 # 2. DADOS E LIMPEZA
 # ---------------------------------------------------------
-@st.cache_data
+@st.cache_data(ttl=0)
 def load_data():
+    # Se estiver usando Github Local, mantenha assim. 
+    # Se conseguiu usar a URL Raw, substitua aqui.
     return pd.read_excel("dados_obras_v5.xlsx")
 
 try:
@@ -108,13 +110,11 @@ def clean_currency_brazil(x):
 df['Vendido'] = df['Vendido'].apply(clean_currency_brazil)
 df['Mat_Real'] = df['Mat_Real'].apply(clean_currency_brazil)
 
-# --- NOVA FUNÇÃO DE FORMATAÇÃO INTELIGENTE (BR) ---
+# Função de formatação BR
 def formatar_valor_ptbr(valor):
     if valor >= 1_000_000:
         val = valor / 1_000_000
-        # Ex: 1.5M (com 1 casa decimal) ou 12M (se for redondo)
         s = f"{val:.1f}".replace(".", ",")
-        # Remove ,0 se existir (ex: 12,0M vira 12M)
         if s.endswith(",0"): s = s[:-2]
         return f"{s}M"
     elif valor >= 1_000:
@@ -123,7 +123,6 @@ def formatar_valor_ptbr(valor):
         if s.endswith(",0"): s = s[:-2]
         return f"{s}k"
     else:
-        # Menor que 1000, mostra normal (ex: 500)
         return f"{valor:,.0f}".replace(",", ".")
 
 # ---------------------------------------------------------
@@ -156,7 +155,7 @@ df['HH_Progresso'] = cols_extras[2]
 # ---------------------------------------------------------
 st.title("🏢 Painel de Controle")
 
-# KPIs Globais (Usando a nova formatação)
+# KPIs
 k1, k2, k3, k4 = st.columns(4)
 total_cart = df['Vendido'].sum()
 total_fat = df['Faturado'].apply(clean_currency_brazil).sum()
@@ -168,56 +167,69 @@ k4.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Margem Média</div><
 
 st.divider()
 
-# --- CONTROLES ---
+# --- CONTROLES (MÚLTIPLA SELEÇÃO E ORDENAÇÃO) ---
 col_filtro, col_sort = st.columns([3, 1])
+
 with col_filtro:
-    status_options = ["Todas", "Não iniciado", "Em andamento", "Apresentado", "Finalizado"]
-    filtro_status = st.radio("Visualização:", status_options, horizontal=True)
+    # 1. Filtros estilo "Toggle" Multi-seleção (Finalizado antes de Apresentado)
+    status_options = ["Não iniciado", "Em andamento", "Finalizado", "Apresentado"]
+    
+    # st.pills permite seleção múltipla e parece botões/tags
+    status_selecionados = st.pills(
+        "Filtrar Status:", 
+        status_options, 
+        selection_mode="multi", 
+        default=status_options # Começa com todos marcados
+    )
 
 with col_sort:
+    # 2. Ordenação por Projeto (Crescente/Decrescente) e removeu "Padrão"
     opcoes_ordem = [
-        "Padrão", 
-        "Valor ⬇️ (Maior ➜ Menor)", 
-        "Valor ⬆️ (Menor ➜ Maior)",
-        "Margem ⬇️ (Maior ➜ Menor)", 
-        "Margem ⬆️ (Menor ➜ Maior)",
-        "Andamento ⬇️ (Maior ➜ Menor)",
-        "Andamento ⬆️ (Menor ➜ Maior)",
-        "Criticidade (Críticos 1º)"
+        "Projeto ⬆️ (Crescente)",
+        "Projeto ⬇️ (Decrescente)",
+        "Valor ⬇️ (Maior)", 
+        "Valor ⬆️ (Menor)",
+        "Margem ⬇️ (Maior)", 
+        "Margem ⬆️ (Menor)",
+        "Andamento ⬇️ (Maior)",
+        "Andamento ⬆️ (Menor)",
+        "Criticidade"
     ]
     ordenar_por = st.selectbox("Ordenar por:", opcoes_ordem)
 
 # --- FILTRAGEM ---
 df_show = df.copy()
 
-if filtro_status == "Não iniciado": 
-    df_show = df_show[df_show['Status'].str.strip().str.lower() == 'não iniciado']
-elif filtro_status == "Em andamento":
-    df_show = df_show[df_show['Status'] == 'Em andamento']
-elif filtro_status == "Apresentado":
-    df_show = df_show[df_show['Status'] == 'Apresentado']
-elif filtro_status == "Finalizado":
-    df_show = df_show[df_show['Status'] == 'Finalizado']
+# Se a lista de selecionados não estiver vazia, filtra. Se vazia, mostra tudo (fallback)
+if status_selecionados:
+    df_show = df_show[df_show['Status'].isin(status_selecionados)]
 
 # --- ORDENAÇÃO ---
 df_show['Conclusao_%'] = pd.to_numeric(df_show['Conclusao_%'], errors='coerce').fillna(0)
+df_show['Projeto'] = pd.to_numeric(df_show['Projeto'], errors='coerce').fillna(0)
 
-if ordenar_por == "Valor ⬇️ (Maior ➜ Menor)":
+# Lógica de Ordenação Atualizada
+if "Projeto ⬆️" in ordenar_por:
+    df_show = df_show.sort_values(by="Projeto", ascending=True)
+elif "Projeto ⬇️" in ordenar_por:
+    df_show = df_show.sort_values(by="Projeto", ascending=False)
+
+elif "Valor ⬇️" in ordenar_por:
     df_show = df_show.sort_values(by="Vendido", ascending=False)
-elif ordenar_por == "Valor ⬆️ (Menor ➜ Maior)":
+elif "Valor ⬆️" in ordenar_por:
     df_show = df_show.sort_values(by="Vendido", ascending=True)
 
-elif ordenar_por == "Margem ⬇️ (Maior ➜ Menor)":
+elif "Margem ⬇️" in ordenar_por:
     df_show = df_show.sort_values(by="Margem_%", ascending=False)
-elif ordenar_por == "Margem ⬆️ (Menor ➜ Maior)":
+elif "Margem ⬆️" in ordenar_por:
     df_show = df_show.sort_values(by="Margem_%", ascending=True)
 
-elif ordenar_por == "Andamento ⬇️ (Maior ➜ Menor)":
+elif "Andamento ⬇️" in ordenar_por:
     df_show = df_show.sort_values(by="Conclusao_%", ascending=False)
-elif ordenar_por == "Andamento ⬆️ (Menor ➜ Maior)":
+elif "Andamento ⬆️" in ordenar_por:
     df_show = df_show.sort_values(by="Conclusao_%", ascending=True)
 
-elif ordenar_por == "Criticidade (Críticos 1º)":
+elif "Criticidade" in ordenar_por:
     df_show = df_show.sort_values(by="E_Critico", ascending=False)
 
 st.write(f"**{len(df_show)}** projetos encontrados")
@@ -254,7 +266,7 @@ for i, (index, row) in enumerate(df_show.iterrows()):
         pct_mat = (mat_real / mat_orc * 100) if mat_orc > 0 else 0
         cor_mat = "#da3633" if pct_mat > 100 else "#e6edf3"
         
-        # --- APLICAÇÃO DA NOVA FORMATAÇÃO AQUI ---
+        # Formatação Valor
         valor_formatado = formatar_valor_ptbr(row['Vendido'])
         
         with st.container(border=True):
