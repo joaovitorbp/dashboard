@@ -119,25 +119,22 @@ st.markdown("""
     }
 
     /* --- BOTÃO (Link Style) --- */
+    /* AQUI ESTÁ A CONFIGURAÇÃO CORRETA DE REDUÇÃO SEM SCALE */
     div[data-testid="stVerticalBlockBorderWrapper"] button {
         background-color: transparent;
         color: #58a6ff;
         border: 1px solid transparent;
         border-radius: 4px;
         
-        /* DIMINUIÇÃO AGRESSIVA */
-        font-size: 0.60rem !important;  
-        padding: 0px !important;       
-        height: 20px !important;        
-        min-height: 20px !important;
+        /* Forçando tamanho pequeno via propriedades diretas */
+        font-size: 0.65rem !important;    /* Reduzi a fonte */
+        padding: 0px 0px !important;      /* Removi espaçamento interno */
+        height: 24px !important;          /* Altura fixa */
+        min-height: 24px !important;      /* Trava do Streamlit quebrada com !important */
         line-height: 1 !important;
         
         margin: 0;
         width: 100%;
-        
-        /* SCALE PARA 70% DO TAMANHO */
-        transform: scale(0.70);
-        transform-origin: right center;
     }
     div[data-testid="stVerticalBlockBorderWrapper"] button:hover {
         background-color: #1f242c;
