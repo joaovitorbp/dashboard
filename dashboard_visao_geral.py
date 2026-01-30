@@ -43,9 +43,9 @@ st.markdown("""
         font-family: "Source Sans Pro", sans-serif;
     }
 
-    /* --- DATA STRIP --- */
+    /* --- DATA STRIP (4 Métricas em Linha) --- */
     .data-strip {
-        background-color: #0d1117;
+        background-color: #0d1117; /* Fundo mais escuro */
         border-top: 1px solid #21262d;
         border-bottom: 1px solid #21262d;
         padding: 10px 15px;
@@ -57,11 +57,13 @@ st.markdown("""
         display: flex;
         flex-direction: column;
         align-items: center;
-        width: 25%;
+        width: 25%; /* 4 colunas iguais */
     }
+    /* Bordas verticais entre as métricas */
     .data-col:not(:last-child) {
         border-right: 1px solid #30363d;
     }
+    
     .data-lbl {
         font-size: 0.6rem;
         color: #8b949e;
@@ -87,18 +89,15 @@ st.markdown("""
         margin-bottom: 10px;
         overflow: hidden;
     }
-    .progress-fill {
-        height: 100%;
-        border-radius: 2px;
-    }
-
+    .progress-fill { height: 100%; border-radius: 2px; }
+    
     .footer-row {
         display: flex;
         justify-content: space-between;
-        align-items: center;
-        height: 20px;
+        align-items: center; /* <--- ISSO GARANTE O CENTRO VERTICAL */
+        height: 20px; /* Altura fixa para garantir estabilidade */
     }
-
+    
     .badge-status {
         font-size: 0.65rem;
         font-weight: 700;
@@ -108,40 +107,35 @@ st.markdown("""
         letter-spacing: 0.5px;
         line-height: 1.2;
     }
-
+    
+    /* Novo estilo para a porcentagem */
     .footer-pct {
         font-size: 0.8rem;
         font-weight: 700;
         font-family: "Source Sans Pro", sans-serif;
-        line-height: 1;
+        line-height: 1; /* Remove espaço vertical extra */
         display: flex;
         align-items: center;
     }
 
-    /* --- BOTÃO (SCALE 80%) --- */
+    /* --- BOTÃO (Link Style) --- */
     div[data-testid="stVerticalBlockBorderWrapper"] button {
         background-color: transparent;
         color: #58a6ff;
         border: 1px solid transparent;
         border-radius: 4px;
-
         font-size: 0.75rem;
         padding: 4px 10px;
-
-        transform: scale(0.8);                 /* 🔽 reduz tudo */
-        transform-origin: right center;        /* ancora à direita */
-
         height: auto;
         min-height: 0px;
         margin: 0;
     }
-
     div[data-testid="stVerticalBlockBorderWrapper"] button:hover {
         background-color: #1f242c;
         border-color: #30363d;
         text-decoration: none;
     }
-
+    
     div[data-testid="column"] { padding: 0 8px; }
 
     /* KPIs Globais */
@@ -152,17 +146,8 @@ st.markdown("""
         border: 1px solid #30363d;
         text-align: center;
     }
-    .big-kpi-val {
-        font-size: 1.8rem;
-        font-weight: bold;
-        color: white;
-        font-family: "Source Sans Pro", sans-serif;
-    }
-    .big-kpi-lbl {
-        font-size: 0.9rem;
-        color: #8b949e;
-        font-family: "Source Sans Pro", sans-serif;
-    }
+    .big-kpi-val { font-size: 1.8rem; font-weight: bold; color: white; font-family: "Source Sans Pro", sans-serif; }
+    .big-kpi-lbl { font-size: 0.9rem; color: #8b949e; font-family: "Source Sans Pro", sans-serif; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -190,7 +175,10 @@ def calcular_dados_extras(row):
     margem = (lucro / row['Vendido'] * 100) if row['Vendido'] > 0 else 0
     hh_perc = (row['HH_Real_Qtd'] / row['HH_Orc_Qtd'] * 100) if row['HH_Orc_Qtd'] > 0 else 0
     fisico = row['Conclusao_%']
-    critico = margem < META_MARGEM or hh_perc > (fisico + 10)
+    
+    critico = False
+    if margem < META_MARGEM or hh_perc > (fisico + 10):
+        critico = True
     return pd.Series([margem, critico])
 
 df[['Margem_%', 'E_Critico']] = df.apply(calcular_dados_extras, axis=1)
@@ -200,6 +188,7 @@ df[['Margem_%', 'E_Critico']] = df.apply(calcular_dados_extras, axis=1)
 # ---------------------------------------------------------
 st.title("🏢 Painel de Controle")
 
+# KPIs Globais
 k1, k2, k3, k4 = st.columns(4)
 k1.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Total Carteira</div><div class='big-kpi-val'>R$ {df['Vendido'].sum()/1e6:.1f}M</div></div>", unsafe_allow_html=True)
 k2.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Faturamento</div><div class='big-kpi-val'>R$ {df['Faturado'].sum()/1e6:.1f}M</div></div>", unsafe_allow_html=True)
@@ -208,12 +197,13 @@ k4.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Margem Média</div><
 
 st.divider()
 
+# Filtros
 status_options = ["Todas", "Não iniciado", "Em andamento", "Apresentado", "Finalizado", "🚨 Críticas"]
 filtro_status = st.radio("Visualização:", status_options, horizontal=True)
 
 df_show = df.copy()
 
-if filtro_status == "Não iniciado":
+if filtro_status == "Não iniciado": 
     df_show = df_show[df_show['Status'].str.strip().str.lower() == 'não iniciado']
 elif filtro_status == "Em andamento":
     df_show = df_show[df_show['Status'] == 'Em andamento']
@@ -222,48 +212,57 @@ elif filtro_status == "Apresentado":
 elif filtro_status == "Finalizado":
     df_show = df_show[df_show['Status'] == 'Finalizado']
 elif filtro_status == "🚨 Críticas":
-    df_show = df_show[df_show['E_Critico']]
+    df_show = df_show[df_show['E_Critico'] == True]
 
 st.write(f"**{len(df_show)}** projetos encontrados")
 st.write("")
 
 # ---------------------------------------------------------
-# 5. GRID DE CARDS
+# 5. GRID DE CARDS (LAYOUT TILES)
 # ---------------------------------------------------------
 cols = st.columns(3)
 
 for index, row in df_show.iterrows():
     with cols[index % 3]:
-
+        
+        # --- PREPARAÇÃO ---
         pct = int(row['Conclusao_%'])
         status_raw = str(row['Status']).strip()
+        
+        # % Consumos
+        if row['HH_Orc_Qtd'] > 0: pct_horas = (row['HH_Real_Qtd'] / row['HH_Orc_Qtd']) * 100
+        else: pct_horas = 0
+        
+        if row['Mat_Orc'] > 0: pct_mat = (row['Mat_Real'] / row['Mat_Orc']) * 100
+        else: pct_mat = 0
 
-        pct_horas = (row['HH_Real_Qtd'] / row['HH_Orc_Qtd'] * 100) if row['HH_Orc_Qtd'] > 0 else 0
-        pct_mat = (row['Mat_Real'] / row['Mat_Orc'] * 100) if row['Mat_Orc'] > 0 else 0
-
+        # Cores Status
         if status_raw == "Finalizado":
-            cor_tema = "#238636"
+            cor_tema = "#238636" # Verde
             bg_badge = "rgba(35, 134, 54, 0.2)"
             color_badge = "#3fb950"
         elif status_raw == "Apresentado":
-            cor_tema = "#1f6feb"
+            cor_tema = "#1f6feb" # Azul
             bg_badge = "rgba(31, 111, 235, 0.2)"
             color_badge = "#58a6ff"
         elif status_raw == "Em andamento":
-            cor_tema = "#d29922"
+            cor_tema = "#d29922" # Laranja
             bg_badge = "rgba(210, 153, 34, 0.2)"
             color_badge = "#e3b341"
-        else:
-            cor_tema = "#da3633"
+        else: 
+            cor_tema = "#da3633" # Vermelho
             bg_badge = "rgba(218, 54, 51, 0.2)"
             color_badge = "#f85149"
 
+        # Cores Métricas
         cor_margem = "#da3633" if row['Margem_%'] < META_MARGEM else "#3fb950"
         cor_horas = "#da3633" if pct_horas > 100 else "#e6edf3"
         cor_mat = "#da3633" if pct_mat > 100 else "#e6edf3"
-
+        
+        # --- CARD CONTAINER ---
         with st.container(border=True):
-
+            
+            # 1. Título e Cliente (Header Limpo)
             st.markdown(f"""
             <div class="tile-header" style="border-left: 3px solid {cor_tema}">
                 <div class="tile-title" title="{row['Projeto']} - {row['Descricao']}">{row['Projeto']} - {row['Descricao']}</div>
@@ -271,29 +270,44 @@ for index, row in df_show.iterrows():
             </div>
             """, unsafe_allow_html=True)
 
+            # 2. Faixa de Dados (Data Strip)
             st.markdown(f"""
             <div class="data-strip">
-                <div class="data-col"><span class="data-lbl">Valor</span><span class="data-val">{row['Vendido']/1000:,.0f}k</span></div>
-                <div class="data-col"><span class="data-lbl">Margem</span><span class="data-val" style="color:{cor_margem}">{row['Margem_%']:.0f}%</span></div>
-                <div class="data-col"><span class="data-lbl">Horas</span><span class="data-val" style="color:{cor_horas}">{pct_horas:.0f}%</span></div>
-                <div class="data-col"><span class="data-lbl">Mat</span><span class="data-val" style="color:{cor_mat}">{pct_mat:.0f}%</span></div>
+                <div class="data-col">
+                    <span class="data-lbl">Valor</span>
+                    <span class="data-val">{row['Vendido']/1000:,.0f}k</span>
+                </div>
+                <div class="data-col">
+                    <span class="data-lbl">Margem</span>
+                    <span class="data-val" style="color: {cor_margem}">{row['Margem_%']:.0f}%</span>
+                </div>
+                <div class="data-col">
+                    <span class="data-lbl">Horas</span>
+                    <span class="data-val" style="color: {cor_horas}">{pct_horas:.0f}%</span>
+                </div>
+                <div class="data-col">
+                    <span class="data-lbl">Mat</span>
+                    <span class="data-val" style="color: {cor_mat}">{pct_mat:.0f}%</span>
+                </div>
             </div>
             """, unsafe_allow_html=True)
 
+            # 3. Rodapé (Progresso + Linha Inferior com Badge e %)
             st.markdown(f"""
             <div class="tile-footer">
                 <div class="progress-track">
-                    <div class="progress-fill" style="width:{pct}%; background-color:{cor_tema};"></div>
+                    <div class="progress-fill" style="width: {pct}%; background-color: {cor_tema};"></div>
                 </div>
                 <div class="footer-row">
-                    <span class="badge-status" style="background-color:{bg_badge}; color:{color_badge}">{status_raw}</span>
-                    <span class="footer-pct" style="color:{color_badge}">{pct}%</span>
+                    <span class="badge-status" style="background-color: {bg_badge}; color: {color_badge}">{status_raw}</span>
+                    <span class="footer-pct" style="color: {color_badge}">{pct}%</span>
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
+            # Botão de Ação
             col_spacer, col_btn = st.columns([2, 1])
             with col_btn:
-                if st.button("Abrir ↗", key=f"btn_{row['Projeto']}"):
+                if st.button("Abrir ↗", key=f"btn_{row['Projeto']}", use_container_width=True):
                     st.session_state["projeto_foco"] = row['Projeto']
                     st.switch_page("dashboard_detalhado.py")
