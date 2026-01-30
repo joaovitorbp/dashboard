@@ -3,7 +3,7 @@ import pandas as pd
 import textwrap
 
 # ---------------------------------------------------------
-# 1. CONFIGURAÇÃO VISUAL (CSS - TILES MODERNOS)
+# 1. CONFIGURAÇÃO VISUAL (CSS - TILES MODERNOS v1.0)
 # ---------------------------------------------------------
 st.markdown("""
 <style>
@@ -197,10 +197,26 @@ k4.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Margem Média</div><
 
 st.divider()
 
-# Filtros
+# --- FILTROS E ORDENAÇÃO ---
 status_options = ["Todas", "Não iniciado", "Em andamento", "Apresentado", "Finalizado", "🚨 Críticas"]
-filtro_status = st.radio("Visualização:", status_options, horizontal=True)
 
+# Criamos duas colunas: uma larga para o filtro (3) e uma menor para o sorting (1)
+col_filtro, col_sort = st.columns([3, 1])
+
+with col_filtro:
+    filtro_status = st.radio("Visualização:", status_options, horizontal=True)
+
+with col_sort:
+    opcoes_ordem = [
+        "Padrão", 
+        "Valor (Maior ➜ Menor)", 
+        "Margem (Menor ➜ Maior)", 
+        "Criticidade (Críticos 1º)",
+        "Andamento (Mais ➜ Menos)"
+    ]
+    ordenar_por = st.selectbox("Ordenar por:", opcoes_ordem)
+
+# --- APLICAÇÃO DOS FILTROS ---
 df_show = df.copy()
 
 if filtro_status == "Não iniciado": 
@@ -213,6 +229,16 @@ elif filtro_status == "Finalizado":
     df_show = df_show[df_show['Status'] == 'Finalizado']
 elif filtro_status == "🚨 Críticas":
     df_show = df_show[df_show['E_Critico'] == True]
+
+# --- APLICAÇÃO DA ORDENAÇÃO ---
+if ordenar_por == "Valor (Maior ➜ Menor)":
+    df_show = df_show.sort_values(by="Vendido", ascending=False)
+elif ordenar_por == "Margem (Menor ➜ Maior)":
+    df_show = df_show.sort_values(by="Margem_%", ascending=True)
+elif ordenar_por == "Criticidade (Críticos 1º)":
+    df_show = df_show.sort_values(by="E_Critico", ascending=False) # True vem antes de False no sort desc
+elif ordenar_por == "Andamento (Mais ➜ Menos)":
+    df_show = df_show.sort_values(by="Conclusao_%", ascending=False)
 
 st.write(f"**{len(df_show)}** projetos encontrados")
 st.write("")
