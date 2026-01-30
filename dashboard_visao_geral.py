@@ -78,28 +78,6 @@ st.markdown("""
     }
     .big-kpi-val { font-size: 1.8rem; font-weight: bold; color: white; font-family: "Source Sans Pro", sans-serif; }
     .big-kpi-lbl { font-size: 0.9rem; color: #8b949e; font-family: "Source Sans Pro", sans-serif; }
-
-    /* --- ESTILO DOS FILTROS (PILLS) --- */
-    
-    /* 1. Estado Normal (Não selecionado) */
-    div[data-testid="stPills"] [data-baseweb="tag"] {
-        background-color: #161b22 !important;
-        border: 1px solid #30363d !important;
-        color: #c9d1d9 !important;
-    }
-
-    /* 2. Hover (Passar o mouse) */
-    div[data-testid="stPills"] [data-baseweb="tag"]:hover {
-        border-color: #58a6ff !important;
-        color: #58a6ff !important;
-    }
-
-    /* 3. Estado SELECIONADO (AZUL ESCURO) */
-    div[data-testid="stPills"] [aria-selected="true"] {
-        background-color: #0c2d6b !important; /* Fundo Azul Escuro */
-        border-color: #1f6feb !important;      /* Borda Azul Clara */
-        color: #ffffff !important;             /* Texto Branco */
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -184,29 +162,32 @@ st.divider()
 col_filtro, col_sort_criterio, col_sort_ordem = st.columns([3, 1, 1])
 
 with col_filtro:
-    # REMOVI O DEFAULT. Agora começa vazio.
     status_options = ["Não iniciado", "Em andamento", "Finalizado", "Apresentado"]
     status_selecionados = st.pills(
         "Filtrar Status:", 
         status_options, 
         selection_mode="multi",
-        default=None # <--- COMEÇA VAZIO
+        default=None 
     )
 
 with col_sort_criterio:
-    criterio_sort = st.selectbox("Ordenar por:", ["Projeto", "Valor Vendido", "Margem (%)", "Andamento (%)", "Criticidade"])
+    criterio_sort = st.selectbox(
+        "Ordenar por:", 
+        ["Projeto", "Valor Vendido", "Margem (%)", "Andamento (%)", "Criticidade"]
+    )
 
 with col_sort_ordem:
-    direcao_sort = st.selectbox("Ordem:", ["⬇️ Decrescente", "⬆️ Crescente"])
+    direcao_sort = st.selectbox(
+        "Ordem:", 
+        ["Decrescente", "Crescente"]
+    )
 
 # --- LÓGICA DE EXIBIÇÃO ---
 
-# SE NÃO TIVER SELEÇÃO, PARA TUDO AQUI.
 if not status_selecionados:
     st.info("👆 Selecione pelo menos um status acima para visualizar os projetos.")
-    st.stop() # <--- BLOQUEIA A RENDERIZAÇÃO DOS CARDS
+    st.stop() 
 
-# SE PASSAR DAQUI, FILTRA E MOSTRA
 df_show = df[df['Status'].isin(status_selecionados)].copy()
 
 # --- LÓGICA DE ORDENAÇÃO ---
