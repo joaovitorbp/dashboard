@@ -45,7 +45,7 @@ st.markdown("""
 
     /* --- DATA STRIP (4 Métricas em Linha) --- */
     .data-strip {
-        background-color: #0d1117; /* Fundo mais escuro */
+        background-color: #0d1117;
         border-top: 1px solid #21262d;
         border-bottom: 1px solid #21262d;
         padding: 10px 15px;
@@ -57,9 +57,8 @@ st.markdown("""
         display: flex;
         flex-direction: column;
         align-items: center;
-        width: 25%; /* 4 colunas iguais */
+        width: 25%;
     }
-    /* Bordas verticais entre as métricas */
     .data-col:not(:last-child) {
         border-right: 1px solid #30363d;
     }
@@ -77,25 +76,21 @@ st.markdown("""
         font-family: "Source Sans Pro", sans-serif;
     }
 
-    /* --- FOOTER --- */
+    /* --- FOOTER (Progresso) --- */
     .tile-footer {
-        padding: 10px 15px;
+        padding: 10px 15px 0px 15px;
     }
     .progress-track {
         background-color: #21262d;
         height: 4px;
         border-radius: 2px;
         width: 100%;
-        margin-bottom: 10px;
+        margin-bottom: 5px;
         overflow: hidden;
     }
     .progress-fill { height: 100%; border-radius: 2px; }
     
-    .footer-row {
-        display: flex;
-        justify-content: space-between; /* Garante badge na esq e % na dir */
-        align-items: center;
-    }
+    /* Badge Status (Esquerda) */
     .badge-status {
         font-size: 0.65rem;
         font-weight: 700;
@@ -103,40 +98,45 @@ st.markdown("""
         padding: 2px 8px;
         border-radius: 4px;
         letter-spacing: 0.5px;
-    }
-    
-    /* Porcentagem na direita */
-    .footer-pct {
-        font-size: 0.75rem;
-        font-weight: 700;
-        font-family: "Source Sans Pro", sans-serif;
+        display: inline-block;
     }
 
-    /* --- BOTÃO MICRO (Link Style) --- */
+    /* Percentual (Direita) */
+    .pct-text {
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-align: right;
+        margin-bottom: 2px;
+        font-family: "Source Sans Pro", sans-serif;
+        line-height: 1;
+    }
+
+    /* --- BOTÃO MICRO (Estilo Forçado) --- */
+    /* Agora que o botão está dentro do container, este CSS vai funcionar */
     div[data-testid="stVerticalBlockBorderWrapper"] button {
         background-color: transparent;
         color: #58a6ff;
-        border: 1px solid transparent;
+        border: 1px solid #30363d;
         border-radius: 4px;
         
-        /* Ajustes para ficar PEQUENO */
-        font-size: 0.65rem !important;
-        padding: 0px 8px !important;
-        height: 22px !important;
-        min-height: 22px !important;
+        /* Forçando Tamanho Micro */
+        font-size: 0.7rem !important;      /* Fonte pequena */
+        padding: 0px 5px !important;       /* Sem enchimento */
+        height: 24px !important;           /* Altura fixa pequena */
+        min-height: 24px !important;
         line-height: 1 !important;
         
-        margin: 0;
+        margin-top: 2px !important;
         width: 100%;
-        float: right;
+        transition: all 0.2s;
     }
     div[data-testid="stVerticalBlockBorderWrapper"] button:hover {
-        background-color: #1f242c;
-        border-color: #30363d;
-        text-decoration: none;
+        background-color: #1f6feb;
+        color: white;
+        border-color: #1f6feb;
     }
     
-    div[data-testid="column"] { padding: 0 8px; }
+    div[data-testid="column"] { padding: 0 5px; }
 
     /* KPIs Globais */
     .big-kpi {
@@ -262,8 +262,7 @@ for index, row in df_show.iterrows():
         # --- CARD CONTAINER ---
         with st.container(border=True):
             
-            # 1. Título e Cliente (Header Limpo)
-            # A cor da borda esquerda indica o status discretamente
+            # 1. Título e Cliente
             st.markdown(f"""
             <div class="tile-header" style="border-left: 3px solid {cor_tema}">
                 <div class="tile-title" title="{row['Projeto']} - {row['Descricao']}">{row['Projeto']} - {row['Descricao']}</div>
@@ -271,8 +270,7 @@ for index, row in df_show.iterrows():
             </div>
             """, unsafe_allow_html=True)
 
-            # 2. Faixa de Dados (Data Strip)
-            # 4 Colunas compactas na horizontal
+            # 2. Data Strip
             st.markdown(f"""
             <div class="data-strip">
                 <div class="data-col">
@@ -294,22 +292,33 @@ for index, row in df_show.iterrows():
             </div>
             """, unsafe_allow_html=True)
 
-            # 3. Rodapé (Progresso + Badge + Botão Texto)
+            # 3. Rodapé
+            # Barra de Progresso
             st.markdown(f"""
             <div class="tile-footer">
                 <div class="progress-track">
                     <div class="progress-fill" style="width: {pct}%; background-color: {cor_tema};"></div>
                 </div>
-                <div class="footer-row">
-                    <span class="badge-status" style="background-color: {bg_badge}; color: {color_badge}">{status_raw}</span>
-                    <span class="footer-pct" style="color: {color_badge}">{pct}%</span>
-                </div>
             </div>
             """, unsafe_allow_html=True)
 
-            # Botão de Ação (Abaixo, alinhado à direita nativamente pelo Streamlit)
-            col_spacer, col_btn = st.columns([2, 1])
-            with col_btn:
+            # Badge (Esq) | Porcentagem + Botão (Dir)
+            c_badge, c_space, c_actions = st.columns([2.5, 0.5, 1], vertical_alignment="bottom")
+            
+            with c_badge:
+                st.markdown(f"""
+                <div style="padding-left: 15px; padding-bottom: 12px;">
+                    <span class="badge-status" style="background-color: {bg_badge}; color: {color_badge}">{status_raw}</span>
+                </div>
+                """, unsafe_allow_html=True)
+                
+            with c_actions:
+                # % no topo
+                st.markdown(f"""<div class="pct-text" style="color: {color_badge};">{pct}%</div>""", unsafe_allow_html=True)
+                
+                # Botão logo abaixo (Agora dentro do container, então o CSS vai pegar!)
                 if st.button("Abrir ↗", key=f"btn_{row['Projeto']}", use_container_width=True):
                     st.session_state["projeto_foco"] = row['Projeto']
                     st.switch_page("dashboard_detalhado.py")
+            
+            st.write("") # Pequeno espaço no final do card
