@@ -23,7 +23,7 @@ st.markdown("""
         transform: translateY(-2px);
     }
 
-    /* Header */
+    /* Header e Textos */
     .tile-header { padding: 15px 15px 10px 15px; }
     .tile-title {
         color: white; font-family: "Source Sans Pro", sans-serif;
@@ -32,8 +32,7 @@ st.markdown("""
         margin-bottom: 2px;
     }
     .tile-sub { color: #8b949e; font-size: 0.75rem; font-family: "Source Sans Pro", sans-serif; }
-
-    /* Metrics Strip */
+    
     .data-strip {
         background-color: #0d1117; border-top: 1px solid #21262d; border-bottom: 1px solid #21262d;
         padding: 10px 15px; display: flex; justify-content: space-between; align-items: center;
@@ -43,7 +42,6 @@ st.markdown("""
     .data-lbl { font-size: 0.6rem; color: #8b949e; text-transform: uppercase; margin-bottom: 2px; }
     .data-val { font-size: 0.85rem; font-weight: 700; color: #e6edf3; font-family: "Source Sans Pro", sans-serif; }
 
-    /* Footer */
     .tile-footer { padding: 10px 15px; }
     .progress-track {
         background-color: #21262d; height: 4px; border-radius: 2px;
@@ -61,7 +59,7 @@ st.markdown("""
         line-height: 1; display: flex; align-items: center;
     }
 
-    /* BOTÃO PEQUENO */
+    /* Botão */
     div[data-testid="stVerticalBlockBorderWrapper"] button {
         background-color: transparent; color: #58a6ff; border: 1px solid #30363d; border-radius: 4px;
         font-size: 0.65rem !important; padding: 0px 0px !important;
@@ -81,15 +79,26 @@ st.markdown("""
     .big-kpi-val { font-size: 1.8rem; font-weight: bold; color: white; font-family: "Source Sans Pro", sans-serif; }
     .big-kpi-lbl { font-size: 0.9rem; color: #8b949e; font-family: "Source Sans Pro", sans-serif; }
 
-    /* --- ESTILO NOVO: PILLS AZUL ESCURO --- */
-    /* Força a cor de fundo do botão selecionado no st.pills */
-    div[data-testid="stPills"] button[aria-selected="true"] {
-        background-color: #0d47a1 !important; /* Azul Escuro */
-        color: white !important;
-        border-color: #0d47a1 !important;
+    /* --- ESTILO DOS FILTROS (PILLS) --- */
+    
+    /* 1. Estado Normal (Não selecionado) */
+    div[data-testid="stPills"] [data-baseweb="tag"] {
+        background-color: #161b22 !important;
+        border: 1px solid #30363d !important;
+        color: #c9d1d9 !important;
     }
-    div[data-testid="stPills"] button[aria-selected="true"]:hover {
-        background-color: #1565c0 !important; /* Azul um pouco mais claro no hover */
+
+    /* 2. Hover (Passar o mouse) */
+    div[data-testid="stPills"] [data-baseweb="tag"]:hover {
+        border-color: #58a6ff !important;
+        color: #58a6ff !important;
+    }
+
+    /* 3. Estado SELECIONADO (AZUL ESCURO) */
+    div[data-testid="stPills"] [aria-selected="true"] {
+        background-color: #0c2d6b !important; /* Fundo Azul Escuro */
+        border-color: #1f6feb !important;      /* Borda Azul Clara */
+        color: #ffffff !important;             /* Texto Branco */
     }
 </style>
 """, unsafe_allow_html=True)
@@ -171,44 +180,39 @@ k4.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Margem Média</div><
 
 st.divider()
 
-# --- NOVA BARRA DE FERRAMENTAS ---
+# --- BARRA DE FERRAMENTAS ---
 col_filtro, col_sort_criterio, col_sort_ordem = st.columns([3, 1, 1])
 
 with col_filtro:
-    # 1. Filtros Azuis (CSS aplicado)
+    # REMOVI O DEFAULT. Agora começa vazio.
     status_options = ["Não iniciado", "Em andamento", "Finalizado", "Apresentado"]
     status_selecionados = st.pills(
         "Filtrar Status:", 
         status_options, 
-        selection_mode="multi", 
-        default=status_options
+        selection_mode="multi",
+        default=None # <--- COMEÇA VAZIO
     )
 
 with col_sort_criterio:
-    # 2. Critério de Ordenação (Limpo)
-    criterio_sort = st.selectbox(
-        "Ordenar por:", 
-        ["Projeto", "Valor Vendido", "Margem (%)", "Andamento (%)", "Criticidade"]
-    )
+    criterio_sort = st.selectbox("Ordenar por:", ["Projeto", "Valor Vendido", "Margem (%)", "Andamento (%)", "Criticidade"])
 
 with col_sort_ordem:
-    # 3. Direção da Ordenação
-    direcao_sort = st.selectbox(
-        "Ordem:", 
-        ["⬇️ Decrescente", "⬆️ Crescente"]
-    )
+    direcao_sort = st.selectbox("Ordem:", ["⬇️ Decrescente", "⬆️ Crescente"])
 
-# --- LÓGICA DE FILTRAGEM ---
-df_show = df.copy()
+# --- LÓGICA DE EXIBIÇÃO ---
 
-if status_selecionados:
-    df_show = df_show[df_show['Status'].isin(status_selecionados)]
+# SE NÃO TIVER SELEÇÃO, PARA TUDO AQUI.
+if not status_selecionados:
+    st.info("👆 Selecione pelo menos um status acima para visualizar os projetos.")
+    st.stop() # <--- BLOQUEIA A RENDERIZAÇÃO DOS CARDS
 
-# --- LÓGICA DE ORDENAÇÃO (DUPLA) ---
+# SE PASSAR DAQUI, FILTRA E MOSTRA
+df_show = df[df['Status'].isin(status_selecionados)].copy()
+
+# --- LÓGICA DE ORDENAÇÃO ---
 df_show['Conclusao_%'] = pd.to_numeric(df_show['Conclusao_%'], errors='coerce').fillna(0)
 df_show['Projeto'] = pd.to_numeric(df_show['Projeto'], errors='coerce').fillna(0)
 
-# Define se é Ascending (Crescente) ou não
 eh_crescente = True if "Crescente" in direcao_sort else False
 
 if criterio_sort == "Projeto":
@@ -220,7 +224,6 @@ elif criterio_sort == "Margem (%)":
 elif criterio_sort == "Andamento (%)":
     df_show = df_show.sort_values(by="Conclusao_%", ascending=eh_crescente)
 elif criterio_sort == "Criticidade":
-    # Criticidade funciona melhor se True vier primeiro no Decrescente
     df_show = df_show.sort_values(by="E_Critico", ascending=eh_crescente)
 
 st.write(f"**{len(df_show)}** projetos encontrados")
