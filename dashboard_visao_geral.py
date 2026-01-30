@@ -108,6 +108,24 @@ def clean_currency_brazil(x):
 df['Vendido'] = df['Vendido'].apply(clean_currency_brazil)
 df['Mat_Real'] = df['Mat_Real'].apply(clean_currency_brazil)
 
+# --- NOVA FUNÇÃO DE FORMATAÇÃO INTELIGENTE (BR) ---
+def formatar_valor_ptbr(valor):
+    if valor >= 1_000_000:
+        val = valor / 1_000_000
+        # Ex: 1.5M (com 1 casa decimal) ou 12M (se for redondo)
+        s = f"{val:.1f}".replace(".", ",")
+        # Remove ,0 se existir (ex: 12,0M vira 12M)
+        if s.endswith(",0"): s = s[:-2]
+        return f"{s}M"
+    elif valor >= 1_000:
+        val = valor / 1_000
+        s = f"{val:.1f}".replace(".", ",")
+        if s.endswith(",0"): s = s[:-2]
+        return f"{s}k"
+    else:
+        # Menor que 1000, mostra normal (ex: 500)
+        return f"{valor:,.0f}".replace(",", ".")
+
 # ---------------------------------------------------------
 # 3. CÁLCULOS
 # ---------------------------------------------------------
@@ -138,10 +156,13 @@ df['HH_Progresso'] = cols_extras[2]
 # ---------------------------------------------------------
 st.title("🏢 Painel de Controle")
 
-# KPIs
+# KPIs Globais (Usando a nova formatação)
 k1, k2, k3, k4 = st.columns(4)
-k1.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Total Carteira</div><div class='big-kpi-val'>R$ {df['Vendido'].sum()/1e6:.1f}M</div></div>", unsafe_allow_html=True)
-k2.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Faturamento</div><div class='big-kpi-val'>R$ {df['Faturado'].apply(clean_currency_brazil).sum()/1e6:.1f}M</div></div>", unsafe_allow_html=True)
+total_cart = df['Vendido'].sum()
+total_fat = df['Faturado'].apply(clean_currency_brazil).sum()
+
+k1.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Total Carteira</div><div class='big-kpi-val'>R$ {formatar_valor_ptbr(total_cart)}</div></div>", unsafe_allow_html=True)
+k2.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Faturamento</div><div class='big-kpi-val'>R$ {formatar_valor_ptbr(total_fat)}</div></div>", unsafe_allow_html=True)
 k3.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Obras Ativas</div><div class='big-kpi-val'>{len(df[df['Status']=='Em andamento'])}</div></div>", unsafe_allow_html=True)
 k4.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Margem Média</div><div class='big-kpi-val'>{df['Margem_%'].mean():.1f}%</div></div>", unsafe_allow_html=True)
 
@@ -150,12 +171,10 @@ st.divider()
 # --- CONTROLES ---
 col_filtro, col_sort = st.columns([3, 1])
 with col_filtro:
-    # FILTRO "CRÍTICAS" REMOVIDO DAQUI
     status_options = ["Todas", "Não iniciado", "Em andamento", "Apresentado", "Finalizado"]
     filtro_status = st.radio("Visualização:", status_options, horizontal=True)
 
 with col_sort:
-    # ORDENAÇÃO BIDIRECIONAL ADICIONADA
     opcoes_ordem = [
         "Padrão", 
         "Valor ⬇️ (Maior ➜ Menor)", 
@@ -183,7 +202,6 @@ elif filtro_status == "Finalizado":
 # --- ORDENAÇÃO ---
 df_show['Conclusao_%'] = pd.to_numeric(df_show['Conclusao_%'], errors='coerce').fillna(0)
 
-# Lógica bidirecional
 if ordenar_por == "Valor ⬇️ (Maior ➜ Menor)":
     df_show = df_show.sort_values(by="Vendido", ascending=False)
 elif ordenar_por == "Valor ⬆️ (Menor ➜ Maior)":
@@ -210,7 +228,6 @@ st.write("")
 # ---------------------------------------------------------
 cols = st.columns(3)
 
-# 'enumerate' garante que a ordem visual siga a ordem do df_show classificado
 for i, (index, row) in enumerate(df_show.iterrows()):
     with cols[i % 3]:
         
@@ -237,6 +254,9 @@ for i, (index, row) in enumerate(df_show.iterrows()):
         pct_mat = (mat_real / mat_orc * 100) if mat_orc > 0 else 0
         cor_mat = "#da3633" if pct_mat > 100 else "#e6edf3"
         
+        # --- APLICAÇÃO DA NOVA FORMATAÇÃO AQUI ---
+        valor_formatado = formatar_valor_ptbr(row['Vendido'])
+        
         with st.container(border=True):
             st.markdown(f"""
             <div class="tile-header" style="border-left: 3px solid {cor_tema}">
@@ -244,7 +264,7 @@ for i, (index, row) in enumerate(df_show.iterrows()):
                 <div class="tile-sub">{row['Cliente']} | {row['Cidade']}</div>
             </div>
             <div class="data-strip">
-                <div class="data-col"><span class="data-lbl">Valor</span><span class="data-val">{row['Vendido']/1000:,.0f}k</span></div>
+                <div class="data-col"><span class="data-lbl">Valor</span><span class="data-val">{valor_formatado}</span></div>
                 <div class="data-col"><span class="data-lbl">Margem</span><span class="data-val" style="color: {cor_margem}">{row['Margem_%']:.0f}%</span></div>
                 <div class="data-col"><span class="data-lbl">Horas</span><span class="data-val" style="color: {cor_horas}">{pct_horas:.0f}%</span></div>
                 <div class="data-col"><span class="data-lbl">Mat</span><span class="data-val" style="color: {cor_mat}">{pct_mat:.0f}%</span></div>
