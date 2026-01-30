@@ -94,8 +94,8 @@ st.markdown("""
     .footer-row {
         display: flex;
         justify-content: space-between;
-        align-items: center; /* <--- ISSO GARANTE O CENTRO VERTICAL */
-        height: 20px; /* Altura fixa para garantir estabilidade */
+        align-items: center;
+        height: 20px; 
     }
     
     .badge-status {
@@ -113,22 +113,27 @@ st.markdown("""
         font-size: 0.8rem;
         font-weight: 700;
         font-family: "Source Sans Pro", sans-serif;
-        line-height: 1; /* Remove espaço vertical extra */
+        line-height: 1;
         display: flex;
         align-items: center;
     }
 
-    /* --- BOTÃO (Link Style) --- */
+    /* --- BOTÃO (Link Style) - AGORA CONFIGURADO CORRETAMENTE --- */
     div[data-testid="stVerticalBlockBorderWrapper"] button {
         background-color: transparent;
         color: #58a6ff;
-        border: 1px solid transparent;
+        border: 1px solid #30363d; /* Borda sutil */
         border-radius: 4px;
-        font-size: 0.75rem;
-        padding: 4px 10px;
-        height: auto;
-        min-height: 0px;
+        
+        /* Redução Real via Propriedades (!important força o Streamlit a obedecer) */
+        font-size: 0.70rem !important; 
+        padding: 0px 0px !important;    /* Remove espaço interno */
+        height: 24px !important;        /* Altura fixa pequena */
+        min-height: 24px !important;    /* Sobrescreve limite do Streamlit */
+        line-height: 1 !important;
+        
         margin: 0;
+        width: 100%;
     }
     div[data-testid="stVerticalBlockBorderWrapper"] button:hover {
         background-color: #1f242c;
