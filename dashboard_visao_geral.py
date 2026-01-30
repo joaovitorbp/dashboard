@@ -112,14 +112,15 @@ st.markdown("""
         font-family: "Source Sans Pro", sans-serif;
     }
 
-    /* --- BOTÃO MICRO (Link Style) + SCALE --- */
-    div[data-testid="stVerticalBlockBorderWrapper"] button {
+    /* --- BOTÃO MICRO (Link Style) COM SCALE --- */
+    /* Seletor específico para botões DENTRO do card */
+    [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stButton"] button {
         background-color: transparent;
         color: #58a6ff;
         border: 1px solid transparent;
         border-radius: 4px;
         
-        /* Ajustes para ficar PEQUENO */
+        /* Ajustes de fonte e tamanho base */
         font-size: 0.65rem !important;
         padding: 0px 8px !important;
         height: 22px !important;
@@ -130,12 +131,12 @@ st.markdown("""
         width: 100%;
         float: right;
 
-        /* AQUI O SCALE QUE VOCÊ PEDIU */
-        transform: scale(0.85);       
-        transform-origin: right center; /* Mantém o botão alinhado à direita ao diminuir */
+        /* --- AQUI ESTÁ O SCALE CORRIGIDO --- */
+        transform: scale(0.80) !important;       /* Reduz para 80% */
+        transform-origin: right center !important; /* Mantém alinhado à direita */
     }
     
-    div[data-testid="stVerticalBlockBorderWrapper"] button:hover {
+    [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stButton"] button:hover {
         background-color: #1f242c;
         border-color: #30363d;
         text-decoration: none;
