@@ -162,12 +162,12 @@ st.divider()
 col_filtro, col_sort_criterio, col_sort_ordem = st.columns([3, 1, 1])
 
 with col_filtro:
+    # VOLTANDO PARA O MULTISELECT (MAIS RÁPIDO E FLUIDO)
     status_options = ["Não iniciado", "Em andamento", "Finalizado", "Apresentado"]
-    status_selecionados = st.pills(
+    status_selecionados = st.multiselect(
         "Filtrar Status:", 
-        status_options, 
-        selection_mode="multi",
-        default=None 
+        options=status_options,
+        placeholder="Selecione os status..."
     )
 
 with col_sort_criterio:
