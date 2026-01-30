@@ -3,7 +3,7 @@ import pandas as pd
 import textwrap
 
 # ---------------------------------------------------------
-# 1. CONFIGURAÇÃO VISUAL (CSS - TILES MODERNOS)
+# 1. CONFIGURAÇÃO VISUAL (CSS)
 # ---------------------------------------------------------
 st.markdown("""
 <style>
@@ -43,9 +43,9 @@ st.markdown("""
         font-family: "Source Sans Pro", sans-serif;
     }
 
-    /* --- DATA STRIP (4 Métricas em Linha) --- */
+    /* --- DATA STRIP (4 Métricas) --- */
     .data-strip {
-        background-color: #0d1117; /* Fundo mais escuro */
+        background-color: #0d1117;
         border-top: 1px solid #21262d;
         border-bottom: 1px solid #21262d;
         padding: 10px 15px;
@@ -57,13 +57,11 @@ st.markdown("""
         display: flex;
         flex-direction: column;
         align-items: center;
-        width: 25%; /* 4 colunas iguais */
+        width: 25%;
     }
-    /* Bordas verticais entre as métricas */
     .data-col:not(:last-child) {
         border-right: 1px solid #30363d;
     }
-    
     .data-lbl {
         font-size: 0.6rem;
         color: #8b949e;
@@ -77,53 +75,63 @@ st.markdown("""
         font-family: "Source Sans Pro", sans-serif;
     }
 
-    /* --- FOOTER --- */
-    .tile-footer {
-        padding: 10px 15px;
-    }
+    /* --- BARRA DE PROGRESSO --- */
     .progress-track {
         background-color: #21262d;
         height: 4px;
-        border-radius: 2px;
         width: 100%;
-        margin-bottom: 10px;
+        margin-top: 10px; /* Espaço entre Data Strip e Barra */
+        margin-bottom: 5px;
         overflow: hidden;
     }
-    .progress-fill { height: 100%; border-radius: 2px; }
-    
-    .footer-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
+    .progress-fill { height: 100%; }
+
+    /* --- RODAPÉ --- */
+    /* Badge Esquerda */
     .badge-status {
-        font-size: 0.65rem;
+        font-size: 0.6rem;
         font-weight: 700;
         text-transform: uppercase;
-        padding: 2px 8px;
+        padding: 3px 8px;
         border-radius: 4px;
         letter-spacing: 0.5px;
+        display: inline-block;
     }
 
-    /* --- BOTÃO (Link Style) --- */
+    /* Percentual Direita */
+    .pct-text {
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-align: right;
+        margin-bottom: 2px;
+        font-family: "Source Sans Pro", sans-serif;
+        line-height: 1;
+    }
+
+    /* --- BOTÃO MICRO --- */
     div[data-testid="stVerticalBlockBorderWrapper"] button {
         background-color: transparent;
         color: #58a6ff;
-        border: 1px solid transparent;
+        border: 1px solid #30363d;
         border-radius: 4px;
-        font-size: 0.75rem;
-        padding: 4px 10px;
-        height: auto;
-        min-height: 0px;
+        
+        /* Forçando tamanho pequeno */
+        font-size: 0.65rem !important;
+        padding: 0px 8px !important;
+        height: 24px !important;
+        min-height: 24px !important;
+        line-height: 1 !important;
+        
         margin: 0;
+        width: 100%;
     }
     div[data-testid="stVerticalBlockBorderWrapper"] button:hover {
-        background-color: #1f242c;
-        border-color: #30363d;
-        text-decoration: none;
+        background-color: #1f6feb;
+        color: white;
+        border-color: #1f6feb;
     }
     
-    div[data-testid="column"] { padding: 0 8px; }
+    div[data-testid="column"] { padding: 0 6px; }
 
     /* KPIs Globais */
     .big-kpi {
@@ -205,7 +213,7 @@ st.write(f"**{len(df_show)}** projetos encontrados")
 st.write("")
 
 # ---------------------------------------------------------
-# 5. GRID DE CARDS (LAYOUT TILES)
+# 5. GRID DE CARDS (TILES V3)
 # ---------------------------------------------------------
 cols = st.columns(3)
 
@@ -216,7 +224,6 @@ for index, row in df_show.iterrows():
         pct = int(row['Conclusao_%'])
         status_raw = str(row['Status']).strip()
         
-        # % Consumos
         if row['HH_Orc_Qtd'] > 0: pct_horas = (row['HH_Real_Qtd'] / row['HH_Orc_Qtd']) * 100
         else: pct_horas = 0
         
@@ -246,11 +253,10 @@ for index, row in df_show.iterrows():
         cor_horas = "#da3633" if pct_horas > 100 else "#e6edf3"
         cor_mat = "#da3633" if pct_mat > 100 else "#e6edf3"
         
-        # --- CARD CONTAINER ---
+        # --- CARD ---
         with st.container(border=True):
             
-            # 1. Título e Cliente (Header Limpo)
-            # A cor da borda esquerda indica o status discretamente
+            # 1. Header
             st.markdown(f"""
             <div class="tile-header" style="border-left: 3px solid {cor_tema}">
                 <div class="tile-title" title="{row['Projeto']} - {row['Descricao']}">{row['Projeto']} - {row['Descricao']}</div>
@@ -258,8 +264,7 @@ for index, row in df_show.iterrows():
             </div>
             """, unsafe_allow_html=True)
 
-            # 2. Faixa de Dados (Data Strip)
-            # 4 Colunas compactas na horizontal
+            # 2. Data Strip
             st.markdown(f"""
             <div class="data-strip">
                 <div class="data-col">
@@ -281,21 +286,34 @@ for index, row in df_show.iterrows():
             </div>
             """, unsafe_allow_html=True)
 
-            # 3. Rodapé (Progresso + Badge + Botão Texto)
+            # 3. Barra de Progresso (Full Width no Card)
+            # Colocamos um padding lateral pequeno para alinhar com o resto
             st.markdown(f"""
-            <div class="tile-footer">
+            <div style="padding: 0 15px;">
                 <div class="progress-track">
                     <div class="progress-fill" style="width: {pct}%; background-color: {cor_tema};"></div>
-                </div>
-                <div class="footer-row">
-                    <span class="badge-status" style="background-color: {bg_badge}; color: {color_badge}">{status_raw}</span>
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
-            # Botão de Ação (Abaixo, alinhado à direita nativamente pelo Streamlit)
-            col_spacer, col_btn = st.columns([2, 1])
-            with col_btn:
+            # 4. Rodapé Dividido: Badge (Esq) | Porcentagem + Botão (Dir)
+            c_badge, c_space, c_actions = st.columns([3, 0.5, 1.5], vertical_alignment="bottom")
+            
+            with c_badge:
+                st.markdown(f"""
+                <div style="padding-left: 10px; padding-bottom: 5px;">
+                    <span class="badge-status" style="background-color: {bg_badge}; color: {color_badge}">{status_raw}</span>
+                </div>
+                """, unsafe_allow_html=True)
+                
+            with c_actions:
+                # Texto % alinhado à direita, logo acima do botão
+                st.markdown(f"""
+                <div class="pct-text" style="color: {color_badge};">{pct}%</div>
+                """, unsafe_allow_html=True)
+                
                 if st.button("Abrir ↗", key=f"btn_{row['Projeto']}", use_container_width=True):
                     st.session_state["projeto_foco"] = row['Projeto']
                     st.switch_page("dashboard_detalhado.py")
+            
+            st.write("") # Respiro final
