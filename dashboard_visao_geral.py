@@ -79,6 +79,17 @@ st.markdown("""
     }
     .big-kpi-val { font-size: 1.8rem; font-weight: bold; color: white; font-family: "Source Sans Pro", sans-serif; }
     .big-kpi-lbl { font-size: 0.9rem; color: #8b949e; font-family: "Source Sans Pro", sans-serif; }
+
+    /* --- NOVO: Customização das Tags do Multiselect --- */
+    span[data-baseweb="tag"] {
+        background-color: #1f6feb !important; /* Mude esta cor (Azul) para a que desejar */
+        color: white !important;
+        border: 1px solid #30363d;
+    }
+    /* Cor do X para fechar a tag */
+    span[data-baseweb="tag"] svg {
+        fill: white !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -166,11 +177,10 @@ col_filtro, col_sort_criterio, col_sort_ordem = st.columns([3, 1, 1])
 
 with col_filtro:
     status_options = ["Não iniciado", "Em andamento", "Finalizado", "Apresentado"]
-    # ALTERADO: De st.pills para st.multiselect
     status_selecionados = st.multiselect(
         "Filtrar por:", 
         options=status_options, 
-        default=status_options # Começa com todos marcados
+        default=status_options 
     )
 
 with col_sort_criterio:
