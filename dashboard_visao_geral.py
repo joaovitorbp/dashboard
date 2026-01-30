@@ -166,11 +166,10 @@ col_filtro, col_sort_criterio, col_sort_ordem = st.columns([3, 1, 1])
 
 with col_filtro:
     status_options = ["Não iniciado", "Em andamento", "Finalizado", "Apresentado"]
-    # ST.PILLS: Botões em linha. Sem CSS extra, usa a cor padrão do Streamlit.
-    status_selecionados = st.pills(
+    # ALTERADO: De st.pills para st.multiselect
+    status_selecionados = st.multiselect(
         "Filtrar por:", 
-        status_options, 
-        selection_mode="multi",
+        options=status_options, 
         default=status_options # Começa com todos marcados
     )
 
