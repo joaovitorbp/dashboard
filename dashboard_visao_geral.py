@@ -3,7 +3,7 @@ import pandas as pd
 import textwrap
 
 # ---------------------------------------------------------
-# 1. CONFIGURAÇÃO VISUAL (CSS)
+# 1. CONFIGURAÇÃO VISUAL (CSS - TILES V2)
 # ---------------------------------------------------------
 st.markdown("""
 <style>
@@ -17,9 +17,6 @@ st.markdown("""
         border-radius: 8px;
         padding: 0px !important;
         transition: transform 0.2s;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
     }
     [data-testid="stVerticalBlockBorderWrapper"]:hover {
         border-color: #58a6ff;
@@ -78,27 +75,31 @@ st.markdown("""
         font-family: "Source Sans Pro", sans-serif;
     }
 
-    /* --- BARRA DE PROGRESSO --- */
+    /* --- FOOTER (Progresso + Badge) --- */
+    .tile-footer {
+        padding: 12px 15px 5px 15px; /* Padding ajustado */
+    }
+    
+    /* Texto do Progresso (Novo) */
+    .progress-info {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.7rem;
+        color: #8b949e;
+        margin-bottom: 4px;
+        font-family: "Source Sans Pro", sans-serif;
+    }
+    
     .progress-track {
         background-color: #21262d;
         height: 4px;
+        border-radius: 2px;
         width: 100%;
-        margin-top: 10px; 
-        margin-bottom: 8px;
+        margin-bottom: 12px;
         overflow: hidden;
     }
-    .progress-fill { height: 100%; }
-
-    /* --- RODAPÉ --- */
+    .progress-fill { height: 100%; border-radius: 2px; }
     
-    /* Wrapper do Badge para travar no canto esquerdo */
-    .badge-wrapper {
-        display: flex;
-        align-items: flex-end; /* Alinha com o fundo do botão */
-        height: 100%;
-        padding-bottom: 2px;
-    }
-
     .badge-status {
         font-size: 0.6rem;
         font-weight: 700;
@@ -109,29 +110,18 @@ st.markdown("""
         display: inline-block;
     }
 
-    /* Percentual Direita */
-    .pct-text {
-        font-size: 0.8rem;
-        font-weight: 700;
-        text-align: right;
-        margin-bottom: 4px;
-        font-family: "Source Sans Pro", sans-serif;
-        line-height: 1;
-    }
-
-    /* --- BOTÃO MICRO --- */
+    /* --- BOTÃO COMPACTO --- */
     div[data-testid="stVerticalBlockBorderWrapper"] button {
         background-color: transparent;
         color: #58a6ff;
         border: 1px solid #30363d;
         border-radius: 4px;
         
-        /* Forçando tamanho pequeno */
-        font-size: 0.65rem !important;
-        padding: 0px 8px !important;
-        height: 24px !important;
-        min-height: 24px !important;
-        line-height: 1 !important;
+        /* Tamanho Reduzido */
+        font-size: 0.7rem !important;
+        padding: 2px 8px !important;
+        height: 28px !important;
+        min-height: 0px !important;
         
         margin: 0;
         width: 100%;
@@ -224,7 +214,7 @@ st.write(f"**{len(df_show)}** projetos encontrados")
 st.write("")
 
 # ---------------------------------------------------------
-# 5. GRID DE CARDS
+# 5. GRID DE CARDS (LAYOUT TILES V2)
 # ---------------------------------------------------------
 cols = st.columns(3)
 
@@ -235,6 +225,7 @@ for index, row in df_show.iterrows():
         pct = int(row['Conclusao_%'])
         status_raw = str(row['Status']).strip()
         
+        # % Consumos
         if row['HH_Orc_Qtd'] > 0: pct_horas = (row['HH_Real_Qtd'] / row['HH_Orc_Qtd']) * 100
         else: pct_horas = 0
         
@@ -267,7 +258,7 @@ for index, row in df_show.iterrows():
         # --- CARD CONTAINER ---
         with st.container(border=True):
             
-            # 1. Header
+            # 1. Header (Título e Cliente)
             st.markdown(f"""
             <div class="tile-header" style="border-left: 3px solid {cor_tema}">
                 <div class="tile-title" title="{row['Projeto']} - {row['Descricao']}">{row['Projeto']} - {row['Descricao']}</div>
@@ -275,7 +266,7 @@ for index, row in df_show.iterrows():
             </div>
             """, unsafe_allow_html=True)
 
-            # 2. Data Strip
+            # 2. Data Strip (4 Métricas)
             st.markdown(f"""
             <div class="data-strip">
                 <div class="data-col">
@@ -297,32 +288,32 @@ for index, row in df_show.iterrows():
             </div>
             """, unsafe_allow_html=True)
 
-            # 3. Barra de Progresso
+            # 3. Rodapé (Texto de Progresso + Barra)
             st.markdown(f"""
-            <div style="padding: 0 15px;">
+            <div class="tile-footer">
+                <div class="progress-info">
+                    <span>Avanço Físico</span>
+                    <span style="color: {color_badge}; font-weight: 700;">{pct}%</span>
+                </div>
                 <div class="progress-track">
                     <div class="progress-fill" style="width: {pct}%; background-color: {cor_tema};"></div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
-            # 4. Rodapé (Badge Esq | Ações Dir)
-            c_badge, c_space, c_actions = st.columns([2.8, 0.2, 1], vertical_alignment="bottom")
+            # 4. Badge e Botão (Alinhados no fundo)
+            # Usando colunas [2, 1] para deixar o botão pequeno na direita
+            c_badge, c_btn = st.columns([2.5, 1], vertical_alignment="center")
             
             with c_badge:
-                # Badge no canto inferior esquerdo
                 st.markdown(f"""
-                <div class="badge-wrapper">
-                    <span class="badge-status" style="background-color: {bg_badge}; color: {color_badge}">{status_raw}</span>
-                </div>
+                <span class="badge-status" style="background-color: {bg_badge}; color: {color_badge}">{status_raw}</span>
                 """, unsafe_allow_html=True)
                 
-            with c_actions:
-                # % em cima, botão em baixo
-                st.markdown(f"""<div class="pct-text" style="color: {color_badge};">{pct}%</div>""", unsafe_allow_html=True)
-                
+            with c_btn:
+                # O botão está menor devido ao CSS aplicado lá em cima
                 if st.button("Abrir ↗", key=f"btn_{row['Projeto']}", use_container_width=True):
                     st.session_state["projeto_foco"] = row['Projeto']
                     st.switch_page("dashboard_detalhado.py")
             
-            st.write("") # Respiro
+            st.write("") # Pequeno respiro final
