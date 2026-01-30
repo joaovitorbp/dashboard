@@ -3,7 +3,7 @@ import pandas as pd
 import textwrap
 
 # ---------------------------------------------------------
-# 1. CONFIGURAÇÃO VISUAL (CSS - TILES MODERNOS v1.0)
+# 1. CONFIGURAÇÃO VISUAL (CSS - TILES MODERNOS)
 # ---------------------------------------------------------
 st.markdown("""
 <style>
@@ -94,8 +94,8 @@ st.markdown("""
     .footer-row {
         display: flex;
         justify-content: space-between;
-        align-items: center; /* <--- ISSO GARANTE O CENTRO VERTICAL */
-        height: 20px; /* Altura fixa para garantir estabilidade */
+        align-items: center; 
+        height: 20px; 
     }
     
     .badge-status {
@@ -108,12 +108,12 @@ st.markdown("""
         line-height: 1.2;
     }
     
-    /* Novo estilo para a porcentagem */
+    /* Porcentagem */
     .footer-pct {
         font-size: 0.8rem;
         font-weight: 700;
         font-family: "Source Sans Pro", sans-serif;
-        line-height: 1; /* Remove espaço vertical extra */
+        line-height: 1;
         display: flex;
         align-items: center;
     }
@@ -122,13 +122,18 @@ st.markdown("""
     div[data-testid="stVerticalBlockBorderWrapper"] button {
         background-color: transparent;
         color: #58a6ff;
-        border: 1px solid transparent;
+        border: 1px solid #30363d;
         border-radius: 4px;
-        font-size: 0.75rem;
-        padding: 4px 10px;
-        height: auto;
-        min-height: 0px;
+        
+        /* Configuração Fixa de Tamanho Pequeno */
+        font-size: 0.65rem !important;    
+        padding: 0px 0px !important;      
+        height: 24px !important;          
+        min-height: 24px !important;      
+        line-height: 1 !important;
+        
         margin: 0;
+        width: 100%;
     }
     div[data-testid="stVerticalBlockBorderWrapper"] button:hover {
         background-color: #1f242c;
@@ -200,7 +205,6 @@ st.divider()
 # --- FILTROS E ORDENAÇÃO ---
 status_options = ["Todas", "Não iniciado", "Em andamento", "Apresentado", "Finalizado", "🚨 Críticas"]
 
-# Criamos duas colunas: uma larga para o filtro (3) e uma menor para o sorting (1)
 col_filtro, col_sort = st.columns([3, 1])
 
 with col_filtro:
@@ -216,7 +220,7 @@ with col_sort:
     ]
     ordenar_por = st.selectbox("Ordenar por:", opcoes_ordem)
 
-# --- APLICAÇÃO DOS FILTROS ---
+# --- FILTRAGEM ---
 df_show = df.copy()
 
 if filtro_status == "Não iniciado": 
@@ -230,13 +234,19 @@ elif filtro_status == "Finalizado":
 elif filtro_status == "🚨 Críticas":
     df_show = df_show[df_show['E_Critico'] == True]
 
-# --- APLICAÇÃO DA ORDENAÇÃO ---
+# --- CORREÇÃO E ORDENAÇÃO (O PULO DO GATO) ---
+# 1. Converter colunas para número forçadamente para garantir que a ordenação funcione
+df_show['Vendido'] = pd.to_numeric(df_show['Vendido'], errors='coerce').fillna(0)
+df_show['Margem_%'] = pd.to_numeric(df_show['Margem_%'], errors='coerce').fillna(0)
+df_show['Conclusao_%'] = pd.to_numeric(df_show['Conclusao_%'], errors='coerce').fillna(0)
+
+# 2. Aplicar a ordenação
 if ordenar_por == "Valor (Maior ➜ Menor)":
     df_show = df_show.sort_values(by="Vendido", ascending=False)
 elif ordenar_por == "Margem (Menor ➜ Maior)":
     df_show = df_show.sort_values(by="Margem_%", ascending=True)
 elif ordenar_por == "Criticidade (Críticos 1º)":
-    df_show = df_show.sort_values(by="E_Critico", ascending=False) # True vem antes de False no sort desc
+    df_show = df_show.sort_values(by="E_Critico", ascending=False)
 elif ordenar_por == "Andamento (Mais ➜ Menos)":
     df_show = df_show.sort_values(by="Conclusao_%", ascending=False)
 
@@ -244,7 +254,7 @@ st.write(f"**{len(df_show)}** projetos encontrados")
 st.write("")
 
 # ---------------------------------------------------------
-# 5. GRID DE CARDS (LAYOUT TILES)
+# 5. GRID DE CARDS
 # ---------------------------------------------------------
 cols = st.columns(3)
 
@@ -255,40 +265,38 @@ for index, row in df_show.iterrows():
         pct = int(row['Conclusao_%'])
         status_raw = str(row['Status']).strip()
         
-        # % Consumos
         if row['HH_Orc_Qtd'] > 0: pct_horas = (row['HH_Real_Qtd'] / row['HH_Orc_Qtd']) * 100
         else: pct_horas = 0
         
         if row['Mat_Orc'] > 0: pct_mat = (row['Mat_Real'] / row['Mat_Orc']) * 100
         else: pct_mat = 0
 
-        # Cores Status
+        # Cores
         if status_raw == "Finalizado":
-            cor_tema = "#238636" # Verde
+            cor_tema = "#238636"
             bg_badge = "rgba(35, 134, 54, 0.2)"
             color_badge = "#3fb950"
         elif status_raw == "Apresentado":
-            cor_tema = "#1f6feb" # Azul
+            cor_tema = "#1f6feb"
             bg_badge = "rgba(31, 111, 235, 0.2)"
             color_badge = "#58a6ff"
         elif status_raw == "Em andamento":
-            cor_tema = "#d29922" # Laranja
+            cor_tema = "#d29922"
             bg_badge = "rgba(210, 153, 34, 0.2)"
             color_badge = "#e3b341"
         else: 
-            cor_tema = "#da3633" # Vermelho
+            cor_tema = "#da3633"
             bg_badge = "rgba(218, 54, 51, 0.2)"
             color_badge = "#f85149"
 
-        # Cores Métricas
         cor_margem = "#da3633" if row['Margem_%'] < META_MARGEM else "#3fb950"
         cor_horas = "#da3633" if pct_horas > 100 else "#e6edf3"
         cor_mat = "#da3633" if pct_mat > 100 else "#e6edf3"
         
-        # --- CARD CONTAINER ---
+        # --- CARD ---
         with st.container(border=True):
             
-            # 1. Título e Cliente (Header Limpo)
+            # Header
             st.markdown(f"""
             <div class="tile-header" style="border-left: 3px solid {cor_tema}">
                 <div class="tile-title" title="{row['Projeto']} - {row['Descricao']}">{row['Projeto']} - {row['Descricao']}</div>
@@ -296,7 +304,7 @@ for index, row in df_show.iterrows():
             </div>
             """, unsafe_allow_html=True)
 
-            # 2. Faixa de Dados (Data Strip)
+            # Metrics
             st.markdown(f"""
             <div class="data-strip">
                 <div class="data-col">
@@ -318,7 +326,7 @@ for index, row in df_show.iterrows():
             </div>
             """, unsafe_allow_html=True)
 
-            # 3. Rodapé (Progresso + Linha Inferior com Badge e %)
+            # Footer
             st.markdown(f"""
             <div class="tile-footer">
                 <div class="progress-track">
@@ -331,7 +339,7 @@ for index, row in df_show.iterrows():
             </div>
             """, unsafe_allow_html=True)
 
-            # Botão de Ação
+            # Botão
             col_spacer, col_btn = st.columns([2, 1])
             with col_btn:
                 if st.button("Abrir ↗", key=f"btn_{row['Projeto']}", use_container_width=True):
