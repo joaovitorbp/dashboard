@@ -61,7 +61,7 @@ st.markdown("""
         line-height: 1; display: flex; align-items: center;
     }
 
-    /* BOTÃO PEQUENO (CSS PURO) */
+    /* BOTÃO PEQUENO */
     div[data-testid="stVerticalBlockBorderWrapper"] button {
         background-color: transparent; color: #58a6ff; border: 1px solid #30363d; border-radius: 4px;
         font-size: 0.65rem !important; padding: 0px 0px !important;
@@ -84,7 +84,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 2. CARREGAMENTO E LIMPEZA DE DADOS
+# 2. DADOS E LIMPEZA
 # ---------------------------------------------------------
 @st.cache_data
 def load_data():
@@ -96,23 +96,17 @@ except FileNotFoundError:
     st.error("⚠️ Base de dados 'dados_obras_v5.xlsx' não encontrada.")
     st.stop()
 
-# Função auxiliar para limpar números (Brasil -> Python)
 def clean_currency_brazil(x):
-    if isinstance(x, (int, float)):
-        return x
+    if isinstance(x, (int, float)): return x
     try:
-        # Remove R$, %, espaço e troca pontuação
         s = str(x).replace('R$', '').replace('%', '').replace(' ', '')
-        s = s.replace('.', '') # Remove milhar (1.000 -> 1000)
-        s = s.replace(',', '.') # Troca decimal (10,5 -> 10.5)
+        s = s.replace('.', '').replace(',', '.')
         return float(s)
-    except:
-        return 0.0
+    except: return 0.0
 
-# Aplica a limpeza nas colunas críticas
+# Limpeza das colunas principais
 df['Vendido'] = df['Vendido'].apply(clean_currency_brazil)
 df['Mat_Real'] = df['Mat_Real'].apply(clean_currency_brazil)
-# Repita para outras se necessário, mas 'Vendido' é a principal do sort
 
 # ---------------------------------------------------------
 # 3. CÁLCULOS
@@ -120,26 +114,20 @@ df['Mat_Real'] = df['Mat_Real'].apply(clean_currency_brazil)
 META_MARGEM = 20.0
 
 def calcular_dados_extras(row):
-    # Garante que inputs sejam floats
     vendido = float(row['Vendido'])
     custo = float(row['Mat_Real'] + row['Desp_Real'] + row['HH_Real_Vlr'] + row['Impostos'])
-    
     lucro = vendido - custo
     margem = (lucro / vendido * 100) if vendido > 0 else 0
     
-    hh_orc = float(row['HH_Orc_Qtd'])
-    hh_real = float(row['HH_Real_Qtd'])
+    hh_orc, hh_real = float(row['HH_Orc_Qtd']), float(row['HH_Real_Qtd'])
     hh_perc = (hh_real / hh_orc * 100) if hh_orc > 0 else 0
     
     fisico = float(row['Conclusao_%'])
-    
     critico = False
     if margem < META_MARGEM or hh_perc > (fisico + 10):
         critico = True
-        
     return pd.Series([margem, critico, hh_perc])
 
-# Recalculamos e garantimos que são numéricos
 cols_extras = df.apply(calcular_dados_extras, axis=1)
 df['Margem_%'] = cols_extras[0]
 df['E_Critico'] = cols_extras[1]
@@ -150,7 +138,7 @@ df['HH_Progresso'] = cols_extras[2]
 # ---------------------------------------------------------
 st.title("🏢 Painel de Controle")
 
-# KPIs Globais (Somando após converter para float)
+# KPIs
 k1, k2, k3, k4 = st.columns(4)
 k1.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Total Carteira</div><div class='big-kpi-val'>R$ {df['Vendido'].sum()/1e6:.1f}M</div></div>", unsafe_allow_html=True)
 k2.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Faturamento</div><div class='big-kpi-val'>R$ {df['Faturado'].apply(clean_currency_brazil).sum()/1e6:.1f}M</div></div>", unsafe_allow_html=True)
@@ -159,21 +147,14 @@ k4.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Margem Média</div><
 
 st.divider()
 
-# --- FILTROS E ORDENAÇÃO ---
+# --- CONTROLES ---
 col_filtro, col_sort = st.columns([3, 1])
-
 with col_filtro:
     status_options = ["Todas", "Não iniciado", "Em andamento", "Apresentado", "Finalizado", "🚨 Críticas"]
     filtro_status = st.radio("Visualização:", status_options, horizontal=True)
 
 with col_sort:
-    opcoes_ordem = [
-        "Padrão (Excel)", 
-        "Valor (Maior ➜ Menor)", 
-        "Margem (Menor ➜ Maior)", 
-        "Criticidade (Críticos 1º)",
-        "Andamento (Mais ➜ Menos)"
-    ]
+    opcoes_ordem = ["Padrão", "Valor (Maior ➜ Menor)", "Margem (Menor ➜ Maior)", "Criticidade (Críticos 1º)", "Andamento (Mais ➜ Menos)"]
     ordenar_por = st.selectbox("Ordenar por:", opcoes_ordem)
 
 # --- FILTRAGEM ---
@@ -190,39 +171,33 @@ elif filtro_status == "Finalizado":
 elif filtro_status == "🚨 Críticas":
     df_show = df_show[df_show['E_Critico'] == True]
 
-# --- ORDENAÇÃO FINAL (Sorting) ---
+# --- ORDENAÇÃO ---
+# Converter colunas extras para numérico antes de ordenar
+df_show['Conclusao_%'] = pd.to_numeric(df_show['Conclusao_%'], errors='coerce').fillna(0)
+
 if ordenar_por == "Valor (Maior ➜ Menor)":
-    # Garante que é float para ordenar
     df_show = df_show.sort_values(by="Vendido", ascending=False)
 elif ordenar_por == "Margem (Menor ➜ Maior)":
     df_show = df_show.sort_values(by="Margem_%", ascending=True)
 elif ordenar_por == "Criticidade (Críticos 1º)":
-    # True (1) > False (0), então ascending=False põe os True primeiro
     df_show = df_show.sort_values(by="E_Critico", ascending=False)
 elif ordenar_por == "Andamento (Mais ➜ Menos)":
     df_show = df_show.sort_values(by="Conclusao_%", ascending=False)
-
-# --- ÁREA DE DEBUG (VERIFIQUE AQUI SE OS VALORES ESTÃO CERTOS) ---
-with st.expander("🕵️‍♂️ Debug: Ver Tabela usada para Ordenação"):
-    st.write("Verifique se as colunas 'Vendido' ou 'Margem' estão numéricas ou texto.")
-    st.dataframe(
-        df_show[['Projeto', 'Vendido', 'Margem_%', 'E_Critico', 'Conclusao_%']],
-        use_container_width=True,
-        hide_index=True
-    )
 
 st.write(f"**{len(df_show)}** projetos encontrados")
 st.write("")
 
 # ---------------------------------------------------------
-# 5. GRID DE CARDS
+# 5. GRID DE CARDS (CORRIGIDO PARA ORDENAÇÃO)
 # ---------------------------------------------------------
 cols = st.columns(3)
 
-for index, row in df_show.iterrows():
-    with cols[index % 3]:
+# *** MUDANÇA CRUCIAL AQUI: 'enumerate' cria um contador visual (i) 
+# que ignora o índice original do Excel. Isso conserta a ordem visual. ***
+for i, (index, row) in enumerate(df_show.iterrows()):
+    with cols[i % 3]:
         
-        pct = int(row['Conclusao_%']) if pd.notnull(row['Conclusao_%']) else 0
+        pct = int(row['Conclusao_%'])
         status_raw = str(row['Status']).strip()
         
         # Cores
@@ -237,12 +212,11 @@ for index, row in df_show.iterrows():
 
         cor_margem = "#da3633" if row['Margem_%'] < META_MARGEM else "#3fb950"
         
-        # Consumos (tratando divisão por zero e float)
-        hh_real, hh_orc = float(row['HH_Real_Qtd']), float(row['HH_Orc_Qtd'])
+        hh_orc, hh_real = float(row['HH_Orc_Qtd']), float(row['HH_Real_Qtd'])
         pct_horas = (hh_real / hh_orc * 100) if hh_orc > 0 else 0
         cor_horas = "#da3633" if pct_horas > 100 else "#e6edf3"
         
-        mat_real, mat_orc = float(row['Mat_Real']), float(row['Mat_Orc'])
+        mat_orc, mat_real = float(row['Mat_Orc']), float(row['Mat_Real'])
         pct_mat = (mat_real / mat_orc * 100) if mat_orc > 0 else 0
         cor_mat = "#da3633" if pct_mat > 100 else "#e6edf3"
         
@@ -252,18 +226,12 @@ for index, row in df_show.iterrows():
                 <div class="tile-title" title="{row['Projeto']} - {row['Descricao']}">{row['Projeto']} - {row['Descricao']}</div>
                 <div class="tile-sub">{row['Cliente']} | {row['Cidade']}</div>
             </div>
-            """, unsafe_allow_html=True)
-
-            st.markdown(f"""
             <div class="data-strip">
                 <div class="data-col"><span class="data-lbl">Valor</span><span class="data-val">{row['Vendido']/1000:,.0f}k</span></div>
                 <div class="data-col"><span class="data-lbl">Margem</span><span class="data-val" style="color: {cor_margem}">{row['Margem_%']:.0f}%</span></div>
                 <div class="data-col"><span class="data-lbl">Horas</span><span class="data-val" style="color: {cor_horas}">{pct_horas:.0f}%</span></div>
                 <div class="data-col"><span class="data-lbl">Mat</span><span class="data-val" style="color: {cor_mat}">{pct_mat:.0f}%</span></div>
             </div>
-            """, unsafe_allow_html=True)
-
-            st.markdown(f"""
             <div class="tile-footer">
                 <div class="progress-track"><div class="progress-fill" style="width: {pct}%; background-color: {cor_tema};"></div></div>
                 <div class="footer-row">
