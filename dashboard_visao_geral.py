@@ -93,7 +93,7 @@ st.markdown("""
     
     .footer-row {
         display: flex;
-        justify-content: space-between;
+        justify-content: space-between; /* Garante badge na esq e % na dir */
         align-items: center;
     }
     .badge-status {
@@ -103,6 +103,13 @@ st.markdown("""
         padding: 2px 8px;
         border-radius: 4px;
         letter-spacing: 0.5px;
+    }
+    
+    /* Novo estilo para a porcentagem na direita */
+    .footer-pct {
+        font-size: 0.75rem;
+        font-weight: 700;
+        font-family: "Source Sans Pro", sans-serif;
     }
 
     /* --- BOTÃO (Link Style) --- */
@@ -249,8 +256,7 @@ for index, row in df_show.iterrows():
         # --- CARD CONTAINER ---
         with st.container(border=True):
             
-            # 1. Título e Cliente (Header Limpo)
-            # A cor da borda esquerda indica o status discretamente
+            # 1. Título e Cliente
             st.markdown(f"""
             <div class="tile-header" style="border-left: 3px solid {cor_tema}">
                 <div class="tile-title" title="{row['Projeto']} - {row['Descricao']}">{row['Projeto']} - {row['Descricao']}</div>
@@ -259,7 +265,6 @@ for index, row in df_show.iterrows():
             """, unsafe_allow_html=True)
 
             # 2. Faixa de Dados (Data Strip)
-            # 4 Colunas compactas na horizontal
             st.markdown(f"""
             <div class="data-strip">
                 <div class="data-col">
@@ -281,7 +286,8 @@ for index, row in df_show.iterrows():
             </div>
             """, unsafe_allow_html=True)
 
-            # 3. Rodapé (Progresso + Badge + Botão Texto)
+            # 3. Rodapé (Progresso + Badge + Porcentagem)
+            # AQUI ESTÁ A ALTERAÇÃO: Adicionada a div com a classe footer-pct
             st.markdown(f"""
             <div class="tile-footer">
                 <div class="progress-track">
@@ -289,11 +295,12 @@ for index, row in df_show.iterrows():
                 </div>
                 <div class="footer-row">
                     <span class="badge-status" style="background-color: {bg_badge}; color: {color_badge}">{status_raw}</span>
+                    <span class="footer-pct" style="color: {color_badge}">{pct}%</span>
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
-            # Botão de Ação (Abaixo, alinhado à direita nativamente pelo Streamlit)
+            # Botão de Ação (Mantido como estava)
             col_spacer, col_btn = st.columns([2, 1])
             with col_btn:
                 if st.button("Abrir ↗", key=f"btn_{row['Projeto']}", use_container_width=True):
