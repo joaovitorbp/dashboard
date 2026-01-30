@@ -112,14 +112,14 @@ st.markdown("""
         font-family: "Source Sans Pro", sans-serif;
     }
 
-    /* --- BOTÃO MICRO (Link Style) --- */
+    /* --- BOTÃO MICRO (Link Style) + SCALE --- */
     div[data-testid="stVerticalBlockBorderWrapper"] button {
         background-color: transparent;
         color: #58a6ff;
         border: 1px solid transparent;
         border-radius: 4px;
         
-        /* Ajustes para ficar PEQUENO */
+        /* Ajustes base */
         font-size: 0.65rem !important;
         padding: 0px 8px !important;
         height: 22px !important;
@@ -129,7 +129,12 @@ st.markdown("""
         margin: 0;
         width: 100%;
         float: right;
+
+        /* --- AQUI ESTÁ O SCALE SOLICITADO --- */
+        transform: scale(0.85);       /* Reduz para 85% do tamanho original */
+        transform-origin: right top;  /* Mantém ancorado no canto superior direito do container dele */
     }
+    
     div[data-testid="stVerticalBlockBorderWrapper"] button:hover {
         background-color: #1f242c;
         border-color: #30363d;
