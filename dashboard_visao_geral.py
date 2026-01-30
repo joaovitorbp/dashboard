@@ -147,7 +147,7 @@ df['HH_Progresso'] = cols_extras[2]
 # ---------------------------------------------------------
 # 4. INTERFACE
 # ---------------------------------------------------------
-st.title("🏢 Painel de Controle")
+st.title("Dashboard de Resultados")
 
 # KPIs Globais
 k1, k2, k3, k4 = st.columns(4)
@@ -168,7 +168,7 @@ with col_filtro:
     status_options = ["Não iniciado", "Em andamento", "Finalizado", "Apresentado"]
     # ST.PILLS: Botões em linha. Sem CSS extra, usa a cor padrão do Streamlit.
     status_selecionados = st.pills(
-        "Filtrar Status:", 
+        "Filtrar por:", 
         status_options, 
         selection_mode="multi",
         default=status_options # Começa com todos marcados
@@ -177,7 +177,7 @@ with col_filtro:
 with col_sort_criterio:
     criterio_sort = st.selectbox(
         "Ordenar por:", 
-        ["Projeto", "Valor Vendido", "Margem (%)", "Andamento (%)", "Criticidade"]
+        ["Projeto", "Valor Vendido", "Margem", "Andamento", "Criticidade"]
     )
 
 with col_sort_ordem:
@@ -188,7 +188,7 @@ with col_sort_ordem:
 
 # --- LÓGICA DE EXIBIÇÃO ---
 if not status_selecionados:
-    st.info("👆 Selecione pelo menos um status acima para visualizar os projetos.")
+    st.info("Selecione pelo menos um status acima para visualizar os projetos.")
     st.stop() 
 
 df_show = df[df['Status'].isin(status_selecionados)].copy()
@@ -204,9 +204,9 @@ if criterio_sort == "Projeto":
     df_show = df_show.sort_values(by="Projeto", ascending=eh_crescente)
 elif criterio_sort == "Valor Vendido":
     df_show = df_show.sort_values(by="Vendido", ascending=eh_crescente)
-elif criterio_sort == "Margem (%)":
+elif criterio_sort == "Margem":
     df_show = df_show.sort_values(by="Margem_%", ascending=eh_crescente)
-elif criterio_sort == "Andamento (%)":
+elif criterio_sort == "Andamento":
     df_show = df_show.sort_values(by="Conclusao_%", ascending=eh_crescente)
 elif criterio_sort == "Criticidade":
     df_show = df_show.sort_values(by="E_Critico", ascending=eh_crescente)
