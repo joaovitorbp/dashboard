@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import textwrap
 
 # ---------------------------------------------------------
 # 1. CONFIGURAÇÃO VISUAL
@@ -10,7 +9,7 @@ st.markdown("""
     .stApp {background-color: #0e1117;}
     .block-container {padding-top: 2rem;}
 
-    /* Cards */
+    /* Cards - Fundo e Borda */
     [data-testid="stVerticalBlockBorderWrapper"] {
         background-color: #161b22;
         border: 1px solid #30363d;
@@ -23,7 +22,7 @@ st.markdown("""
         transform: translateY(-2px);
     }
 
-    /* Header e Textos */
+    /* Header e Textos do Card */
     .tile-header { padding: 15px 15px 10px 15px; }
     .tile-title {
         color: white; font-family: "Source Sans Pro", sans-serif;
@@ -33,6 +32,7 @@ st.markdown("""
     }
     .tile-sub { color: #8b949e; font-size: 0.75rem; font-family: "Source Sans Pro", sans-serif; }
     
+    /* Faixa de Dados (Meio do Card) */
     .data-strip {
         background-color: #0d1117; border-top: 1px solid #21262d; border-bottom: 1px solid #21262d;
         padding: 10px 15px; display: flex; justify-content: space-between; align-items: center;
@@ -42,6 +42,7 @@ st.markdown("""
     .data-lbl { font-size: 0.6rem; color: #8b949e; text-transform: uppercase; margin-bottom: 2px; }
     .data-val { font-size: 0.85rem; font-weight: 700; color: #e6edf3; font-family: "Source Sans Pro", sans-serif; }
 
+    /* Rodapé do Card */
     .tile-footer { padding: 10px 15px; }
     .progress-track {
         background-color: #21262d; height: 4px; border-radius: 2px;
@@ -59,7 +60,7 @@ st.markdown("""
         line-height: 1; display: flex; align-items: center;
     }
 
-    /* Botão Abrir */
+    /* Botão "Abrir" */
     div[data-testid="stVerticalBlockBorderWrapper"] button {
         background-color: transparent; color: #58a6ff; border: 1px solid #30363d; border-radius: 4px;
         font-size: 0.65rem !important; padding: 0px 0px !important;
@@ -71,37 +72,13 @@ st.markdown("""
     }
     div[data-testid="column"] { padding: 0 8px; }
 
-    /* KPIs Globais */
+    /* KPIs Globais (Topo) */
     .big-kpi {
         background-color: #161b22; padding: 15px; border-radius: 8px;
         border: 1px solid #30363d; text-align: center;
     }
     .big-kpi-val { font-size: 1.8rem; font-weight: bold; color: white; font-family: "Source Sans Pro", sans-serif; }
     .big-kpi-lbl { font-size: 0.9rem; color: #8b949e; font-family: "Source Sans Pro", sans-serif; }
-
-    /* --- ESTILO PERSONALIZADO DOS FILTROS (PILLS) --- */
-    
-    /* 1. Item NÃO selecionado (Cinza Escuro) */
-    div[data-testid="stPills"] button {
-        background-color: #161b22 !important;
-        border: 1px solid #30363d !important;
-        color: #8b949e !important;
-        transition: all 0.2s ease;
-    }
-    
-    /* 2. Hover (Passar o mouse) */
-    div[data-testid="stPills"] button:hover {
-        border-color: #58a6ff !important;
-        color: #58a6ff !important;
-    }
-
-    /* 3. Item SELECIONADO (AZUL ESCURO) */
-    div[data-testid="stPills"] button[aria-selected="true"] {
-        background-color: #0d47a1 !important; /* Azul Escuro */
-        border-color: #1f6feb !important;      /* Borda Azul Clara */
-        color: #ffffff !important;             /* Texto Branco */
-        font-weight: bold !important;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -118,6 +95,7 @@ except FileNotFoundError:
     st.error("⚠️ Base de dados 'dados_obras_v5.xlsx' não encontrada.")
     st.stop()
 
+# Funções de limpeza e formatação
 def clean_currency_brazil(x):
     if isinstance(x, (int, float)): return x
     try:
@@ -171,6 +149,7 @@ df['HH_Progresso'] = cols_extras[2]
 # ---------------------------------------------------------
 st.title("🏢 Painel de Controle")
 
+# KPIs Globais
 k1, k2, k3, k4 = st.columns(4)
 total_cart = df['Vendido'].sum()
 total_fat = df['Faturado'].apply(clean_currency_brazil).sum()
@@ -187,7 +166,7 @@ col_filtro, col_sort_criterio, col_sort_ordem = st.columns([3, 1, 1])
 
 with col_filtro:
     status_options = ["Não iniciado", "Em andamento", "Finalizado", "Apresentado"]
-    # ST.PILLS: O visual que você gosta (botões em linha)
+    # ST.PILLS: Botões em linha. Sem CSS extra, usa a cor padrão do Streamlit.
     status_selecionados = st.pills(
         "Filtrar Status:", 
         status_options, 
@@ -208,17 +187,17 @@ with col_sort_ordem:
     )
 
 # --- LÓGICA DE EXIBIÇÃO ---
-# Se nada selecionado, mostra aviso
 if not status_selecionados:
     st.info("👆 Selecione pelo menos um status acima para visualizar os projetos.")
     st.stop() 
 
 df_show = df[df['Status'].isin(status_selecionados)].copy()
 
-# --- ORDENAÇÃO ---
+# --- LÓGICA DE ORDENAÇÃO ---
 df_show['Conclusao_%'] = pd.to_numeric(df_show['Conclusao_%'], errors='coerce').fillna(0)
 df_show['Projeto'] = pd.to_numeric(df_show['Projeto'], errors='coerce').fillna(0)
 
+# Define True/False baseado na seleção
 eh_crescente = True if "Crescente" in direcao_sort else False
 
 if criterio_sort == "Projeto":
@@ -246,6 +225,7 @@ for i, (index, row) in enumerate(df_show.iterrows()):
         pct = int(row['Conclusao_%'])
         status_raw = str(row['Status']).strip()
         
+        # Definição das cores do card baseada no status
         if status_raw == "Finalizado":
             cor_tema, bg_badge, color_badge = "#238636", "rgba(35, 134, 54, 0.2)", "#3fb950"
         elif status_raw == "Apresentado":
