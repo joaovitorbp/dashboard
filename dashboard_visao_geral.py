@@ -23,7 +23,7 @@ st.markdown("""
         transform: translateY(-2px);
     }
 
-    /* Header e Textos */
+    /* Header */
     .tile-header { padding: 15px 15px 10px 15px; }
     .tile-title {
         color: white; font-family: "Source Sans Pro", sans-serif;
@@ -32,7 +32,8 @@ st.markdown("""
         margin-bottom: 2px;
     }
     .tile-sub { color: #8b949e; font-size: 0.75rem; font-family: "Source Sans Pro", sans-serif; }
-    
+
+    /* Metrics Strip */
     .data-strip {
         background-color: #0d1117; border-top: 1px solid #21262d; border-bottom: 1px solid #21262d;
         padding: 10px 15px; display: flex; justify-content: space-between; align-items: center;
@@ -42,6 +43,7 @@ st.markdown("""
     .data-lbl { font-size: 0.6rem; color: #8b949e; text-transform: uppercase; margin-bottom: 2px; }
     .data-val { font-size: 0.85rem; font-weight: 700; color: #e6edf3; font-family: "Source Sans Pro", sans-serif; }
 
+    /* Footer */
     .tile-footer { padding: 10px 15px; }
     .progress-track {
         background-color: #21262d; height: 4px; border-radius: 2px;
@@ -59,7 +61,7 @@ st.markdown("""
         line-height: 1; display: flex; align-items: center;
     }
 
-    /* Botão */
+    /* BOTÃO PEQUENO */
     div[data-testid="stVerticalBlockBorderWrapper"] button {
         background-color: transparent; color: #58a6ff; border: 1px solid #30363d; border-radius: 4px;
         font-size: 0.65rem !important; padding: 0px 0px !important;
@@ -86,6 +88,8 @@ st.markdown("""
 # ---------------------------------------------------------
 @st.cache_data(ttl=0)
 def load_data():
+    # Se estiver usando Github Local, mantenha assim. 
+    # Se conseguiu usar a URL Raw, substitua aqui.
     return pd.read_excel("dados_obras_v5.xlsx")
 
 try:
@@ -102,9 +106,11 @@ def clean_currency_brazil(x):
         return float(s)
     except: return 0.0
 
+# Limpeza das colunas principais
 df['Vendido'] = df['Vendido'].apply(clean_currency_brazil)
 df['Mat_Real'] = df['Mat_Real'].apply(clean_currency_brazil)
 
+# Função de formatação BR
 def formatar_valor_ptbr(valor):
     if valor >= 1_000_000:
         val = valor / 1_000_000
@@ -129,8 +135,10 @@ def calcular_dados_extras(row):
     custo = float(row['Mat_Real'] + row['Desp_Real'] + row['HH_Real_Vlr'] + row['Impostos'])
     lucro = vendido - custo
     margem = (lucro / vendido * 100) if vendido > 0 else 0
+    
     hh_orc, hh_real = float(row['HH_Orc_Qtd']), float(row['HH_Real_Qtd'])
     hh_perc = (hh_real / hh_orc * 100) if hh_orc > 0 else 0
+    
     fisico = float(row['Conclusao_%'])
     critico = False
     if margem < META_MARGEM or hh_perc > (fisico + 10):
@@ -147,6 +155,7 @@ df['HH_Progresso'] = cols_extras[2]
 # ---------------------------------------------------------
 st.title("🏢 Painel de Controle")
 
+# KPIs
 k1, k2, k3, k4 = st.columns(4)
 total_cart = df['Vendido'].sum()
 total_fat = df['Faturado'].apply(clean_currency_brazil).sum()
@@ -158,54 +167,70 @@ k4.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Margem Média</div><
 
 st.divider()
 
-# --- BARRA DE FERRAMENTAS ---
-col_filtro, col_sort_criterio, col_sort_ordem = st.columns([3, 1, 1])
+# --- CONTROLES (MÚLTIPLA SELEÇÃO E ORDENAÇÃO) ---
+col_filtro, col_sort = st.columns([3, 1])
 
 with col_filtro:
+    # 1. Filtros estilo "Toggle" Multi-seleção (Finalizado antes de Apresentado)
     status_options = ["Não iniciado", "Em andamento", "Finalizado", "Apresentado"]
+    
+    # st.pills permite seleção múltipla e parece botões/tags
     status_selecionados = st.pills(
         "Filtrar Status:", 
         status_options, 
-        selection_mode="multi",
-        default=None 
+        selection_mode="multi", 
+        default=status_options # Começa com todos marcados
     )
 
-with col_sort_criterio:
-    criterio_sort = st.selectbox(
-        "Ordenar por:", 
-        ["Projeto", "Valor Vendido", "Margem (%)", "Andamento (%)", "Criticidade"]
-    )
+with col_sort:
+    # 2. Ordenação por Projeto (Crescente/Decrescente) e removeu "Padrão"
+    opcoes_ordem = [
+        "Projeto ⬆️ (Crescente)",
+        "Projeto ⬇️ (Decrescente)",
+        "Valor ⬇️ (Maior)", 
+        "Valor ⬆️ (Menor)",
+        "Margem ⬇️ (Maior)", 
+        "Margem ⬆️ (Menor)",
+        "Andamento ⬇️ (Maior)",
+        "Andamento ⬆️ (Menor)",
+        "Criticidade"
+    ]
+    ordenar_por = st.selectbox("Ordenar por:", opcoes_ordem)
 
-with col_sort_ordem:
-    direcao_sort = st.selectbox(
-        "Ordem:", 
-        ["Decrescente", "Crescente"]
-    )
+# --- FILTRAGEM ---
+df_show = df.copy()
 
-# --- LÓGICA DE EXIBIÇÃO ---
+# Se a lista de selecionados não estiver vazia, filtra. Se vazia, mostra tudo (fallback)
+if status_selecionados:
+    df_show = df_show[df_show['Status'].isin(status_selecionados)]
 
-if not status_selecionados:
-    st.info("👆 Selecione pelo menos um status acima para visualizar os projetos.")
-    st.stop() 
-
-df_show = df[df['Status'].isin(status_selecionados)].copy()
-
-# --- LÓGICA DE ORDENAÇÃO ---
+# --- ORDENAÇÃO ---
 df_show['Conclusao_%'] = pd.to_numeric(df_show['Conclusao_%'], errors='coerce').fillna(0)
 df_show['Projeto'] = pd.to_numeric(df_show['Projeto'], errors='coerce').fillna(0)
 
-eh_crescente = True if "Crescente" in direcao_sort else False
+# Lógica de Ordenação Atualizada
+if "Projeto ⬆️" in ordenar_por:
+    df_show = df_show.sort_values(by="Projeto", ascending=True)
+elif "Projeto ⬇️" in ordenar_por:
+    df_show = df_show.sort_values(by="Projeto", ascending=False)
 
-if criterio_sort == "Projeto":
-    df_show = df_show.sort_values(by="Projeto", ascending=eh_crescente)
-elif criterio_sort == "Valor Vendido":
-    df_show = df_show.sort_values(by="Vendido", ascending=eh_crescente)
-elif criterio_sort == "Margem (%)":
-    df_show = df_show.sort_values(by="Margem_%", ascending=eh_crescente)
-elif criterio_sort == "Andamento (%)":
-    df_show = df_show.sort_values(by="Conclusao_%", ascending=eh_crescente)
-elif criterio_sort == "Criticidade":
-    df_show = df_show.sort_values(by="E_Critico", ascending=eh_crescente)
+elif "Valor ⬇️" in ordenar_por:
+    df_show = df_show.sort_values(by="Vendido", ascending=False)
+elif "Valor ⬆️" in ordenar_por:
+    df_show = df_show.sort_values(by="Vendido", ascending=True)
+
+elif "Margem ⬇️" in ordenar_por:
+    df_show = df_show.sort_values(by="Margem_%", ascending=False)
+elif "Margem ⬆️" in ordenar_por:
+    df_show = df_show.sort_values(by="Margem_%", ascending=True)
+
+elif "Andamento ⬇️" in ordenar_por:
+    df_show = df_show.sort_values(by="Conclusao_%", ascending=False)
+elif "Andamento ⬆️" in ordenar_por:
+    df_show = df_show.sort_values(by="Conclusao_%", ascending=True)
+
+elif "Criticidade" in ordenar_por:
+    df_show = df_show.sort_values(by="E_Critico", ascending=False)
 
 st.write(f"**{len(df_show)}** projetos encontrados")
 st.write("")
@@ -221,6 +246,7 @@ for i, (index, row) in enumerate(df_show.iterrows()):
         pct = int(row['Conclusao_%'])
         status_raw = str(row['Status']).strip()
         
+        # Cores
         if status_raw == "Finalizado":
             cor_tema, bg_badge, color_badge = "#238636", "rgba(35, 134, 54, 0.2)", "#3fb950"
         elif status_raw == "Apresentado":
@@ -240,6 +266,7 @@ for i, (index, row) in enumerate(df_show.iterrows()):
         pct_mat = (mat_real / mat_orc * 100) if mat_orc > 0 else 0
         cor_mat = "#da3633" if pct_mat > 100 else "#e6edf3"
         
+        # Formatação Valor
         valor_formatado = formatar_valor_ptbr(row['Vendido'])
         
         with st.container(border=True):
