@@ -93,9 +93,11 @@ st.markdown("""
     
     .footer-row {
         display: flex;
-        justify-content: space-between; /* Garante badge na esq e % na dir */
-        align-items: center;
+        justify-content: space-between;
+        align-items: center; /* <--- ISSO GARANTE O CENTRO VERTICAL */
+        height: 20px; /* Altura fixa para garantir estabilidade */
     }
+    
     .badge-status {
         font-size: 0.65rem;
         font-weight: 700;
@@ -103,32 +105,30 @@ st.markdown("""
         padding: 2px 8px;
         border-radius: 4px;
         letter-spacing: 0.5px;
+        line-height: 1.2;
     }
     
-    /* Porcentagem na direita */
+    /* Novo estilo para a porcentagem */
     .footer-pct {
-        font-size: 0.75rem;
+        font-size: 0.8rem;
         font-weight: 700;
         font-family: "Source Sans Pro", sans-serif;
+        line-height: 1; /* Remove espaço vertical extra */
+        display: flex;
+        align-items: center;
     }
 
-    /* --- BOTÃO MICRO (Link Style) --- */
+    /* --- BOTÃO (Link Style) --- */
     div[data-testid="stVerticalBlockBorderWrapper"] button {
         background-color: transparent;
         color: #58a6ff;
         border: 1px solid transparent;
         border-radius: 4px;
-        
-        /* Ajustes para ficar PEQUENO */
-        font-size: 0.65rem !important;
-        padding: 0px 8px !important;
-        height: 22px !important;
-        min-height: 22px !important;
-        line-height: 1 !important;
-        
+        font-size: 0.75rem;
+        padding: 4px 10px;
+        height: auto;
+        min-height: 0px;
         margin: 0;
-        width: 100%;
-        float: right;
     }
     div[data-testid="stVerticalBlockBorderWrapper"] button:hover {
         background-color: #1f242c;
@@ -263,7 +263,6 @@ for index, row in df_show.iterrows():
         with st.container(border=True):
             
             # 1. Título e Cliente (Header Limpo)
-            # A cor da borda esquerda indica o status discretamente
             st.markdown(f"""
             <div class="tile-header" style="border-left: 3px solid {cor_tema}">
                 <div class="tile-title" title="{row['Projeto']} - {row['Descricao']}">{row['Projeto']} - {row['Descricao']}</div>
@@ -272,7 +271,6 @@ for index, row in df_show.iterrows():
             """, unsafe_allow_html=True)
 
             # 2. Faixa de Dados (Data Strip)
-            # 4 Colunas compactas na horizontal
             st.markdown(f"""
             <div class="data-strip">
                 <div class="data-col">
@@ -294,7 +292,7 @@ for index, row in df_show.iterrows():
             </div>
             """, unsafe_allow_html=True)
 
-            # 3. Rodapé (Progresso + Badge + Botão Texto)
+            # 3. Rodapé (Progresso + Linha Inferior com Badge e %)
             st.markdown(f"""
             <div class="tile-footer">
                 <div class="progress-track">
@@ -307,7 +305,7 @@ for index, row in df_show.iterrows():
             </div>
             """, unsafe_allow_html=True)
 
-            # Botão de Ação (Abaixo, alinhado à direita nativamente pelo Streamlit)
+            # Botão de Ação
             col_spacer, col_btn = st.columns([2, 1])
             with col_btn:
                 if st.button("Abrir ↗", key=f"btn_{row['Projeto']}", use_container_width=True):
