@@ -17,6 +17,9 @@ st.markdown("""
         border-radius: 8px;
         padding: 0px !important;
         transition: transform 0.2s;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
     }
     [data-testid="stVerticalBlockBorderWrapper"]:hover {
         border-color: #58a6ff;
@@ -80,14 +83,22 @@ st.markdown("""
         background-color: #21262d;
         height: 4px;
         width: 100%;
-        margin-top: 10px; /* Espaço entre Data Strip e Barra */
-        margin-bottom: 5px;
+        margin-top: 10px; 
+        margin-bottom: 8px;
         overflow: hidden;
     }
     .progress-fill { height: 100%; }
 
     /* --- RODAPÉ --- */
-    /* Badge Esquerda */
+    
+    /* Wrapper do Badge para travar no canto esquerdo */
+    .badge-wrapper {
+        display: flex;
+        align-items: flex-end; /* Alinha com o fundo do botão */
+        height: 100%;
+        padding-bottom: 2px;
+    }
+
     .badge-status {
         font-size: 0.6rem;
         font-weight: 700;
@@ -103,7 +114,7 @@ st.markdown("""
         font-size: 0.8rem;
         font-weight: 700;
         text-align: right;
-        margin-bottom: 2px;
+        margin-bottom: 4px;
         font-family: "Source Sans Pro", sans-serif;
         line-height: 1;
     }
@@ -213,7 +224,7 @@ st.write(f"**{len(df_show)}** projetos encontrados")
 st.write("")
 
 # ---------------------------------------------------------
-# 5. GRID DE CARDS (TILES V3)
+# 5. GRID DE CARDS
 # ---------------------------------------------------------
 cols = st.columns(3)
 
@@ -253,7 +264,7 @@ for index, row in df_show.iterrows():
         cor_horas = "#da3633" if pct_horas > 100 else "#e6edf3"
         cor_mat = "#da3633" if pct_mat > 100 else "#e6edf3"
         
-        # --- CARD ---
+        # --- CARD CONTAINER ---
         with st.container(border=True):
             
             # 1. Header
@@ -286,8 +297,7 @@ for index, row in df_show.iterrows():
             </div>
             """, unsafe_allow_html=True)
 
-            # 3. Barra de Progresso (Full Width no Card)
-            # Colocamos um padding lateral pequeno para alinhar com o resto
+            # 3. Barra de Progresso
             st.markdown(f"""
             <div style="padding: 0 15px;">
                 <div class="progress-track">
@@ -296,24 +306,23 @@ for index, row in df_show.iterrows():
             </div>
             """, unsafe_allow_html=True)
 
-            # 4. Rodapé Dividido: Badge (Esq) | Porcentagem + Botão (Dir)
-            c_badge, c_space, c_actions = st.columns([3, 0.5, 1.5], vertical_alignment="bottom")
+            # 4. Rodapé (Badge Esq | Ações Dir)
+            c_badge, c_space, c_actions = st.columns([2.8, 0.2, 1], vertical_alignment="bottom")
             
             with c_badge:
+                # Badge no canto inferior esquerdo
                 st.markdown(f"""
-                <div style="padding-left: 10px; padding-bottom: 5px;">
+                <div class="badge-wrapper">
                     <span class="badge-status" style="background-color: {bg_badge}; color: {color_badge}">{status_raw}</span>
                 </div>
                 """, unsafe_allow_html=True)
                 
             with c_actions:
-                # Texto % alinhado à direita, logo acima do botão
-                st.markdown(f"""
-                <div class="pct-text" style="color: {color_badge};">{pct}%</div>
-                """, unsafe_allow_html=True)
+                # % em cima, botão em baixo
+                st.markdown(f"""<div class="pct-text" style="color: {color_badge};">{pct}%</div>""", unsafe_allow_html=True)
                 
                 if st.button("Abrir ↗", key=f"btn_{row['Projeto']}", use_container_width=True):
                     st.session_state["projeto_foco"] = row['Projeto']
                     st.switch_page("dashboard_detalhado.py")
             
-            st.write("") # Respiro final
+            st.write("") # Respiro
