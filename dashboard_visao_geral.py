@@ -150,11 +150,22 @@ st.divider()
 # --- CONTROLES ---
 col_filtro, col_sort = st.columns([3, 1])
 with col_filtro:
-    status_options = ["Todas", "Não iniciado", "Em andamento", "Apresentado", "Finalizado", "🚨 Críticas"]
+    # FILTRO "CRÍTICAS" REMOVIDO DAQUI
+    status_options = ["Todas", "Não iniciado", "Em andamento", "Apresentado", "Finalizado"]
     filtro_status = st.radio("Visualização:", status_options, horizontal=True)
 
 with col_sort:
-    opcoes_ordem = ["Padrão", "Valor (Maior ➜ Menor)", "Margem (Menor ➜ Maior)", "Criticidade (Críticos 1º)", "Andamento (Mais ➜ Menos)"]
+    # ORDENAÇÃO BIDIRECIONAL ADICIONADA
+    opcoes_ordem = [
+        "Padrão", 
+        "Valor ⬇️ (Maior ➜ Menor)", 
+        "Valor ⬆️ (Menor ➜ Maior)",
+        "Margem ⬇️ (Maior ➜ Menor)", 
+        "Margem ⬆️ (Menor ➜ Maior)",
+        "Andamento ⬇️ (Maior ➜ Menor)",
+        "Andamento ⬆️ (Menor ➜ Maior)",
+        "Criticidade (Críticos 1º)"
+    ]
     ordenar_por = st.selectbox("Ordenar por:", opcoes_ordem)
 
 # --- FILTRAGEM ---
@@ -168,32 +179,38 @@ elif filtro_status == "Apresentado":
     df_show = df_show[df_show['Status'] == 'Apresentado']
 elif filtro_status == "Finalizado":
     df_show = df_show[df_show['Status'] == 'Finalizado']
-elif filtro_status == "🚨 Críticas":
-    df_show = df_show[df_show['E_Critico'] == True]
 
 # --- ORDENAÇÃO ---
-# Converter colunas extras para numérico antes de ordenar
 df_show['Conclusao_%'] = pd.to_numeric(df_show['Conclusao_%'], errors='coerce').fillna(0)
 
-if ordenar_por == "Valor (Maior ➜ Menor)":
+# Lógica bidirecional
+if ordenar_por == "Valor ⬇️ (Maior ➜ Menor)":
     df_show = df_show.sort_values(by="Vendido", ascending=False)
-elif ordenar_por == "Margem (Menor ➜ Maior)":
+elif ordenar_por == "Valor ⬆️ (Menor ➜ Maior)":
+    df_show = df_show.sort_values(by="Vendido", ascending=True)
+
+elif ordenar_por == "Margem ⬇️ (Maior ➜ Menor)":
+    df_show = df_show.sort_values(by="Margem_%", ascending=False)
+elif ordenar_por == "Margem ⬆️ (Menor ➜ Maior)":
     df_show = df_show.sort_values(by="Margem_%", ascending=True)
+
+elif ordenar_por == "Andamento ⬇️ (Maior ➜ Menor)":
+    df_show = df_show.sort_values(by="Conclusao_%", ascending=False)
+elif ordenar_por == "Andamento ⬆️ (Menor ➜ Maior)":
+    df_show = df_show.sort_values(by="Conclusao_%", ascending=True)
+
 elif ordenar_por == "Criticidade (Críticos 1º)":
     df_show = df_show.sort_values(by="E_Critico", ascending=False)
-elif ordenar_por == "Andamento (Mais ➜ Menos)":
-    df_show = df_show.sort_values(by="Conclusao_%", ascending=False)
 
 st.write(f"**{len(df_show)}** projetos encontrados")
 st.write("")
 
 # ---------------------------------------------------------
-# 5. GRID DE CARDS (CORRIGIDO PARA ORDENAÇÃO)
+# 5. GRID DE CARDS
 # ---------------------------------------------------------
 cols = st.columns(3)
 
-# *** MUDANÇA CRUCIAL AQUI: 'enumerate' cria um contador visual (i) 
-# que ignora o índice original do Excel. Isso conserta a ordem visual. ***
+# 'enumerate' garante que a ordem visual siga a ordem do df_show classificado
 for i, (index, row) in enumerate(df_show.iterrows()):
     with cols[i % 3]:
         
