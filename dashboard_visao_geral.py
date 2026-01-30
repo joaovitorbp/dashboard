@@ -59,7 +59,7 @@ st.markdown("""
         line-height: 1; display: flex; align-items: center;
     }
 
-    /* Botão */
+    /* Botão Abrir */
     div[data-testid="stVerticalBlockBorderWrapper"] button {
         background-color: transparent; color: #58a6ff; border: 1px solid #30363d; border-radius: 4px;
         font-size: 0.65rem !important; padding: 0px 0px !important;
@@ -78,6 +78,30 @@ st.markdown("""
     }
     .big-kpi-val { font-size: 1.8rem; font-weight: bold; color: white; font-family: "Source Sans Pro", sans-serif; }
     .big-kpi-lbl { font-size: 0.9rem; color: #8b949e; font-family: "Source Sans Pro", sans-serif; }
+
+    /* --- ESTILO PERSONALIZADO DOS FILTROS (PILLS) --- */
+    
+    /* 1. Item NÃO selecionado (Cinza Escuro) */
+    div[data-testid="stPills"] button {
+        background-color: #161b22 !important;
+        border: 1px solid #30363d !important;
+        color: #8b949e !important;
+        transition: all 0.2s ease;
+    }
+    
+    /* 2. Hover (Passar o mouse) */
+    div[data-testid="stPills"] button:hover {
+        border-color: #58a6ff !important;
+        color: #58a6ff !important;
+    }
+
+    /* 3. Item SELECIONADO (AZUL ESCURO) */
+    div[data-testid="stPills"] button[aria-selected="true"] {
+        background-color: #0d47a1 !important; /* Azul Escuro */
+        border-color: #1f6feb !important;      /* Borda Azul Clara */
+        color: #ffffff !important;             /* Texto Branco */
+        font-weight: bold !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -162,12 +186,13 @@ st.divider()
 col_filtro, col_sort_criterio, col_sort_ordem = st.columns([3, 1, 1])
 
 with col_filtro:
-    # VOLTANDO PARA O MULTISELECT (MAIS RÁPIDO E FLUIDO)
     status_options = ["Não iniciado", "Em andamento", "Finalizado", "Apresentado"]
-    status_selecionados = st.multiselect(
+    # ST.PILLS: O visual que você gosta (botões em linha)
+    status_selecionados = st.pills(
         "Filtrar Status:", 
-        options=status_options,
-        placeholder="Selecione os status..."
+        status_options, 
+        selection_mode="multi",
+        default=status_options # Começa com todos marcados
     )
 
 with col_sort_criterio:
@@ -183,14 +208,14 @@ with col_sort_ordem:
     )
 
 # --- LÓGICA DE EXIBIÇÃO ---
-
+# Se nada selecionado, mostra aviso
 if not status_selecionados:
     st.info("👆 Selecione pelo menos um status acima para visualizar os projetos.")
     st.stop() 
 
 df_show = df[df['Status'].isin(status_selecionados)].copy()
 
-# --- LÓGICA DE ORDENAÇÃO ---
+# --- ORDENAÇÃO ---
 df_show['Conclusao_%'] = pd.to_numeric(df_show['Conclusao_%'], errors='coerce').fillna(0)
 df_show['Projeto'] = pd.to_numeric(df_show['Projeto'], errors='coerce').fillna(0)
 
