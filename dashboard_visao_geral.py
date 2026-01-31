@@ -4,12 +4,27 @@ import pandas as pd
 # ---------------------------------------------------------
 # 1. CONFIGURAÇÃO VISUAL
 # ---------------------------------------------------------
+st.set_page_config(page_title="Dashboard TE", layout="wide")
+
 st.markdown("""
 <style>
     .stApp {background-color: #0e1117;}
     .block-container {padding-top: 2rem;}
 
-    /* Cards - Fundo e Borda */
+    /* --- NOVO CSS DOS KPIS (CABEÇALHO) --- */
+    .kpi-card {
+        background-color: #161b22; 
+        border: 1px solid #30363d; 
+        border-radius: 8px; 
+        padding: 15px;
+        height: 100%;
+        display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .kpi-title { color: #8b949e; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+    .kpi-val { font-size: 1.5rem; font-weight: 700; color: white; font-family: "Source Sans Pro", sans-serif; }
+    .kpi-sub { font-size: 0.75rem; color: #8b949e; margin-top: 5px; }
+
+    /* --- CSS ORIGINAL DOS CARDS DE PROJETO (MANTIDO INTACTO) --- */
     [data-testid="stVerticalBlockBorderWrapper"] {
         background-color: #161b22;
         border: 1px solid #30363d;
@@ -72,22 +87,12 @@ st.markdown("""
     }
     div[data-testid="column"] { padding: 0 8px; }
 
-    /* KPIs Globais (Topo) */
-    .big-kpi {
-        background-color: #161b22; padding: 15px; border-radius: 8px;
-        border: 1px solid #30363d; text-align: center;
-    }
-    .big-kpi-val { font-size: 1.8rem; font-weight: bold; color: white; font-family: "Source Sans Pro", sans-serif; }
-    .big-kpi-lbl { font-size: 0.9rem; color: #8b949e; font-family: "Source Sans Pro", sans-serif; }
-
-/* --- Customização das Tags do Multiselect (Cinza Neutro + Texto Branco) --- */
+    /* Customização das Tags do Multiselect (Cinza Neutro + Texto Branco) */
     span[data-baseweb="tag"] {
-        background-color: #30363d !important; /* Fundo Cinza Neutro */
-        color: white !important;              /* Texto Branco */
-        border: 1px solid #8b949e;            /* Borda sutil */
+        background-color: #30363d !important;
+        color: white !important;
+        border: 1px solid #8b949e;
     }
-    
-    /* Cor do X para fechar a tag */
     span[data-baseweb="tag"] svg {
         fill: white !important;
     }
@@ -102,7 +107,7 @@ def load_data():
     return pd.read_excel("dados_obras_v5.xlsx")
 
 try:
-    df = load_data()
+    df_raw = load_data()
 except FileNotFoundError:
     st.error("⚠️ Base de dados 'dados_obras_v5.xlsx' não encontrada.")
     st.stop()
@@ -116,8 +121,11 @@ def clean_currency_brazil(x):
         return float(s)
     except: return 0.0
 
-df['Vendido'] = df['Vendido'].apply(clean_currency_brazil)
-df['Mat_Real'] = df['Mat_Real'].apply(clean_currency_brazil)
+# Limpeza nas colunas monetárias
+cols_monetarias = ['Vendido', 'Mat_Real', 'Desp_Real', 'HH_Real_Vlr', 'Impostos', 'Mat_Orc']
+for col in cols_monetarias:
+    if col in df_raw.columns:
+        df_raw[col] = df_raw[col].apply(clean_currency_brazil)
 
 def formatar_valor_ptbr(valor):
     if valor >= 1_000_000:
@@ -134,8 +142,37 @@ def formatar_valor_ptbr(valor):
         return f"{valor:,.0f}".replace(",", ".")
 
 # ---------------------------------------------------------
-# 3. CÁLCULOS
+# 3. LÓGICA DE NEGÓCIO (FIXOS vs OBRAS)
 # ---------------------------------------------------------
+# Separação dos projetos de custo fixo
+IDS_FIXOS = [5009.2025, 5010.2025, 5011.2025]
+
+df_fixos = df_raw[df_raw['Projeto'].isin(IDS_FIXOS)].copy()
+df = df_raw[~df_raw['Projeto'].isin(IDS_FIXOS)].copy() # df agora contém APENAS obras produtivas
+
+# Função para calcular custo total (Mat + Desp + HH + Impostos)
+def get_custo_total(row):
+    return row['Mat_Real'] + row['Desp_Real'] + row['HH_Real_Vlr'] + row['Impostos']
+
+# Totais Globais
+custo_fixo_total = df_fixos.apply(get_custo_total, axis=1).sum()
+custo_obras_total = df.apply(get_custo_total, axis=1).sum()
+valor_vendido_total = df['Vendido'].sum()
+
+# Lucro Líquido Real = Vendas - (Custo Obras + Custo Fixos)
+lucro_real_total = valor_vendido_total - (custo_obras_total + custo_fixo_total)
+
+# Dados de Pipeline (Projetos Apresentados)
+df_apresentado = df[df['Status'] == 'Apresentado']
+valor_apresentado = df_apresentado['Vendido'].sum()
+
+# Margem média do pipeline
+def calc_margem_orcada(row):
+    custo_est = row['Mat_Orc'] # Estimativa simples baseada no material orçado
+    return ((row['Vendido'] - custo_est) / row['Vendido'] * 100) if row['Vendido'] > 0 else 0
+margem_media_apresentado = df_apresentado.apply(calc_margem_orcada, axis=1).mean() if not df_apresentado.empty else 0
+
+# --- CÁLCULOS POR PROJETO (GRID) ---
 META_MARGEM = 20.0
 
 def calcular_dados_extras(row):
@@ -146,34 +183,98 @@ def calcular_dados_extras(row):
     hh_orc, hh_real = float(row['HH_Orc_Qtd']), float(row['HH_Real_Qtd'])
     hh_perc = (hh_real / hh_orc * 100) if hh_orc > 0 else 0
     fisico = float(row['Conclusao_%'])
+    
     critico = False
-    if margem < META_MARGEM or hh_perc > (fisico + 10):
+    if (margem < META_MARGEM and row['Status'] != 'Apresentado') or (hh_perc > fisico + 10):
         critico = True
     return pd.Series([margem, critico, hh_perc])
 
+# Aplica cálculos no dataframe principal (Obras)
 cols_extras = df.apply(calcular_dados_extras, axis=1)
 df['Margem_%'] = cols_extras[0]
 df['E_Critico'] = cols_extras[1]
 df['HH_Progresso'] = cols_extras[2]
 
+# --- METAS ANUAIS ---
+META_VENDAS_ANO = 5000000.00
+META_LUCRO_ANO = 1000000.00
+
 # ---------------------------------------------------------
-# 4. INTERFACE
+# 4. INTERFACE - CABEÇALHO (ATUALIZADO)
 # ---------------------------------------------------------
 st.title("Dashboard de Resultados")
 
-# KPIs Globais
-k1, k2, k3, k4 = st.columns(4)
-total_cart = df['Vendido'].sum()
-total_fat = df['Faturado'].apply(clean_currency_brazil).sum()
+# Grid de KPIs atualizado
+col1, col2, col3, col4 = st.columns(4)
 
-k1.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Total Carteira</div><div class='big-kpi-val'>R$ {formatar_valor_ptbr(total_cart)}</div></div>", unsafe_allow_html=True)
-k2.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Faturamento</div><div class='big-kpi-val'>R$ {formatar_valor_ptbr(total_fat)}</div></div>", unsafe_allow_html=True)
-k3.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Obras Ativas</div><div class='big-kpi-val'>{len(df[df['Status']=='Em andamento'])}</div></div>", unsafe_allow_html=True)
-k4.markdown(f"<div class='big-kpi'><div class='big-kpi-lbl'>Margem Média</div><div class='big-kpi-val'>{df['Margem_%'].mean():.1f}%</div></div>", unsafe_allow_html=True)
+# CARD 1: META DE VENDAS
+pct_v = min((valor_vendido_total / META_VENDAS_ANO), 1.0)
+with col1:
+    st.markdown(f"""
+    <div class="kpi-card" style="border-left: 3px solid #58a6ff;">
+        <div>
+            <div class="kpi-title">Valor Vendido (Ano)</div>
+            <div class="kpi-val">{formatar_valor_ptbr(valor_vendido_total)}</div>
+        </div>
+        <div class="kpi-sub">
+            Meta: {formatar_valor_ptbr(META_VENDAS_ANO)} ({pct_v*100:.0f}%)
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    st.progress(pct_v)
+
+# CARD 2: META DE LUCRO
+pct_l = max(min((lucro_real_total / META_LUCRO_ANO), 1.0), 0.0)
+cor_lucro = "#3fb950" if lucro_real_total > 0 else "#da3633"
+with col2:
+    st.markdown(f"""
+    <div class="kpi-card" style="border-left: 3px solid {cor_lucro};">
+        <div>
+            <div class="kpi-title">Lucro Líquido Real</div>
+            <div class="kpi-val" style="color: {cor_lucro}">{formatar_valor_ptbr(lucro_real_total)}</div>
+        </div>
+        <div class="kpi-sub">
+            Meta: {formatar_valor_ptbr(META_LUCRO_ANO)} ({pct_l*100:.0f}%)
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    st.progress(pct_l)
+
+# CARD 3: PIPELINE (APRESENTADO)
+with col3:
+    st.markdown(f"""
+    <div class="kpi-card" style="border-left: 3px solid #a371f7;">
+        <div>
+            <div class="kpi-title">Propostas (Apresentado)</div>
+            <div class="kpi-val">{formatar_valor_ptbr(valor_apresentado)}</div>
+        </div>
+        <div class="kpi-sub" style="display:flex; justify-content:space-between;">
+            <span>Qtd: {len(df_apresentado)}</span>
+            <span style="color:#a371f7; font-weight:bold">Mg: {margem_media_apresentado:.1f}%</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# CARD 4: CUSTOS FIXOS
+with col4:
+    st.markdown(f"""
+    <div class="kpi-card" style="border-left: 3px solid #d29922;">
+        <div>
+            <div class="kpi-title">Custos Estruturais</div>
+            <div class="kpi-val">{formatar_valor_ptbr(custo_fixo_total)}</div>
+        </div>
+        <div class="kpi-sub">
+            Ferramental, Comercial e Interno<br>
+            <span style="font-style:italic; opacity:0.7">(Já descontado do lucro)</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.divider()
 
-# --- BARRA DE FERRAMENTAS ---
+# ---------------------------------------------------------
+# 5. BARRA DE FERRAMENTAS E GRID (MANTIDOS)
+# ---------------------------------------------------------
 col_filtro, col_sort_criterio, col_sort_ordem = st.columns([3, 1, 1])
 
 with col_filtro:
@@ -225,7 +326,7 @@ st.write(f"**{len(df_show)}** projetos encontrados")
 st.write("")
 
 # ---------------------------------------------------------
-# 5. GRID DE CARDS
+# 6. GRID DE CARDS (VISUAL ORIGINAL PRESERVADO)
 # ---------------------------------------------------------
 cols = st.columns(3)
 
