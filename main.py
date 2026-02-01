@@ -4,10 +4,10 @@ import streamlit as st
 st.set_page_config(page_title="Portal TE Engenharia", layout="wide", page_icon="🏗️")
 
 # Definição do Menu de Navegação
-# Removi a página de admin daqui
 pg = st.navigation([
     st.Page("dashboard_visao_geral.py", title="Visão Geral", icon="🏢"),
     st.Page("dashboard_detalhado.py", title="Detalhamento de Obra", icon="📝"),
+    st.Page("configuracoes.py", title="Configurações", icon="⚙️"),
 ])
 
 # Executa a navegação
