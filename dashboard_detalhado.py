@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 # ---------------------------------------------------------
-# 1. ESTILO CSS (CORRIGIDO PARA NÃO CORTAR O TOPO)
+# 1. ESTILO CSS
 # ---------------------------------------------------------
 st.set_page_config(page_title="Detalhes da Obra", layout="wide")
 
@@ -11,48 +11,42 @@ st.markdown("""
 <style>
     .stApp {background-color: #0e1117;}
     
-    /* Aumentei o padding superior para evitar cortes */
+    /* Padding ajustado para não cortar cards */
     .block-container {padding-top: 3rem; padding-bottom: 3rem;}
     
     .js-plotly-plot .plotly .modebar {display: none !important;}
 
-    /* --- LAYOUT DOS CARDS (IGUAL VISÃO GERAL) --- */
+    /* --- LAYOUT DOS CARDS --- */
     .kpi-card {
         background-color: #161b22; 
         border: 1px solid #30363d; 
         border-radius: 10px; 
         padding: 20px 15px;
         height: 100%;
-        display: flex; flex-direction: column; justify-content: space-between; align-items: center;
+        display: flex; flex-direction: column; justify-content: center; align-items: center;
         text-align: center;
-        min-height: 130px;
+        min-height: 120px; /* Altura um pouco menor sem o rodapé */
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
     
     .kpi-title { 
         color: #8b949e; font-size: 0.8rem; text-transform: uppercase; 
-        letter-spacing: 1px; font-weight: 600; margin-bottom: 8px;
+        letter-spacing: 1px; font-weight: 600; margin-bottom: 10px;
     }
     
     .kpi-val { 
         font-size: 1.8rem; font-weight: 800; color: white; 
-        font-family: "Source Sans Pro", sans-serif; margin-bottom: 8px;
-    }
-    
-    .kpi-sub { 
-        font-size: 0.75rem; color: #8b949e; width: 100%;
-        border-top: 1px solid #21262d;
-        padding-top: 8px; margin-top: auto;
+        font-family: "Source Sans Pro", sans-serif; margin: 0;
     }
 
-    /* --- CABEÇALHO DO PROJETO (AJUSTADO) --- */
+    /* --- CABEÇALHO DO PROJETO --- */
     .header-box {
         background-color: #161b22;
         border: 1px solid #30363d;
         border-radius: 10px;
-        padding: 25px; /* Mais espaço interno */
+        padding: 25px;
         margin-bottom: 20px;
-        margin-top: 10px; /* Margem extra no topo */
+        margin-top: 10px;
         display: flex; justify-content: space-between; align-items: center;
         box-shadow: 0 4px 6px rgba(0,0,0,0.2);
     }
@@ -120,16 +114,16 @@ META_MARGEM = 25.0
 # Definição de Cores Padronizadas
 status = dados['Status']
 if status == "Finalizado":
-    cor_status, bg_status = "#3fb950", "rgba(63, 185, 80, 0.2)" # Verde
+    cor_status, bg_status = "#3fb950", "rgba(63, 185, 80, 0.2)"
 elif status == "Apresentado":
-    cor_status, bg_status = "#a371f7", "rgba(163, 113, 247, 0.2)" # Roxo
+    cor_status, bg_status = "#a371f7", "rgba(163, 113, 247, 0.2)"
 elif status == "Em andamento":
-    cor_status, bg_status = "#d29922", "rgba(210, 153, 34, 0.2)" # Laranja
+    cor_status, bg_status = "#d29922", "rgba(210, 153, 34, 0.2)"
 else:
-    cor_status, bg_status = "#da3633", "rgba(218, 54, 51, 0.2)" # Vermelho
+    cor_status, bg_status = "#da3633", "rgba(218, 54, 51, 0.2)"
 
 # ---------------------------------------------------------
-# CABEÇALHO (ESTILO NOVO)
+# CABEÇALHO
 # ---------------------------------------------------------
 st.markdown(f"""
 <div class="header-box" style="border-left: 5px solid {cor_status};">
@@ -146,31 +140,29 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# KPI CARDS (ESTILO NOVO - VISÃO GERAL)
+# KPI CARDS (LIMPOS)
 # ---------------------------------------------------------
 k1, k2, k3, k4 = st.columns(4)
 
-# Card 1: Vendido (Azul)
+# Card 1: Vendido
 with k1:
     st.markdown(f"""
     <div class="kpi-card" style="border-top: 4px solid #58a6ff;">
         <div class="kpi-title">Valor Vendido</div>
         <div class="kpi-val">{format_currency(dados['Vendido'])}</div>
-        <div class="kpi-sub">Valor de Contrato</div>
     </div>
     """, unsafe_allow_html=True)
 
-# Card 2: Faturado (Verde)
+# Card 2: Faturado
 with k2:
     st.markdown(f"""
     <div class="kpi-card" style="border-top: 4px solid #3fb950;">
         <div class="kpi-title">Valor Faturado</div>
         <div class="kpi-val">{format_currency(dados['Faturado'])}</div>
-        <div class="kpi-sub">Receita Emitida</div>
     </div>
     """, unsafe_allow_html=True)
 
-# Card 3: Lucro (Dinâmico)
+# Card 3: Lucro
 cor_lucro = "txt-green" if lucro_liquido > 0 else "txt-red"
 border_lucro = "#3fb950" if lucro_liquido > 0 else "#da3633"
 with k3:
@@ -178,11 +170,10 @@ with k3:
     <div class="kpi-card" style="border-top: 4px solid {border_lucro};">
         <div class="kpi-title">Lucro Líquido</div>
         <div class="kpi-val {cor_lucro}">{format_currency(lucro_liquido)}</div>
-        <div class="kpi-sub">Resultado Real</div>
     </div>
     """, unsafe_allow_html=True)
 
-# Card 4: Margem (Dinâmico)
+# Card 4: Margem
 cor_margem = "txt-green" if margem_real_pct >= META_MARGEM else "txt-red"
 border_margem = "#3fb950" if margem_real_pct >= META_MARGEM else "#da3633"
 with k4:
@@ -190,7 +181,6 @@ with k4:
     <div class="kpi-card" style="border-top: 4px solid {border_margem};">
         <div class="kpi-title">Margem %</div>
         <div class="kpi-val {cor_margem}">{format_percent(margem_real_pct)}</div>
-        <div class="kpi-sub">Meta: {META_MARGEM:.0f}%</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -208,7 +198,7 @@ with st.container(border=True):
     with col_gauges:
         fig_gauge = go.Figure()
 
-        # Gauge 1: Físico (Verde)
+        # Gauge 1: Físico
         fig_gauge.add_trace(go.Indicator(
             mode = "gauge+number", value = dados['Conclusao_%'],
             title = {'text': "Avanço Físico", 'font': {'size': 14, 'color': '#8b949e'}},
@@ -221,12 +211,10 @@ with st.container(border=True):
             }
         ))
 
-        # Gauge 2: Horas (Dinâmico)
+        # Gauge 2: Horas
         hh_orc = dados['HH_Orc_Qtd']
         hh_real = dados['HH_Real_Qtd']
         perc_hh = (hh_real / hh_orc * 100) if hh_orc > 0 else 0
-        
-        # Lógica de cor HH: Se gastou muito mais que o físico = Vermelho, senão Laranja/Azul
         cor_hh = "#da3633" if perc_hh > (dados['Conclusao_%'] + 10) else "#58a6ff"
 
         fig_gauge.add_trace(go.Indicator(
@@ -326,7 +314,6 @@ st.subheader("🔎 Detalhamento de Custos")
 
 def plot_row_fixed(titulo, orcado, real):
     pct = (real / orcado * 100) if orcado > 0 else 0
-    # Se real > orçado (estourou) = Vermelho, senão Azul
     cor_real = "#da3633" if real > orcado else "#58a6ff"
     
     fig = go.Figure()
