@@ -21,7 +21,7 @@ st.markdown("""
         display: flex; flex-direction: column; justify-content: space-between; align-items: center;
         text-align: center;
         min-height: 130px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
     
     /* Título no Topo (Menor e Discreto) */
@@ -180,11 +180,11 @@ META_MARGEM = 25.0
 # ---------------------------------------------------------
 st.title("Dashboard de Resultados")
 
-# LINHA 1: Volume Financeiro (3 Cards)
+# LINHA 1: Volume Financeiro (3 Cards Coloridos)
 st.markdown("### 📊 Indicadores de Volume (Financeiro)")
 row1_c1, row1_c2, row1_c3 = st.columns(3)
 
-# CARD 1.1: VALOR VENDIDO
+# CARD 1.1: VALOR VENDIDO (Azul)
 pct_meta_venda = (valor_vendido_total / META_VENDAS * 100)
 with row1_c1:
     st.markdown(f"""
@@ -198,7 +198,7 @@ with row1_c1:
     </div>
     """, unsafe_allow_html=True)
 
-# CARD 1.2: VALOR CONCLUÍDO
+# CARD 1.2: VALOR CONCLUÍDO (Verde)
 pct_concluido_carteira = (valor_concluido / valor_vendido_total * 100) if valor_vendido_total > 0 else 0
 pct_meta_concluido = (valor_concluido / META_VENDAS * 100)
 with row1_c2:
@@ -213,7 +213,7 @@ with row1_c2:
     </div>
     """, unsafe_allow_html=True)
 
-# CARD 1.3: CUSTOS INTERNOS
+# CARD 1.3: CUSTOS INTERNOS (Laranja)
 with row1_c3:
     st.markdown(f"""
     <div class="kpi-card" style="border-top: 4px solid #d29922;">
@@ -225,15 +225,15 @@ with row1_c3:
     </div>
     """, unsafe_allow_html=True)
 
-# LINHA 2: Eficiência e Margens (4 Cards)
+# LINHA 2: Eficiência e Margens (4 Cards Neutros)
 st.markdown("### 📈 Indicadores de Eficiência (Margens & Status)")
 row2_c1, row2_c2, row2_c3, row2_c4 = st.columns(4)
 
-# CARD 2.1: MARGEM TOTAL
+# CARD 2.1: MARGEM TOTAL (Borda Cinza)
 cor_m_geral = "txt-green" if mg_geral >= META_MARGEM else "txt-red"
 with row2_c1:
     st.markdown(f"""
-    <div class="kpi-card" style="border-top: 4px solid #58a6ff;">
+    <div class="kpi-card" style="border-top: 4px solid #8b949e;">
         <div class="kpi-title">Margem total</div>
         <div class="kpi-val {cor_m_geral}">{mg_geral:.1f}%</div>
         <div class="kpi-sub">
@@ -242,11 +242,11 @@ with row2_c1:
     </div>
     """, unsafe_allow_html=True)
 
-# CARD 2.2: MARGEM CONCLUÍDA
+# CARD 2.2: MARGEM CONCLUÍDA (Borda Cinza)
 cor_m_conc = "txt-green" if mg_concluida >= META_MARGEM else "txt-red"
 with row2_c2:
     st.markdown(f"""
-    <div class="kpi-card" style="border-top: 4px solid #3fb950;">
+    <div class="kpi-card" style="border-top: 4px solid #8b949e;">
         <div class="kpi-title">Margem concluída</div>
         <div class="kpi-val {cor_m_conc}">{mg_concluida:.1f}%</div>
         <div class="kpi-sub">
@@ -255,11 +255,11 @@ with row2_c2:
     </div>
     """, unsafe_allow_html=True)
 
-# CARD 2.3: MARGEM LÍQUIDA
+# CARD 2.3: MARGEM LÍQUIDA (Borda Cinza)
 cor_m_liq = "txt-green" if mg_liquida_pos_adm >= (META_MARGEM - 10) else "txt-red"
 with row2_c3:
     st.markdown(f"""
-    <div class="kpi-card" style="border-top: 4px solid #a371f7;">
+    <div class="kpi-card" style="border-top: 4px solid #8b949e;">
         <div class="kpi-title">Margem líquida</div>
         <div class="kpi-val {cor_m_liq}">{mg_liquida_pos_adm:.1f}%</div>
         <div class="kpi-sub">
@@ -268,7 +268,7 @@ with row2_c3:
     </div>
     """, unsafe_allow_html=True)
 
-# CARD 2.4: ORÇAMENTOS
+# CARD 2.4: ORÇAMENTOS (Borda Cinza)
 with row2_c4:
     st.markdown(f"""
     <div class="kpi-card" style="border-top: 4px solid #8b949e;">
