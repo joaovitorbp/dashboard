@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+import json
+import os
 
 # ---------------------------------------------------------
 # 1. ESTILO CSS
@@ -110,7 +112,19 @@ dados = df_raw[df_raw['Projeto'] == id_projeto].iloc[0]
 custo_total = dados['Mat_Real'] + dados['Desp_Real'] + dados['HH_Real_Vlr'] + dados['Impostos']
 lucro_liquido = dados['Vendido'] - custo_total
 margem_real_pct = (lucro_liquido / dados['Vendido']) * 100 if dados['Vendido'] > 0 else 0
-META_MARGEM = 25.0
+
+# --- CARREGAR META (CONFIG) ---
+def load_config():
+    if not os.path.exists("config.json"):
+        default_data = {"meta_vendas": 5000000.0, "meta_margem": 25.0}
+        with open("config.json", "w") as f:
+            json.dump(default_data, f)
+        return default_data
+    with open("config.json", "r") as f:
+        return json.load(f)
+
+config = load_config()
+META_MARGEM = float(config["meta_margem"])
 
 # Definição de Cores Padronizadas
 status = dados['Status']
