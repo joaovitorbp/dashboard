@@ -13,30 +13,35 @@ st.markdown("""
     .stApp {background-color: #0e1117;}
     .block-container {padding-top: 3rem; padding-bottom: 3rem;}
     
-    /* Estilização dos Botões para Azul (Melhor Contraste) */
+    /* --- Estilização dos Botões (Azul Vibrante) --- */
     div.stButton > button {
-        background-color: #1f6feb; 
-        color: white; 
-        border: 1px solid #1f6feb;
-        font-weight: 600;
+        background-color: #58a6ff; /* Azul mais vibrante e visível */
+        color: #ffffff; 
+        border: none;
+        font-weight: 700; /* Negrito para destacar a ação */
+        padding: 0.5rem 1rem;
+        transition: all 0.2s ease-in-out;
     }
     div.stButton > button:hover {
-        background-color: #58a6ff;
-        border-color: #58a6ff;
-        color: white;
+        background-color: #79c0ff; /* Azul ligeiramente mais claro no hover */
+        color: #ffffff;
+        box-shadow: 0 4px 8px rgba(88, 166, 255, 0.3); /*Sombra suave ao passar o mouse*/
     }
     div.stButton > button:active {
-        background-color: #1f6feb;
-        color: white;
+        background-color: #58a6ff;
+        transform: translateY(2px); /* Efeito de clique */
     }
 
-    h3 {color: #58a6ff !important; font-size: 1.2rem;}
-    p {color: #8b949e;}
+    /* --- Tipografia --- */
+    /* Títulos dos containers agora são BRANCOS */
+    h3 {color: #ffffff !important; font-size: 1.3rem; font-weight: 600;}
+    /* Textos de apoio continuam cinza claro para não cansar a vista */
+    p, .stMarkdown, .stNumberInput label {color: #e6edf3 !important;}
+    
 </style>
 """, unsafe_allow_html=True)
 
 st.title("⚙️ Configurações do Sistema")
-# Subtítulo removido conforme solicitado
 
 # ARQUIVOS DE CONFIGURAÇÃO
 CONFIG_FILE = "config.json"
@@ -66,9 +71,9 @@ config_atual = load_config()
 # ---------------------------------------------------------
 # 1. PARÂMETROS DE GESTÃO (METAS)
 # ---------------------------------------------------------
-# Substituído HTML manual por Container Nativo para evitar bugs visuais
 with st.container(border=True):
     st.subheader("Parâmetros de Metas")
+    st.write("") # Espaçamento
     
     col1, col2, col3 = st.columns(3)
     
@@ -101,8 +106,8 @@ with st.container(border=True):
             format="%.1f"
         )
     
-    # Texto explicativo removido conforme solicitado
-    st.write("") 
+    st.write("")
+    st.write("") # Espaçamento antes do botão
 
     if st.button("Salvar Novos Parâmetros"):
         novos_dados = {
@@ -118,13 +123,16 @@ with st.container(border=True):
 # ---------------------------------------------------------
 with st.container(border=True):
     st.subheader("Base de dados")
+    st.write("")
     
     st.info(f"Arquivo em uso: **{DATA_FILE}**")
+    st.write("")
     
     uploaded_file = st.file_uploader("Arraste o arquivo atualizado aqui (.xlsx)", type=["xlsx"])
 
     if uploaded_file is not None:
         st.write("")
+        # Usando type="primary" para dar o destaque azul definido no CSS
         if st.button("Confirmar Substituição da Base"):
             # Salva o arquivo no disco
             with open(DATA_FILE, "wb") as f:
