@@ -33,12 +33,16 @@ st.markdown("Defina as metas globais e atualize a base de dados.")
 CONFIG_FILE = "config.json"
 DATA_FILE = "dados_obras_v5.xlsx"
 
-# Função para carregar configurações
+# Função para carregar configurações (Cria o arquivo se não existir)
 def load_config():
-    if os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE, "r") as f:
-            return json.load(f)
-    return {"meta_vendas": 5000000.0, "meta_margem": 25.0} # Padrão se não existir
+    if not os.path.exists(CONFIG_FILE):
+        default_data = {"meta_vendas": 5000000.0, "meta_margem": 25.0}
+        with open(CONFIG_FILE, "w") as f:
+            json.dump(default_data, f)
+        return default_data
+    
+    with open(CONFIG_FILE, "r") as f:
+        return json.load(f)
 
 # Função para salvar configurações
 def save_config(data):
@@ -76,6 +80,7 @@ with st.container():
             format="%.1f"
         )
     
+    st.write("")
     if st.button("Salvar Novas Metas", type="primary"):
         novos_dados = {
             "meta_vendas": nova_meta_vendas,
