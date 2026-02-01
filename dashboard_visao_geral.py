@@ -26,19 +26,16 @@ st.markdown("""
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
     
-    /* Título no Topo (Menor e Discreto) */
     .kpi-title { 
         color: #8b949e; font-size: 0.8rem; text-transform: uppercase; 
         letter-spacing: 1px; font-weight: 600; margin-bottom: 8px;
     }
     
-    /* Valor Principal (Grande e Central) */
     .kpi-val { 
         font-size: 1.8rem; font-weight: 800; color: white; 
         font-family: "Source Sans Pro", sans-serif; margin-bottom: 8px;
     }
     
-    /* Rodapé com Contexto */
     .kpi-sub { 
         font-size: 0.75rem; color: #8b949e; width: 100%;
         border-top: 1px solid #21262d;
@@ -46,7 +43,6 @@ st.markdown("""
         display: flex; justify-content: space-around;
     }
     
-    /* Cores de Texto Auxiliares */
     .txt-green { color: #3fb950; font-weight: bold; }
     .txt-red { color: #da3633; font-weight: bold; }
     .txt-blue { color: #58a6ff; font-weight: bold; }
@@ -73,13 +69,10 @@ st.markdown("""
     .badge-status { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; }
     .footer-pct { font-size: 0.8rem; font-weight: 700; }
     
-    /* Tags e Botões */
     div[data-testid="stVerticalBlockBorderWrapper"] button {
         background-color: transparent; color: #58a6ff; border: 1px solid #30363d; border-radius: 4px;
         font-size: 0.65rem !important; padding: 0px 0px !important; height: 24px !important; min-height: 24px !important; line-height: 1 !important; margin: 0; width: 100%;
     }
-    span[data-baseweb="tag"] { background-color: #30363d !important; color: white !important; border: 1px solid #8b949e; }
-    span[data-baseweb="tag"] svg { fill: white !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -96,7 +89,6 @@ except FileNotFoundError:
     st.error("⚠️ Base de dados 'dados_obras_v5.xlsx' não encontrada.")
     st.stop()
 
-# Limpeza Monetária
 def clean_currency_brazil(x):
     if isinstance(x, (int, float)): return x
     try:
@@ -120,82 +112,73 @@ def formatar_valor_ptbr(valor):
 # ---------------------------------------------------------
 # 3. LÓGICA DE NEGÓCIO
 # ---------------------------------------------------------
-# IDs dos custos administrativos (Overhead)
 IDS_ADM = [5009.2025, 5010.2025, 5011.2025]
-
-# Separação
 df_adm = df_raw[df_raw['Projeto'].isin(IDS_ADM)].copy()
 df_obras = df_raw[~df_raw['Projeto'].isin(IDS_ADM)].copy()
 
-# Função de Custo Total
 def get_custo_total(row):
     return row['Mat_Real'] + row['Desp_Real'] + row['HH_Real_Vlr'] + row['Impostos']
 
-# --- CÁLCULOS MACRO (VOLUME) ---
-
-# 1. Valor Vendido Total
+# Cálculos Macro
 status_venda = ['Não iniciado', 'Em andamento', 'Finalizado', 'Apresentado']
 df_carteira_total = df_obras[df_obras['Status'].isin(status_venda)]
 valor_vendido_total = df_carteira_total['Vendido'].sum()
 
-# 2. Valor Concluído
 df_concluido = df_obras[df_obras['Status'].isin(['Finalizado', 'Apresentado'])]
 valor_concluido = df_concluido['Vendido'].sum()
-
-# 3. Valor Faturado
 valor_faturado_total = df_obras['Faturado'].sum()
 
-# 4. Custos Administrativos
 custo_adm_total = df_adm.apply(get_custo_total, axis=1).sum()
 overhead_pct = (custo_adm_total / valor_vendido_total * 100) if valor_vendido_total > 0 else 0
 
-# --- CÁLCULOS DE EFICIÊNCIA (MARGENS) ---
+# Cálculos de Margem
 def get_margem_ponderada(df_in):
     if df_in.empty: return 0.0
     venda = df_in['Vendido'].sum()
     custo = df_in.apply(get_custo_total, axis=1).sum()
     return ((venda - custo) / venda * 100) if venda > 0 else 0
 
-# 1. Margem Geral (Bruta)
 mg_geral = get_margem_ponderada(df_obras)
-
-# 2. Margem Concluída (Bruta)
 mg_concluida = get_margem_ponderada(df_concluido)
 
-# 3. Margem Líquida (Pós Administrativo)
 custo_obras_total = df_obras.apply(get_custo_total, axis=1).sum()
 lucro_bruto_total = valor_vendido_total - custo_obras_total
 lucro_liquido_final = lucro_bruto_total - custo_adm_total
 mg_liquida_pos_adm = (lucro_liquido_final / valor_vendido_total * 100) if valor_vendido_total > 0 else 0
 
-# Contagem de Obras
 df_aberto = df_obras[df_obras['Status'].isin(['Em andamento', 'Não iniciado'])]
 qtd_aberto = len(df_aberto)
 qtd_total = len(df_obras) 
 
 # --- CARREGAR METAS (CONFIG) ---
 def load_config():
+    # Padrão: Venda 5M, Margem 25%, Custo Adm 5%
+    default_data = {"meta_vendas": 5000000.0, "meta_margem": 25.0, "meta_custo_adm": 5.0}
     if not os.path.exists("config.json"):
-        default_data = {"meta_vendas": 5000000.0, "meta_margem": 25.0}
         with open("config.json", "w") as f:
             json.dump(default_data, f)
         return default_data
+    
     with open("config.json", "r") as f:
-        return json.load(f)
+        data = json.load(f)
+        if "meta_custo_adm" not in data: data["meta_custo_adm"] = 5.0
+        return data
 
 config = load_config()
 META_VENDAS = float(config["meta_vendas"])
-META_MARGEM = float(config["meta_margem"])
+META_MARGEM_BRUTA = float(config["meta_margem"])
+META_CUSTO_ADM = float(config["meta_custo_adm"])
+# A meta líquida é o que sobra da meta bruta depois de pagar o ADM
+META_MARGEM_LIQUIDA = META_MARGEM_BRUTA - META_CUSTO_ADM
 
 # ---------------------------------------------------------
-# 4. INTERFACE - CABEÇALHO (SEM TÍTULOS INTERMEDIÁRIOS)
+# 4. INTERFACE
 # ---------------------------------------------------------
 st.title("Dashboard de Resultados")
 
 # LINHA 1 (3 Colunas)
 row1_c1, row1_c2, row1_c3 = st.columns(3)
 
-# CARD 1.1: VALOR VENDIDO
 pct_meta_venda = (valor_vendido_total / META_VENDAS * 100)
 with row1_c1:
     st.markdown(f"""
@@ -209,7 +192,6 @@ with row1_c1:
     </div>
     """, unsafe_allow_html=True)
 
-# CARD 1.2: VALOR CONCLUÍDO
 pct_concluido_carteira = (valor_concluido / valor_vendido_total * 100) if valor_vendido_total > 0 else 0
 pct_meta_concluido = (valor_concluido / META_VENDAS * 100)
 with row1_c2:
@@ -224,25 +206,26 @@ with row1_c2:
     </div>
     """, unsafe_allow_html=True)
 
-# CARD 1.3: CUSTOS INTERNOS
+# Cor condicional do Custo Adm: Se for maior que a meta (ex: 5%), fica vermelho
+cor_adm = "txt-red" if overhead_pct > META_CUSTO_ADM else "txt-orange"
 with row1_c3:
     st.markdown(f"""
     <div class="kpi-card" style="border-top: 4px solid #d29922;">
         <div class="kpi-title">Custos internos</div>
         <div class="kpi-val">{formatar_valor_ptbr(custo_adm_total)}</div>
         <div class="kpi-sub">
-            <span class="txt-orange" style="font-weight:bold">{overhead_pct:.1f}% do valor vendido</span>
+            <span class="{cor_adm}" style="font-weight:bold">{overhead_pct:.1f}% do valor vendido</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-st.write("") # Espaçamento sutil
+st.write("")
 
 # LINHA 2 (4 Colunas)
 row2_c1, row2_c2, row2_c3, row2_c4 = st.columns(4)
 
-# CARD 2.1: MARGEM TOTAL
-cor_m_geral = "txt-green" if mg_geral >= META_MARGEM else "txt-red"
+# Compara com Margem Bruta
+cor_m_geral = "txt-green" if mg_geral >= META_MARGEM_BRUTA else "txt-red"
 with row2_c1:
     st.markdown(f"""
     <div class="kpi-card" style="border-top: 4px solid #8b949e;">
@@ -254,8 +237,7 @@ with row2_c1:
     </div>
     """, unsafe_allow_html=True)
 
-# CARD 2.2: MARGEM CONCLUÍDA
-cor_m_conc = "txt-green" if mg_concluida >= META_MARGEM else "txt-red"
+cor_m_conc = "txt-green" if mg_concluida >= META_MARGEM_BRUTA else "txt-red"
 with row2_c2:
     st.markdown(f"""
     <div class="kpi-card" style="border-top: 4px solid #8b949e;">
@@ -267,8 +249,8 @@ with row2_c2:
     </div>
     """, unsafe_allow_html=True)
 
-# CARD 2.3: MARGEM LÍQUIDA
-cor_m_liq = "txt-green" if mg_liquida_pos_adm >= (META_MARGEM - 10) else "txt-red"
+# Compara com Margem Líquida (Bruta - Adm)
+cor_m_liq = "txt-green" if mg_liquida_pos_adm >= META_MARGEM_LIQUIDA else "txt-red"
 with row2_c3:
     st.markdown(f"""
     <div class="kpi-card" style="border-top: 4px solid #8b949e;">
@@ -280,7 +262,6 @@ with row2_c3:
     </div>
     """, unsafe_allow_html=True)
 
-# CARD 2.4: ORÇAMENTOS
 with row2_c4:
     st.markdown(f"""
     <div class="kpi-card" style="border-top: 4px solid #8b949e;">
@@ -295,7 +276,7 @@ with row2_c4:
 st.divider()
 
 # ---------------------------------------------------------
-# 5. CARDS DE PROJETOS (GRID INTACTO)
+# 5. CARDS DE PROJETOS
 # ---------------------------------------------------------
 
 def calcular_dados_extras(row):
@@ -308,11 +289,11 @@ def calcular_dados_extras(row):
     fisico = float(row['Conclusao_%'])
     critico = False
     
-    if (margem < META_MARGEM and row['Status'] != 'Apresentado') or (hh_perc > fisico + 10):
+    # Critério: Margem abaixo da meta bruta OU estouro de horas
+    if (margem < META_MARGEM_BRUTA and row['Status'] != 'Apresentado') or (hh_perc > fisico + 10):
         critico = True
     return pd.Series([margem, critico, hh_perc])
 
-# Aplica cálculos
 cols_extras = df_obras.apply(calcular_dados_extras, axis=1)
 df_obras['Margem_%'] = cols_extras[0]
 df_obras['E_Critico'] = cols_extras[1]
@@ -331,14 +312,11 @@ with col_sort_criterio:
 with col_sort_ordem:
     direcao_sort = st.selectbox("Ordem:", ["Decrescente", "Crescente"])
 
-# --- EXIBIÇÃO ---
 if not status_selecionados:
     st.info("Selecione pelo menos um status acima.")
     st.stop() 
 
 df_show = df_obras[df_obras['Status'].isin(status_selecionados)].copy()
-
-# Ordenação
 eh_crescente = True if direcao_sort == "Crescente" else False
 mapa_sort = {"Projeto": "Projeto", "Valor Vendido": "Vendido", "Margem": "Margem_%", "Andamento": "Conclusao_%"}
 df_show = df_show.sort_values(by=mapa_sort[criterio_sort], ascending=eh_crescente)
@@ -353,15 +331,13 @@ for i, (index, row) in enumerate(df_show.iterrows()):
         pct = int(row['Conclusao_%'])
         status_raw = str(row['Status']).strip()
         
-        # Cores e Estilos
         if status_raw == "Finalizado": cor_t, bg_b, cl_b = "#3fb950", "rgba(63,185,80,0.2)", "#3fb950"
         elif status_raw == "Apresentado": cor_t, bg_b, cl_b = "#a371f7", "rgba(163,113,247,0.2)", "#a371f7"
         elif status_raw == "Em andamento": cor_t, bg_b, cl_b = "#d29922", "rgba(210,153,34,0.2)", "#e3b341"
         else: cor_t, bg_b, cl_b = "#da3633", "rgba(218,54,51,0.2)", "#f85149"
 
-        cor_margem = "#da3633" if row['Margem_%'] < META_MARGEM else "#3fb950"
+        cor_margem = "#da3633" if row['Margem_%'] < META_MARGEM_BRUTA else "#3fb950"
         
-        # Métricas internas do card
         hh_orc, hh_real = float(row['HH_Orc_Qtd']), float(row['HH_Real_Qtd'])
         pct_horas = (hh_real / hh_orc * 100) if hh_orc > 0 else 0
         cor_horas = "#da3633" if pct_horas > 100 else "#e6edf3"
