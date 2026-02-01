@@ -35,14 +35,20 @@ DATA_FILE = "dados_obras_v5.xlsx"
 
 # Função para carregar configurações (Cria o arquivo se não existir)
 def load_config():
+    # Valores padrão: Venda 5M, Margem 25%, Custo Adm 5%
+    default_data = {"meta_vendas": 5000000.0, "meta_margem": 25.0, "meta_custo_adm": 5.0}
+    
     if not os.path.exists(CONFIG_FILE):
-        default_data = {"meta_vendas": 5000000.0, "meta_margem": 25.0}
         with open(CONFIG_FILE, "w") as f:
             json.dump(default_data, f)
         return default_data
     
     with open(CONFIG_FILE, "r") as f:
-        return json.load(f)
+        data = json.load(f)
+        # Garante que a chave nova exista em arquivos antigos
+        if "meta_custo_adm" not in data:
+            data["meta_custo_adm"] = 5.0
+        return data
 
 # Função para salvar configurações
 def save_config(data):
@@ -59,7 +65,7 @@ with st.container():
     st.markdown('<div class="config-card">', unsafe_allow_html=True)
     st.subheader("🎯 Parâmetros de Metas")
     
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     
     with col1:
         nova_meta_vendas = st.number_input(
@@ -67,7 +73,8 @@ with st.container():
             min_value=0.0,
             value=float(config_atual["meta_vendas"]),
             step=100000.0,
-            format="%.2f"
+            format="%.2f",
+            help="Valor total de vendas esperado para o ano."
         )
         
     with col2:
@@ -77,17 +84,37 @@ with st.container():
             max_value=100.0,
             value=float(config_atual["meta_margem"]),
             step=0.5,
-            format="%.1f"
+            format="%.1f",
+            help="Margem operacional desejada antes dos custos fixos."
+        )
+
+    with col3:
+        nova_meta_adm = st.number_input(
+            "Custo Adm. Esperado (%)",
+            min_value=0.0,
+            max_value=50.0,
+            value=float(config_atual["meta_custo_adm"]),
+            step=0.5,
+            format="%.1f",
+            help="Porcentagem da receita destinada a pagar a estrutura (Overhead)."
         )
     
     st.write("")
-    if st.button("Salvar Novas Metas", type="primary"):
+    
+    # Cálculo da meta líquida para visualização
+    meta_liq_calc = nova_meta_margem - nova_meta_adm
+    st.caption(f"ℹ️ Com esses valores, a **Meta de Margem Líquida** será de **{meta_liq_calc:.1f}%**")
+    
+    st.write("")
+
+    if st.button("Salvar Novos Parâmetros", type="primary"):
         novos_dados = {
             "meta_vendas": nova_meta_vendas,
-            "meta_margem": nova_meta_margem
+            "meta_margem": nova_meta_margem,
+            "meta_custo_adm": nova_meta_adm
         }
         save_config(novos_dados)
-        st.success("✅ Metas atualizadas com sucesso! Os indicadores já foram recalculados.")
+        st.success("✅ Parâmetros atualizados! Os indicadores foram recalculados.")
         
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -113,11 +140,3 @@ with st.container():
             st.success("✅ Base de dados atualizada e cache limpo!")
             
     st.markdown('</div>', unsafe_allow_html=True)
-
-# ---------------------------------------------------------
-# 3. VISUALIZAÇÃO DE CHECK (OPCIONAL)
-# ---------------------------------------------------------
-if os.path.exists(DATA_FILE):
-    with st.expander("Verificar dados carregados atualmente"):
-        df_check = pd.read_excel(DATA_FILE)
-        st.dataframe(df_check.head(10), use_container_width=True)
