@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+import json
+import os
 
 # ---------------------------------------------------------
 # 1. CONFIGURAÇÃO VISUAL
@@ -171,9 +173,19 @@ df_aberto = df_obras[df_obras['Status'].isin(['Em andamento', 'Não iniciado'])]
 qtd_aberto = len(df_aberto)
 qtd_total = len(df_obras) 
 
-# --- METAS ---
-META_VENDAS = 5000000.00
-META_MARGEM = 25.0
+# --- CARREGAR METAS (CONFIG) ---
+def load_config():
+    if not os.path.exists("config.json"):
+        default_data = {"meta_vendas": 5000000.0, "meta_margem": 25.0}
+        with open("config.json", "w") as f:
+            json.dump(default_data, f)
+        return default_data
+    with open("config.json", "r") as f:
+        return json.load(f)
+
+config = load_config()
+META_VENDAS = float(config["meta_vendas"])
+META_MARGEM = float(config["meta_margem"])
 
 # ---------------------------------------------------------
 # 4. INTERFACE - CABEÇALHO (SEM TÍTULOS INTERMEDIÁRIOS)
@@ -343,7 +355,7 @@ for i, (index, row) in enumerate(df_show.iterrows()):
         
         # Cores e Estilos
         if status_raw == "Finalizado": cor_t, bg_b, cl_b = "#3fb950", "rgba(63,185,80,0.2)", "#3fb950"
-        elif status_raw == "Apresentado": cor_t, bg_b, cl_b = "#a371f7", "rgba(163,113,247,0.2)", "#a371f7" # Ajustado para manter tom
+        elif status_raw == "Apresentado": cor_t, bg_b, cl_b = "#a371f7", "rgba(163,113,247,0.2)", "#a371f7"
         elif status_raw == "Em andamento": cor_t, bg_b, cl_b = "#d29922", "rgba(210,153,34,0.2)", "#e3b341"
         else: cor_t, bg_b, cl_b = "#da3633", "rgba(218,54,51,0.2)", "#f85149"
 
