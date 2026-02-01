@@ -249,13 +249,15 @@ with row2_c3:
     </div>
     """, unsafe_allow_html=True)
 
-# CARD 2.4: ORÇAMENTOS EM ABERTO/TOTAL
+# CARD 2.4: ORÇAMENTOS
 with row2_c4:
     st.markdown(f"""
     <div class="kpi-card">
-        <div class="kpi-title">Orçamentos em aberto/total</div>
+        <div class="kpi-title">Orçamentos</div>
         <div class="kpi-val">{qtd_aberto} <span style='font-size:1rem; color:#8b949e'>/ {qtd_total}</span></div>
-        <div class="kpi-sub"></div>
+        <div class="kpi-sub">
+            <span>Quantidade em aberto/total</span>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
