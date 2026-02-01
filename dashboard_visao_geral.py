@@ -117,22 +117,16 @@ status_venda = ['Não iniciado', 'Em andamento', 'Finalizado', 'Apresentado']
 df_carteira_total = df_obras[df_obras['Status'].isin(status_venda)]
 valor_vendido_total = df_carteira_total['Vendido'].sum()
 
-# 2. Valor Entregue (Finalizado + Apresentado)
+# 2. Valor Concluído (Finalizado + Apresentado)
 # Obras terminadas para o cliente (Produção concluída)
-df_entregue = df_obras[df_obras['Status'].isin(['Finalizado', 'Apresentado'])]
-valor_entregue = df_entregue['Vendido'].sum()
+df_concluido = df_obras[df_obras['Status'].isin(['Finalizado', 'Apresentado'])]
+valor_concluido = df_concluido['Vendido'].sum()
 
-# 3. Valor Apresentado (Auditado Internamente)
-# Obras terminadas para a TE (Custos fechados e auditados)
-df_apresentado = df_obras[df_obras['Status'] == 'Apresentado']
-valor_apresentado = df_apresentado['Vendido'].sum()
-
-# 4. Valor Faturado (Caixa)
+# 3. Valor Faturado (Caixa)
 valor_faturado_total = df_obras['Faturado'].sum()
 
-# 5. Custos Administrativos e Representatividade
+# 4. Custos Administrativos e Representatividade
 custo_adm_total = df_adm.apply(get_custo_total, axis=1).sum()
-# Overhead sobre a Receita Total
 overhead_pct = (custo_adm_total / valor_vendido_total * 100) if valor_vendido_total > 0 else 0
 
 # --- CÁLCULOS DE EFICIÊNCIA (LINHA 2) ---
@@ -143,11 +137,13 @@ def get_margem_ponderada(df_in):
     return ((venda - custo) / venda * 100) if venda > 0 else 0
 
 # Margens Específicas
-mg_apresentada = get_margem_ponderada(df_apresentado) # A mais precisa (auditada)
-mg_finalizada = get_margem_ponderada(df_obras[df_obras['Status'] == 'Finalizado']) # A prévia (produção)
+df_apresentado = df_obras[df_obras['Status'] == 'Apresentado']
+mg_apresentada = get_margem_ponderada(df_apresentado) 
+
+df_finalizado = df_obras[df_obras['Status'] == 'Finalizado']
+mg_finalizada = get_margem_ponderada(df_finalizado)
 
 # Contagem de Obras
-# Obras em aberto = Em andamento + Não iniciado (tudo que ainda tem que trabalhar)
 df_aberto = df_obras[df_obras['Status'].isin(['Em andamento', 'Não iniciado'])]
 qtd_aberto = len(df_aberto)
 qtd_total = len(df_obras) 
@@ -157,16 +153,17 @@ META_VENDAS = 5000000.00
 META_MARGEM = 25.0
 
 # ---------------------------------------------------------
-# 4. INTERFACE - CABEÇALHO (2 LINHAS)
+# 4. INTERFACE - CABEÇALHO
 # ---------------------------------------------------------
 st.title("Dashboard de Resultados")
 
+# LINHA 1: Volume Financeiro (3 Colunas)
 st.markdown("### 📊 Indicadores de Volume (Financeiro)")
-row1_col1, row1_col2, row1_col3, row1_col4 = st.columns(4)
+row1_c1, row1_c2, row1_c3 = st.columns(3)
 
 # CARD 1.1: VALOR VENDIDO (TOTAL)
 pct_meta_venda = (valor_vendido_total / META_VENDAS * 100)
-with row1_col1:
+with row1_c1:
     st.markdown(f"""
     <div class="kpi-card" style="border-left: 3px solid #58a6ff;">
         <div class="kpi-title">Valor Vendido (Carteira)</div>
@@ -178,37 +175,23 @@ with row1_col1:
     </div>
     """, unsafe_allow_html=True)
 
-# CARD 1.2: VALOR ENTREGUE (PRODUÇÃO)
-# Finalizado + Apresentado
-pct_concluido = (valor_entregue / valor_vendido_total * 100) if valor_vendido_total > 0 else 0
-with row1_col2:
+# CARD 1.2: VALOR CONCLUÍDO (PRODUÇÃO)
+# Soma de Finalizado + Apresentado
+pct_concluido = (valor_concluido / valor_vendido_total * 100) if valor_vendido_total > 0 else 0
+with row1_c2:
     st.markdown(f"""
     <div class="kpi-card" style="border-left: 3px solid #3fb950;">
-        <div class="kpi-title">Valor Entregue (Produção)</div>
-        <div class="kpi-val">{formatar_valor_ptbr(valor_entregue)}</div>
+        <div class="kpi-title">Valor Concluído (Fin + Apr)</div>
+        <div class="kpi-val">{formatar_valor_ptbr(valor_concluido)}</div>
         <div class="kpi-sub">
-            <span>Pronto p/ Cliente</span>
+            <span>Produção Entregue</span>
             <span class="txt-green">{pct_concluido:.0f}% da carteira</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-# CARD 1.3: VALOR APRESENTADO (AUDITADO)
-# Apenas Apresentado (Custos travados)
-with row1_col3:
-    st.markdown(f"""
-    <div class="kpi-card" style="border-left: 3px solid #a371f7;">
-        <div class="kpi-title">Valor Auditado (Apresentado)</div>
-        <div class="kpi-val">{formatar_valor_ptbr(valor_apresentado)}</div>
-        <div class="kpi-sub">
-            <span>Custos Fechados/Auditados</span>
-            <span class="txt-purple">{len(df_apresentado)} obras</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-# CARD 1.4: CUSTOS ADM (OVERHEAD)
-with row1_col4:
+# CARD 1.3: CUSTOS ADM (OVERHEAD)
+with row1_c3:
     st.markdown(f"""
     <div class="kpi-card" style="border-left: 3px solid #d29922;">
         <div class="kpi-title">Custo Administrativo</div>
@@ -220,13 +203,13 @@ with row1_col4:
     </div>
     """, unsafe_allow_html=True)
 
+# LINHA 2: Eficiência (4 Colunas)
 st.markdown("### 📈 Indicadores de Eficiência (Margens)")
-row2_col1, row2_col2, row2_col3, row2_col4 = st.columns(4)
+row2_c1, row2_c2, row2_c3, row2_c4 = st.columns(4)
 
 # CARD 2.1: MARGEM APRESENTADA (REAL)
-# A margem mais importante, pois os custos não mudam mais
 cor_m_apr = "txt-green" if mg_apresentada >= META_MARGEM else "txt-red"
-with row2_col1:
+with row2_c1:
     st.markdown(f"""
     <div class="kpi-card">
         <div class="kpi-title">Margem Auditada (Apres.)</div>
@@ -240,7 +223,7 @@ with row2_col1:
 
 # CARD 2.2: MARGEM FINALIZADA (PRÉVIA)
 cor_m_fin = "txt-green" if mg_finalizada >= META_MARGEM else "txt-red"
-with row2_col2:
+with row2_c2:
     st.markdown(f"""
     <div class="kpi-card">
         <div class="kpi-title">Margem Finalizada</div>
@@ -255,7 +238,7 @@ with row2_col2:
 # CARD 2.3: MARGEM GERAL
 mg_geral = get_margem_ponderada(df_obras)
 cor_m_geral = "txt-green" if mg_geral >= META_MARGEM else "txt-red"
-with row2_col3:
+with row2_c3:
     st.markdown(f"""
     <div class="kpi-card">
         <div class="kpi-title">Margem Geral (Ponderada)</div>
@@ -267,14 +250,14 @@ with row2_col3:
     </div>
     """, unsafe_allow_html=True)
 
-# CARD 2.4: STATUS DE PRODUÇÃO (BACKLOG)
-with row2_col4:
+# CARD 2.4: STATUS DE PRODUÇÃO
+with row2_c4:
     st.markdown(f"""
     <div class="kpi-card">
         <div class="kpi-title">Status de Produção</div>
         <div class="kpi-val">{qtd_aberto} <span style='font-size:1rem; color:#8b949e'>/ {qtd_total}</span></div>
         <div class="kpi-sub">
-            <span>Aberto (Não Ini. + Andam.)</span>
+            <span>Aberto (Não Ini + Andam)</span>
             <span class="txt-blue">Foco Operacional</span>
         </div>
     </div>
@@ -296,8 +279,6 @@ def calcular_dados_extras(row):
     fisico = float(row['Conclusao_%'])
     critico = False
     
-    # Critério: Se margem ruim e NÃO foi auditado (Apresentado), ou se estourou horas vs físico
-    # Se já está Apresentado, não é mais crítico operacional (é fato consumado)
     if (margem < META_MARGEM and row['Status'] != 'Apresentado') or (hh_perc > fisico + 10):
         critico = True
     return pd.Series([margem, critico, hh_perc])
