@@ -11,28 +11,47 @@ st.markdown("""
     .stApp {background-color: #0e1117;}
     .block-container {padding-top: 2rem;}
 
-    /* --- CSS DOS KPIS (CABEÇALHO) --- */
+    /* --- NOVO LAYOUT DOS KPIS (CABEÇALHO) --- */
     .kpi-card {
         background-color: #161b22; 
         border: 1px solid #30363d; 
-        border-radius: 8px; 
-        padding: 15px;
+        border-radius: 10px; 
+        padding: 20px 15px;
         height: 100%;
-        display: flex; flex-direction: column; justify-content: space-between;
-        min-height: 110px;
+        display: flex; flex-direction: column; justify-content: space-between; align-items: center;
+        text-align: center;
+        min-height: 130px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
     }
-    .kpi-title { color: #8b949e; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; font-weight: 600;}
-    .kpi-val { font-size: 1.4rem; font-weight: 700; color: white; font-family: "Source Sans Pro", sans-serif; }
-    .kpi-sub { font-size: 0.75rem; color: #8b949e; margin-top: 5px; display: flex; justify-content: space-between; align-items: center;}
+    
+    /* Título no Topo (Menor e Discreto) */
+    .kpi-title { 
+        color: #8b949e; font-size: 0.8rem; text-transform: uppercase; 
+        letter-spacing: 1px; font-weight: 600; margin-bottom: 8px;
+    }
+    
+    /* Valor Principal (Grande e Central) */
+    .kpi-val { 
+        font-size: 1.8rem; font-weight: 800; color: white; 
+        font-family: "Source Sans Pro", sans-serif; margin-bottom: 8px;
+    }
+    
+    /* Rodapé com Contexto */
+    .kpi-sub { 
+        font-size: 0.75rem; color: #8b949e; width: 100%;
+        border-top: 1px solid #21262d;
+        padding-top: 8px; margin-top: auto;
+        display: flex; justify-content: space-around;
+    }
     
     /* Cores de Texto Auxiliares */
-    .txt-green { color: #3fb950; }
-    .txt-red { color: #da3633; }
-    .txt-blue { color: #58a6ff; }
-    .txt-purple { color: #a371f7; }
-    .txt-orange { color: #d29922; }
+    .txt-green { color: #3fb950; font-weight: bold; }
+    .txt-red { color: #da3633; font-weight: bold; }
+    .txt-blue { color: #58a6ff; font-weight: bold; }
+    .txt-purple { color: #a371f7; font-weight: bold; }
+    .txt-orange { color: #d29922; font-weight: bold; }
 
-    /* --- CSS DOS CARDS DE PROJETO --- */
+    /* --- CSS DOS CARDS DE PROJETO (MANTIDO) --- */
     [data-testid="stVerticalBlockBorderWrapper"] {
         background-color: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 0px !important; transition: transform 0.2s;
     }
@@ -169,7 +188,7 @@ row1_c1, row1_c2, row1_c3 = st.columns(3)
 pct_meta_venda = (valor_vendido_total / META_VENDAS * 100)
 with row1_c1:
     st.markdown(f"""
-    <div class="kpi-card" style="border-left: 3px solid #58a6ff;">
+    <div class="kpi-card" style="border-top: 4px solid #58a6ff;">
         <div class="kpi-title">Valor Vendido</div>
         <div class="kpi-val">{formatar_valor_ptbr(valor_vendido_total)}</div>
         <div class="kpi-sub">
@@ -184,7 +203,7 @@ pct_concluido_carteira = (valor_concluido / valor_vendido_total * 100) if valor_
 pct_meta_concluido = (valor_concluido / META_VENDAS * 100)
 with row1_c2:
     st.markdown(f"""
-    <div class="kpi-card" style="border-left: 3px solid #3fb950;">
+    <div class="kpi-card" style="border-top: 4px solid #3fb950;">
         <div class="kpi-title">Valor Concluído</div>
         <div class="kpi-val">{formatar_valor_ptbr(valor_concluido)}</div>
         <div class="kpi-sub">
@@ -197,11 +216,10 @@ with row1_c2:
 # CARD 1.3: CUSTOS INTERNOS
 with row1_c3:
     st.markdown(f"""
-    <div class="kpi-card" style="border-left: 3px solid #d29922;">
+    <div class="kpi-card" style="border-top: 4px solid #d29922;">
         <div class="kpi-title">Custos internos</div>
         <div class="kpi-val">{formatar_valor_ptbr(custo_adm_total)}</div>
         <div class="kpi-sub">
-            <span></span>
             <span class="txt-orange" style="font-weight:bold">{overhead_pct:.1f}% do valor vendido</span>
         </div>
     </div>
@@ -215,7 +233,7 @@ row2_c1, row2_c2, row2_c3, row2_c4 = st.columns(4)
 cor_m_geral = "txt-green" if mg_geral >= META_MARGEM else "txt-red"
 with row2_c1:
     st.markdown(f"""
-    <div class="kpi-card">
+    <div class="kpi-card" style="border-top: 4px solid #58a6ff;">
         <div class="kpi-title">Margem total</div>
         <div class="kpi-val {cor_m_geral}">{mg_geral:.1f}%</div>
         <div class="kpi-sub">
@@ -228,7 +246,7 @@ with row2_c1:
 cor_m_conc = "txt-green" if mg_concluida >= META_MARGEM else "txt-red"
 with row2_c2:
     st.markdown(f"""
-    <div class="kpi-card">
+    <div class="kpi-card" style="border-top: 4px solid #3fb950;">
         <div class="kpi-title">Margem concluída</div>
         <div class="kpi-val {cor_m_conc}">{mg_concluida:.1f}%</div>
         <div class="kpi-sub">
@@ -241,7 +259,7 @@ with row2_c2:
 cor_m_liq = "txt-green" if mg_liquida_pos_adm >= (META_MARGEM - 10) else "txt-red"
 with row2_c3:
     st.markdown(f"""
-    <div class="kpi-card" style="border-left: 3px solid #a371f7;">
+    <div class="kpi-card" style="border-top: 4px solid #a371f7;">
         <div class="kpi-title">Margem líquida</div>
         <div class="kpi-val {cor_m_liq}">{mg_liquida_pos_adm:.1f}%</div>
         <div class="kpi-sub">
@@ -253,9 +271,9 @@ with row2_c3:
 # CARD 2.4: ORÇAMENTOS
 with row2_c4:
     st.markdown(f"""
-    <div class="kpi-card">
+    <div class="kpi-card" style="border-top: 4px solid #8b949e;">
         <div class="kpi-title">Orçamentos</div>
-        <div class="kpi-val">{qtd_aberto} <span style='font-size:1rem; color:#8b949e'>/ {qtd_total}</span></div>
+        <div class="kpi-val">{qtd_aberto} <span style='font-size:1.2rem; color:#8b949e'>/ {qtd_total}</span></div>
         <div class="kpi-sub">
             <span>Quantidade em aberto/total</span>
         </div>
