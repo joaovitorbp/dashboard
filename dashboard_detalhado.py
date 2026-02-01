@@ -11,12 +11,12 @@ st.markdown("""
 <style>
     .stApp {background-color: #0e1117;}
     
-    /* Padding ajustado para não cortar cards */
+    /* Padding ajustado */
     .block-container {padding-top: 3rem; padding-bottom: 3rem;}
     
     .js-plotly-plot .plotly .modebar {display: none !important;}
 
-    /* --- LAYOUT DOS CARDS --- */
+    /* --- LAYOUT DOS CARDS (KPIs) --- */
     .kpi-card {
         background-color: #161b22; 
         border: 1px solid #30363d; 
@@ -25,7 +25,7 @@ st.markdown("""
         height: 100%;
         display: flex; flex-direction: column; justify-content: center; align-items: center;
         text-align: center;
-        min-height: 120px; /* Altura um pouco menor sem o rodapé */
+        min-height: 120px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
     
@@ -39,7 +39,7 @@ st.markdown("""
         font-family: "Source Sans Pro", sans-serif; margin: 0;
     }
 
-    /* --- CABEÇALHO DO PROJETO --- */
+    /* --- CABEÇALHO DO PROJETO (ATUALIZADO PARA BORDA NO TOPO) --- */
     .header-box {
         background-color: #161b22;
         border: 1px solid #30363d;
@@ -49,6 +49,7 @@ st.markdown("""
         margin-top: 10px;
         display: flex; justify-content: space-between; align-items: center;
         box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        /* A borda colorida será aplicada via inline style no topo */
     }
     .header-title { color: white; font-size: 1.5rem; font-weight: 700; margin: 0; line-height: 1.2; }
     .header-subtitle { color: #8b949e; font-size: 0.9rem; margin-top: 8px; }
@@ -123,10 +124,10 @@ else:
     cor_status, bg_status = "#da3633", "rgba(218, 54, 51, 0.2)"
 
 # ---------------------------------------------------------
-# CABEÇALHO
+# CABEÇALHO (ALTERADO PARA BORDA SUPERIOR)
 # ---------------------------------------------------------
 st.markdown(f"""
-<div class="header-box" style="border-left: 5px solid {cor_status};">
+<div class="header-box" style="border-top: 5px solid {cor_status};">
     <div>
         <div class="header-title">{dados['Projeto']} - {dados['Descricao']}</div>
         <div class="header-subtitle">
@@ -140,7 +141,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# KPI CARDS (LIMPOS)
+# KPI CARDS
 # ---------------------------------------------------------
 k1, k2, k3, k4 = st.columns(4)
 
