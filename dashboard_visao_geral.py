@@ -142,11 +142,15 @@ mg_geral = get_margem_ponderada(df_obras)
 mg_concluida = get_margem_ponderada(df_concluido)
 
 # 3. Margem Líquida (Pós Administrativo)
-# (Lucro Bruto Total - Custos ADM) / Venda Total
 custo_obras_total = df_obras.apply(get_custo_total, axis=1).sum()
 lucro_bruto_total = valor_vendido_total - custo_obras_total
 lucro_liquido_final = lucro_bruto_total - custo_adm_total
 mg_liquida_pos_adm = (lucro_liquido_final / valor_vendido_total * 100) if valor_vendido_total > 0 else 0
+
+# Contagem de Obras
+df_aberto = df_obras[df_obras['Status'].isin(['Em andamento', 'Não iniciado'])]
+qtd_aberto = len(df_aberto)
+qtd_total = len(df_obras) 
 
 # --- METAS ---
 META_VENDAS = 5000000.00
@@ -202,9 +206,9 @@ with row1_c3:
     </div>
     """, unsafe_allow_html=True)
 
-# LINHA 2: Eficiência e Margens (3 Cards)
-st.markdown("### 📈 Indicadores de Eficiência (Margens)")
-row2_c1, row2_c2, row2_c3 = st.columns(3)
+# LINHA 2: Eficiência e Margens (4 Cards)
+st.markdown("### 📈 Indicadores de Eficiência (Margens & Status)")
+row2_c1, row2_c2, row2_c3, row2_c4 = st.columns(4)
 
 # CARD 2.1: MARGEM GERAL (Carteira)
 cor_m_geral = "txt-green" if mg_geral >= META_MARGEM else "txt-red"
@@ -235,7 +239,7 @@ with row2_c2:
     """, unsafe_allow_html=True)
 
 # CARD 2.3: MARGEM LÍQUIDA (PÓS ADM)
-cor_m_liq = "txt-green" if mg_liquida_pos_adm >= (META_MARGEM - 10) else "txt-red" # Meta ajustada mentalmente ou fixa
+cor_m_liq = "txt-green" if mg_liquida_pos_adm >= (META_MARGEM - 10) else "txt-red"
 with row2_c3:
     st.markdown(f"""
     <div class="kpi-card" style="border-left: 3px solid #a371f7;">
@@ -244,6 +248,19 @@ with row2_c3:
         <div class="kpi-sub">
             <span>Descontado Overhead</span>
             <span class="txt-purple">Real Final</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# CARD 2.4: STATUS DE PRODUÇÃO
+with row2_c4:
+    st.markdown(f"""
+    <div class="kpi-card">
+        <div class="kpi-title">Status de Produção</div>
+        <div class="kpi-val">{qtd_aberto} <span style='font-size:1rem; color:#8b949e'>/ {qtd_total}</span></div>
+        <div class="kpi-sub">
+            <span>Aberto (Não Ini + Andam)</span>
+            <span class="txt-blue">Foco Operacional</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
