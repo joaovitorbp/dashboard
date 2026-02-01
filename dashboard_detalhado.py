@@ -3,14 +3,16 @@ import pandas as pd
 import plotly.graph_objects as go
 
 # ---------------------------------------------------------
-# 1. ESTILO CSS (PADRONIZADO COM A VISÃO GERAL)
+# 1. ESTILO CSS (CORRIGIDO PARA NÃO CORTAR O TOPO)
 # ---------------------------------------------------------
 st.set_page_config(page_title="Detalhes da Obra", layout="wide")
 
 st.markdown("""
 <style>
     .stApp {background-color: #0e1117;}
-    .block-container {padding-top: 2rem; padding-bottom: 3rem;}
+    
+    /* Aumentei o padding superior para evitar cortes */
+    .block-container {padding-top: 3rem; padding-bottom: 3rem;}
     
     .js-plotly-plot .plotly .modebar {display: none !important;}
 
@@ -43,19 +45,21 @@ st.markdown("""
         padding-top: 8px; margin-top: auto;
     }
 
-    /* --- CABEÇALHO DO PROJETO --- */
+    /* --- CABEÇALHO DO PROJETO (AJUSTADO) --- */
     .header-box {
         background-color: #161b22;
         border: 1px solid #30363d;
         border-radius: 10px;
-        padding: 20px;
+        padding: 25px; /* Mais espaço interno */
         margin-bottom: 20px;
+        margin-top: 10px; /* Margem extra no topo */
         display: flex; justify-content: space-between; align-items: center;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
     }
-    .header-title { color: white; font-size: 1.5rem; font-weight: 700; margin: 0; }
-    .header-subtitle { color: #8b949e; font-size: 0.9rem; margin-top: 5px; }
+    .header-title { color: white; font-size: 1.5rem; font-weight: 700; margin: 0; line-height: 1.2; }
+    .header-subtitle { color: #8b949e; font-size: 0.9rem; margin-top: 8px; }
     .header-status { 
-        font-weight: 700; padding: 5px 12px; border-radius: 6px; 
+        font-weight: 700; padding: 6px 14px; border-radius: 6px; 
         color: white; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;
     }
 
@@ -212,7 +216,7 @@ with st.container(border=True):
             number = {'suffix': "%", 'font': {'color': 'white'}},
             gauge = {
                 'axis': {'range': [0, 100], 'tickcolor': "#30363d"},
-                'bar': {'color': "#3fb950"}, # Verde Padrão
+                'bar': {'color': "#3fb950"}, 
                 'bgcolor': "#0d1117", 'borderwidth': 2, 'bordercolor': "#30363d"
             }
         ))
@@ -297,9 +301,9 @@ with st.container(border=True):
         orientation = "v", measure = ["relative"]*5 + ["total"],
         x = labels, y = vals, text = text_vals, textposition = "outside",
         connector = {"line":{"color":"#30363d"}},
-        decreasing = {"marker":{"color":"#da3633"}}, # Vermelho para custos
-        increasing = {"marker":{"color":"#3fb950"}}, # Verde para venda
-        totals = {"marker":{"color":"#58a6ff"}},     # Azul para resultado final
+        decreasing = {"marker":{"color":"#da3633"}}, 
+        increasing = {"marker":{"color":"#3fb950"}}, 
+        totals = {"marker":{"color":"#58a6ff"}},     
         cliponaxis = False
     ))
     
