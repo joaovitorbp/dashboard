@@ -193,7 +193,7 @@ with row1_c1:
         <div class="kpi-val">{formatar_valor_ptbr(valor_vendido_total)}</div>
         <div class="kpi-sub">
             <span>Meta: {pct_meta_venda:.0f}%</span>
-            <span class="txt-blue">{formatar_valor_ptbr(valor_faturado_total)} faturado</span>
+            <span class="txt-blue">{formatar_valor_ptbr(valor_faturado_total)} faturados</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
