@@ -11,7 +11,7 @@ st.markdown("""
     .stApp {background-color: #0e1117;}
     .block-container {padding-top: 2rem;}
 
-    /* --- NOVO LAYOUT DOS KPIS (CABEÇALHO) --- */
+    /* --- LAYOUT DOS KPIS (CABEÇALHO) --- */
     .kpi-card {
         background-color: #161b22; 
         border: 1px solid #30363d; 
@@ -51,7 +51,7 @@ st.markdown("""
     .txt-purple { color: #a371f7; font-weight: bold; }
     .txt-orange { color: #d29922; font-weight: bold; }
 
-    /* --- CSS DOS CARDS DE PROJETO (MANTIDO) --- */
+    /* --- CSS DOS CARDS DE PROJETO --- */
     [data-testid="stVerticalBlockBorderWrapper"] {
         background-color: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 0px !important; transition: transform 0.2s;
     }
@@ -176,15 +176,14 @@ META_VENDAS = 5000000.00
 META_MARGEM = 25.0
 
 # ---------------------------------------------------------
-# 4. INTERFACE - CABEÇALHO
+# 4. INTERFACE - CABEÇALHO (SEM TÍTULOS INTERMEDIÁRIOS)
 # ---------------------------------------------------------
 st.title("Dashboard de Resultados")
 
-# LINHA 1: Volume Financeiro (3 Cards Coloridos)
-st.markdown("### 📊 Indicadores de Volume (Financeiro)")
+# LINHA 1 (3 Colunas)
 row1_c1, row1_c2, row1_c3 = st.columns(3)
 
-# CARD 1.1: VALOR VENDIDO (Azul)
+# CARD 1.1: VALOR VENDIDO
 pct_meta_venda = (valor_vendido_total / META_VENDAS * 100)
 with row1_c1:
     st.markdown(f"""
@@ -198,7 +197,7 @@ with row1_c1:
     </div>
     """, unsafe_allow_html=True)
 
-# CARD 1.2: VALOR CONCLUÍDO (Verde)
+# CARD 1.2: VALOR CONCLUÍDO
 pct_concluido_carteira = (valor_concluido / valor_vendido_total * 100) if valor_vendido_total > 0 else 0
 pct_meta_concluido = (valor_concluido / META_VENDAS * 100)
 with row1_c2:
@@ -213,7 +212,7 @@ with row1_c2:
     </div>
     """, unsafe_allow_html=True)
 
-# CARD 1.3: CUSTOS INTERNOS (Laranja)
+# CARD 1.3: CUSTOS INTERNOS
 with row1_c3:
     st.markdown(f"""
     <div class="kpi-card" style="border-top: 4px solid #d29922;">
@@ -225,11 +224,12 @@ with row1_c3:
     </div>
     """, unsafe_allow_html=True)
 
-# LINHA 2: Eficiência e Margens (4 Cards Neutros)
-st.markdown("### 📈 Indicadores de Eficiência (Margens & Status)")
+st.write("") # Espaçamento sutil
+
+# LINHA 2 (4 Colunas)
 row2_c1, row2_c2, row2_c3, row2_c4 = st.columns(4)
 
-# CARD 2.1: MARGEM TOTAL (Borda Cinza)
+# CARD 2.1: MARGEM TOTAL
 cor_m_geral = "txt-green" if mg_geral >= META_MARGEM else "txt-red"
 with row2_c1:
     st.markdown(f"""
@@ -242,7 +242,7 @@ with row2_c1:
     </div>
     """, unsafe_allow_html=True)
 
-# CARD 2.2: MARGEM CONCLUÍDA (Borda Cinza)
+# CARD 2.2: MARGEM CONCLUÍDA
 cor_m_conc = "txt-green" if mg_concluida >= META_MARGEM else "txt-red"
 with row2_c2:
     st.markdown(f"""
@@ -255,7 +255,7 @@ with row2_c2:
     </div>
     """, unsafe_allow_html=True)
 
-# CARD 2.3: MARGEM LÍQUIDA (Borda Cinza)
+# CARD 2.3: MARGEM LÍQUIDA
 cor_m_liq = "txt-green" if mg_liquida_pos_adm >= (META_MARGEM - 10) else "txt-red"
 with row2_c3:
     st.markdown(f"""
@@ -268,7 +268,7 @@ with row2_c3:
     </div>
     """, unsafe_allow_html=True)
 
-# CARD 2.4: ORÇAMENTOS (Borda Cinza)
+# CARD 2.4: ORÇAMENTOS
 with row2_c4:
     st.markdown(f"""
     <div class="kpi-card" style="border-top: 4px solid #8b949e;">
@@ -343,7 +343,7 @@ for i, (index, row) in enumerate(df_show.iterrows()):
         
         # Cores e Estilos
         if status_raw == "Finalizado": cor_t, bg_b, cl_b = "#3fb950", "rgba(63,185,80,0.2)", "#3fb950"
-        elif status_raw == "Apresentado": cor_t, bg_b, cl_b = "#a371f7", "rgba(163,113,247,0.2)", "#d2a8ff"
+        elif status_raw == "Apresentado": cor_t, bg_b, cl_b = "#a371f7", "rgba(163,113,247,0.2)", "#a371f7" # Ajustado para manter tom
         elif status_raw == "Em andamento": cor_t, bg_b, cl_b = "#d29922", "rgba(210,153,34,0.2)", "#e3b341"
         else: cor_t, bg_b, cl_b = "#da3633", "rgba(218,54,51,0.2)", "#f85149"
 
