@@ -12,10 +12,7 @@ st.set_page_config(page_title="Detalhes da Obra", layout="wide")
 st.markdown("""
 <style>
     .stApp {background-color: #0e1117;}
-    
-    /* Padding ajustado */
     .block-container {padding-top: 3rem; padding-bottom: 3rem;}
-    
     .js-plotly-plot .plotly .modebar {display: none !important;}
 
     /* --- LAYOUT DOS CARDS (KPIs) --- */
@@ -41,7 +38,7 @@ st.markdown("""
         font-family: "Source Sans Pro", sans-serif; margin: 0;
     }
 
-    /* --- CABEÇALHO DO PROJETO (ATUALIZADO PARA BORDA NO TOPO) --- */
+    /* --- CABEÇALHO DO PROJETO --- */
     .header-box {
         background-color: #161b22;
         border: 1px solid #30363d;
@@ -51,7 +48,6 @@ st.markdown("""
         margin-top: 10px;
         display: flex; justify-content: space-between; align-items: center;
         box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-        /* A borda colorida será aplicada via inline style no topo */
     }
     .header-title { color: white; font-size: 1.5rem; font-weight: 700; margin: 0; line-height: 1.2; }
     .header-subtitle { color: #8b949e; font-size: 0.9rem; margin-top: 8px; }
@@ -115,16 +111,18 @@ margem_real_pct = (lucro_liquido / dados['Vendido']) * 100 if dados['Vendido'] >
 
 # --- CARREGAR META (CONFIG) ---
 def load_config():
+    default_data = {"meta_vendas": 5000000.0, "meta_margem": 25.0, "meta_custo_adm": 5.0}
     if not os.path.exists("config.json"):
-        default_data = {"meta_vendas": 5000000.0, "meta_margem": 25.0}
         with open("config.json", "w") as f:
             json.dump(default_data, f)
         return default_data
     with open("config.json", "r") as f:
-        return json.load(f)
+        data = json.load(f)
+        if "meta_custo_adm" not in data: data["meta_custo_adm"] = 5.0
+        return data
 
 config = load_config()
-META_MARGEM = float(config["meta_margem"])
+META_MARGEM_BRUTA = float(config["meta_margem"])
 
 # Definição de Cores Padronizadas
 status = dados['Status']
@@ -138,7 +136,7 @@ else:
     cor_status, bg_status = "#da3633", "rgba(218, 54, 51, 0.2)"
 
 # ---------------------------------------------------------
-# CABEÇALHO (ALTERADO PARA BORDA SUPERIOR)
+# CABEÇALHO
 # ---------------------------------------------------------
 st.markdown(f"""
 <div class="header-box" style="border-top: 5px solid {cor_status};">
@@ -189,8 +187,8 @@ with k3:
     """, unsafe_allow_html=True)
 
 # Card 4: Margem
-cor_margem = "txt-green" if margem_real_pct >= META_MARGEM else "txt-red"
-border_margem = "#3fb950" if margem_real_pct >= META_MARGEM else "#da3633"
+cor_margem = "txt-green" if margem_real_pct >= META_MARGEM_BRUTA else "txt-red"
+border_margem = "#3fb950" if margem_real_pct >= META_MARGEM_BRUTA else "#da3633"
 with k4:
     st.markdown(f"""
     <div class="kpi-card" style="border-top: 4px solid {border_margem};">
