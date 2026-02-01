@@ -170,7 +170,7 @@ pct_meta_venda = (valor_vendido_total / META_VENDAS * 100)
 with row1_c1:
     st.markdown(f"""
     <div class="kpi-card" style="border-left: 3px solid #58a6ff;">
-        <div class="kpi-title">Valor Vendido (Carteira)</div>
+        <div class="kpi-title">Valor Vendido</div>
         <div class="kpi-val">{formatar_valor_ptbr(valor_vendido_total)}</div>
         <div class="kpi-sub">
             <span>Meta: {pct_meta_venda:.0f}%</span>
@@ -184,24 +184,24 @@ pct_concluido = (valor_concluido / valor_vendido_total * 100) if valor_vendido_t
 with row1_c2:
     st.markdown(f"""
     <div class="kpi-card" style="border-left: 3px solid #3fb950;">
-        <div class="kpi-title">Valor Concluído (Fin + Apr)</div>
+        <div class="kpi-title">Valor Concluído</div>
         <div class="kpi-val">{formatar_valor_ptbr(valor_concluido)}</div>
         <div class="kpi-sub">
-            <span>Produção Entregue</span>
-            <span class="txt-green">{pct_concluido:.0f}% da carteira</span>
+            <span></span>
+            <span class="txt-green">{pct_concluido:.0f}% do total</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-# CARD 1.3: CUSTO ADM
+# CARD 1.3: CUSTOS INTERNOS
 with row1_c3:
     st.markdown(f"""
     <div class="kpi-card" style="border-left: 3px solid #d29922;">
-        <div class="kpi-title">Custo Administrativo</div>
+        <div class="kpi-title">Custos internos</div>
         <div class="kpi-val">{formatar_valor_ptbr(custo_adm_total)}</div>
         <div class="kpi-sub">
-            <span>Overhead:</span>
-            <span class="txt-orange" style="font-weight:bold">{overhead_pct:.1f}% da Receita</span>
+            <span></span>
+            <span class="txt-orange" style="font-weight:bold">{overhead_pct:.1f}% do valor vendido</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -210,16 +210,15 @@ with row1_c3:
 st.markdown("### 📈 Indicadores de Eficiência (Margens & Status)")
 row2_c1, row2_c2, row2_c3, row2_c4 = st.columns(4)
 
-# CARD 2.1: MARGEM GERAL (Carteira)
+# CARD 2.1: MARGEM TOTAL
 cor_m_geral = "txt-green" if mg_geral >= META_MARGEM else "txt-red"
 with row2_c1:
     st.markdown(f"""
     <div class="kpi-card">
-        <div class="kpi-title">Margem Geral (Carteira)</div>
+        <div class="kpi-title">Margem total</div>
         <div class="kpi-val {cor_m_geral}">{mg_geral:.1f}%</div>
         <div class="kpi-sub">
-            <span>Média Ponderada Total</span>
-            <span>Meta: 25%</span>
+            <span>Obras vendidas</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -229,39 +228,34 @@ cor_m_conc = "txt-green" if mg_concluida >= META_MARGEM else "txt-red"
 with row2_c2:
     st.markdown(f"""
     <div class="kpi-card">
-        <div class="kpi-title">Margem Concluída (Fin + Apr)</div>
+        <div class="kpi-title">Margem concluída</div>
         <div class="kpi-val {cor_m_conc}">{mg_concluida:.1f}%</div>
         <div class="kpi-sub">
-            <span>Resultado Entregue</span>
-            <span>Meta: 25%</span>
+            <span>Obras concluidas</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-# CARD 2.3: MARGEM LÍQUIDA (PÓS ADM)
+# CARD 2.3: MARGEM LÍQUIDA
 cor_m_liq = "txt-green" if mg_liquida_pos_adm >= (META_MARGEM - 10) else "txt-red"
 with row2_c3:
     st.markdown(f"""
     <div class="kpi-card" style="border-left: 3px solid #a371f7;">
-        <div class="kpi-title">Margem Líquida (Pós Adm)</div>
+        <div class="kpi-title">Margem líquida</div>
         <div class="kpi-val {cor_m_liq}">{mg_liquida_pos_adm:.1f}%</div>
         <div class="kpi-sub">
-            <span>Descontado Overhead</span>
-            <span class="txt-purple">Real Final</span>
+            <span>Descontado custos internos</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-# CARD 2.4: STATUS DE PRODUÇÃO
+# CARD 2.4: ORÇAMENTOS EM ABERTO/TOTAL
 with row2_c4:
     st.markdown(f"""
     <div class="kpi-card">
-        <div class="kpi-title">Status de Produção</div>
+        <div class="kpi-title">Orçamentos em aberto/total</div>
         <div class="kpi-val">{qtd_aberto} <span style='font-size:1rem; color:#8b949e'>/ {qtd_total}</span></div>
-        <div class="kpi-sub">
-            <span>Aberto (Não Ini + Andam)</span>
-            <span class="txt-blue">Foco Operacional</span>
-        </div>
+        <div class="kpi-sub"></div>
     </div>
     """, unsafe_allow_html=True)
 
