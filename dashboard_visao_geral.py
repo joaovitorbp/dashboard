@@ -180,15 +180,16 @@ with row1_c1:
     """, unsafe_allow_html=True)
 
 # CARD 1.2: VALOR CONCLUÍDO
-pct_concluido = (valor_concluido / valor_vendido_total * 100) if valor_vendido_total > 0 else 0
+pct_concluido_carteira = (valor_concluido / valor_vendido_total * 100) if valor_vendido_total > 0 else 0
+pct_meta_concluido = (valor_concluido / META_VENDAS * 100)
 with row1_c2:
     st.markdown(f"""
     <div class="kpi-card" style="border-left: 3px solid #3fb950;">
         <div class="kpi-title">Valor Concluído</div>
         <div class="kpi-val">{formatar_valor_ptbr(valor_concluido)}</div>
         <div class="kpi-sub">
-            <span></span>
-            <span class="txt-green">{pct_concluido:.0f}% do total</span>
+            <span>Meta: {pct_meta_concluido:.0f}%</span>
+            <span class="txt-green">{pct_concluido_carteira:.0f}% do total</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
