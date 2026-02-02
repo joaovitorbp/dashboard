@@ -1,24 +1,21 @@
 import streamlit as st
 import pandas as pd
+import gspread
 import json
 import os
 
 # ---------------------------------------------------------
 # 1. CONFIGURAÇÃO VISUAL
 # ---------------------------------------------------------
-# REMOVEMOS st.set_page_config DAQUI (Já está no main.py)
-
 st.markdown("""
 <style>
-    /* FORÇAR ALINHAMENTO NO TOPO 
-       Isso garante que esta página obedeça ao main.py e zera a margem do título 
-    */
+    /* FORÇAR ALINHAMENTO NO TOPO */
     .block-container {
         padding-top: 1rem !important;
         padding-bottom: 2rem !important;
     }
     
-    /* Remove a margem extra que o st.title coloca automaticamente */
+    /* Remove a margem extra do título */
     h1 {
         padding-top: 0rem !important;
         margin-top: -1rem !important;
@@ -88,16 +85,31 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 2. DADOS E TRATAMENTO
+# 2. DADOS E TRATAMENTO (GOOGLE SHEETS)
 # ---------------------------------------------------------
-@st.cache_data(ttl=0)
+@st.cache_data(ttl=60)
 def load_data():
-    return pd.read_excel("dados_obras_v5.xlsx")
+    try:
+        # Conexão com Google Sheets
+        gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
+        
+        # Abre a planilha pelo nome exato
+        sh = gc.open("dados_dashboard_obras") 
+        
+        # Seleciona a primeira aba
+        worksheet = sh.sheet1
+        
+        # Pega os dados
+        dados = worksheet.get_all_records()
+        df = pd.DataFrame(dados)
+        return df
+    except Exception as e:
+        st.error(f"Erro na conexão com o Google Sheets: {e}")
+        return None
 
-try:
-    df_raw = load_data()
-except FileNotFoundError:
-    st.error("⚠️ Base de dados 'dados_obras_v5.xlsx' não encontrada.")
+df_raw = load_data()
+
+if df_raw is None:
     st.stop()
 
 def clean_currency_brazil(x):
