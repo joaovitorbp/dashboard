@@ -1,9 +1,17 @@
 import streamlit as st
-import streamlit_authenticator as stauth
+import bcrypt
 
-# --- CÓDIGO TEMPORÁRIO PARA GERAR HASH ---
-senha_real = "coloque_sua_senha_aqui"  # <--- DIGITE SUA SENHA AQUI
+# --- GERADOR DE HASH INFALÍVEL ---
+st.title("Gerador de Senha")
 
-hashed_passwords = stauth.Hasher([senha_real]).generate()
-st.write("Sua senha criptografada é:")
-st.code(hashed_passwords[0], language='text')
+# 1. Digite sua senha aqui dentro das aspas
+minha_senha_real = "admin" 
+
+# 2. O código abaixo cria a criptografia
+senha_bytes = minha_senha_real.encode('utf-8')
+salt = bcrypt.gensalt()
+senha_hash = bcrypt.hashpw(senha_bytes, salt)
+
+# 3. Mostra o resultado na tela
+st.write("Copie o código abaixo para colocar no Secrets:")
+st.code(senha_hash.decode('utf-8'), language='text')
