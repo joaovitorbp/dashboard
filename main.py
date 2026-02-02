@@ -12,10 +12,9 @@ st.markdown("""
     /* Fundo geral */
     .stApp {background-color: #0e1117;}
     
-    /* --- 0. REMOVE MARGEM DO TOPO (GLOBAL) --- */
-    /* Isso força o conteúdo de TODAS as páginas a começar mais acima */
+    /* --- 0. ALINHAMENTO GLOBAL (PUXA TUDO PARA O TOPO) --- */
     .block-container {
-        padding-top: 1rem !important; /* Padrão é 6rem, reduzimos para 1rem */
+        padding-top: 1rem !important; /* Reduz a margem superior padrão */
         padding-bottom: 2rem !important;
     }
     
@@ -55,9 +54,19 @@ st.markdown("""
         background-color: #79c0ff !important;
     }
 
-    /* 2. Botão da Sidebar (Padrão, largura total) */
+    /* 2. Botão da Sidebar (TRAVADO para não mudar de tamanho) */
     section[data-testid="stSidebar"] .stButton button {
-        width: 100% !important;
+        background-color: transparent !important;
+        border: 1px solid #4a4a4a !important;
+        color: #fafafa !important;
+        width: 100% !important; /* Garante largura total sempre */
+        box-sizing: border-box !important;
+    }
+    
+    section[data-testid="stSidebar"] .stButton button:hover {
+        border-color: #ff4b4b !important;
+        color: #ff4b4b !important;
+        background-color: rgba(255, 75, 75, 0.1) !important;
     }
     
     /* Centraliza mensagens de erro */
