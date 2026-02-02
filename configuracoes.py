@@ -51,7 +51,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("Configurações do Sistema")
+st.title("Configurações")
 
 # ARQUIVOS
 CONFIG_FILE = "config.json"
