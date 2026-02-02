@@ -320,46 +320,45 @@ with tab3:
         
         saldo = verba_permitida - custo_adm_total
 
-        # --- KPI CARDS (PADRONIZADOS) ---
+        # --- KPI CARDS ---
         c_kpi1, c_kpi2, c_kpi3 = st.columns(3)
         
         with c_kpi1:
-            # Gasto Realizado
             st.markdown(f"""
             <div class="highlight-box" style="border-top: 4px solid #d29922">
-                <div class="highlight-lbl">Custo Interno</div> <div class="highlight-val">R$ {custo_adm_total:,.2f}</div>
+                <div class="highlight-lbl">Custo Interno</div>
+                <div class="highlight-val">R$ {custo_adm_total:,.2f}</div>
             </div>
             """, unsafe_allow_html=True)
             
         with c_kpi2:
-            # Impacto
             cor_impacto = "#da3633" if impacto_percentual > META_ADM else "#3fb950"
             st.markdown(f"""
             <div class="highlight-box" style="border-top: 4px solid {cor_impacto}">
-                <div class="highlight-lbl">Overhead</div> <div class="highlight-val" style="color: {cor_impacto}">{impacto_percentual:.1f}%</div>
+                <div class="highlight-lbl">Overhead</div>
+                <div class="highlight-val" style="color: {cor_impacto}">{impacto_percentual:.1f}%</div>
             </div>
             """, unsafe_allow_html=True)
 
         with c_kpi3:
-            # Saldo com sinal + ou -
             cor_saldo = "#3fb950" if saldo >= 0 else "#da3633"
             sinal = "+" if saldo >= 0 else "-"
             st.markdown(f"""
             <div class="highlight-box" style="border-top: 4px solid {cor_saldo}">
-                <div class="highlight-lbl">Saldo</div> <div class="highlight-val" style="color: {cor_saldo}">{sinal} R$ {abs(saldo):,.2f}</div>
+                <div class="highlight-lbl">Saldo</div>
+                <div class="highlight-val" style="color: {cor_saldo}">{sinal} R$ {abs(saldo):,.2f}</div>
             </div>
             """, unsafe_allow_html=True)
 
         st.divider()
 
-        # FUNÇÃO DE PLOTAGEM (AJUSTADA PARA CORES PROFISSIONAIS E VALORES VISÍVEIS)
+        # FUNÇÃO DE PLOTAGEM (AJUSTADA: NOME + VALOR + PCT)
         def plotar_consumo(df_input, group_col, title):
             df_grouped = df_input
             
-            # Paleta Profissional (Corporate)
-            # Azul Profundo (Folha), Verde Floresta (Materiais), Cinza Metálico (Despesas)
+            # Paleta Profissional
             cores_cat = {'Pessoal': '#0969da', 'Despesas': '#6e7681', 'Materiais': '#2da44e'}
-            cores_seq = ['#0969da', '#2da44e', '#6e7681'] # Sequência para quando não for categoria
+            cores_seq = ['#0969da', '#2da44e', '#6e7681']
             
             if group_col == 'Categoria':
                 vals = {
@@ -376,14 +375,23 @@ with tab3:
                 col_val = 'Total_Sem_Imp'
                 col_name = 'Projeto'
             
-            # Formatação do Texto Dentro da Barra (Compacto mas legível)
-            # Ex: "R$ 10k"
-            df_grouped['Rotulo'] = df_grouped[col_val].apply(lambda x: f"R$ {x/1000:.0f}k")
+            # Calcula Porcentagem do Total Gasto (para exibir dentro da barra)
+            total_deste_grafico = df_grouped[col_val].sum()
+            df_grouped['Pct'] = (df_grouped[col_val] / total_deste_grafico * 100).fillna(0)
+            
+            # Formatação do Texto: NOME + VALOR + (%)
+            if group_col == 'Categoria':
+                df_grouped['Rotulo'] = df_grouped.apply(
+                    lambda x: f"<b>{x[col_name]}</b><br>R$ {x[col_val]/1000:.0f}k<br>({x['Pct']:.1f}%)", axis=1
+                )
+            else:
+                df_grouped['Rotulo'] = df_grouped.apply(
+                    lambda x: f"<b>{x[col_name]}</b><br>R$ {x[col_val]/1000:.0f}k<br>({x['Pct']:.1f}%)", axis=1
+                )
 
             fig = go.Figure()
             
             for i, row in df_grouped.iterrows():
-                # Define cor
                 if group_col == 'Categoria':
                     cor = cores_cat.get(row[col_name], '#8b949e')
                 else:
@@ -395,15 +403,16 @@ with tab3:
                     name=str(row[col_name]), 
                     orientation='h',
                     marker=dict(color=cor),
-                    text=[row['Rotulo']], # Valor explícito na barra
+                    text=[row['Rotulo']], # Texto completo
                     textposition='auto',
-                    insidetextfont=dict(color='white', size=14, weight='bold'),
-                    hovertemplate=f"<b>{row[col_name]}</b><br>Valor: R$ %{{x:,.2f}}<extra></extra>"
+                    insidetextfont=dict(color='white', size=13), # Fonte ajustada
+                    hovertemplate=f"<b>{row[col_name]}</b><br>Valor: R$ %{{x:,.2f}}<br>Representatividade: %{{customdata:.1f}}%<extra></extra>",
+                    customdata=[row['Pct']]
                 ))
 
             fig.update_layout(
                 barmode='stack',
-                height=180,
+                height=200, # Altura um pouco maior para caber o texto de 3 linhas
                 margin=dict(l=0, r=0, t=30, b=10),
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
@@ -419,7 +428,6 @@ with tab3:
                 title=dict(text=title, font=dict(color='white', size=16))
             )
             
-            # Linha da Meta
             fig.add_vline(
                 x=verba_permitida, line_width=3, line_dash="dash", line_color="#da3633", 
                 annotation_text=f"Limite: R$ {verba_permitida:,.0f}", annotation_position="top right",
