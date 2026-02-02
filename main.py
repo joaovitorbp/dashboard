@@ -14,12 +14,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 2. PREPARAÇÃO DOS DADOS (EVITANDO ERROS DE VERSÃO)
+# 2. PREPARAÇÃO DOS DADOS
 # ---------------------------------------------------------
 secrets = st.secrets
 
-# Montamos o dicionário manualmente para evitar erro de "Proxy" do Streamlit
-# e para garantir que a estrutura esteja correta para a biblioteca
+# Montamos o dicionário manualmente para compatibilidade
 config_dict = {
     "credentials": {
         "usernames": {
@@ -34,7 +33,6 @@ config_dict = {
 # ---------------------------------------------------------
 # 3. AUTENTICAÇÃO
 # ---------------------------------------------------------
-# Tenta inicializar de forma compatível com múltiplas versões
 try:
     authenticator = stauth.Authenticate(
         config_dict['credentials'],
@@ -44,7 +42,6 @@ try:
         config_dict['preauthorized']
     )
 except TypeError:
-    # Fallback para versões muito novas que mudaram a assinatura
     authenticator = stauth.Authenticate(
         config_dict['credentials'],
         config_dict['cookie']['name'],
@@ -55,12 +52,13 @@ except TypeError:
 authenticator.login()
 
 # ---------------------------------------------------------
-# 4. VERIFICAÇÃO E NAVEGAÇÃO
+# 4. NAVEGAÇÃO
 # ---------------------------------------------------------
 if st.session_state.get("authentication_status"):
     
     # === LOGADO ===
     with st.sidebar:
+        # Mostra o nome real configurado no Secrets (ex: "Diretoria TE")
         st.write(f"👋 Olá, *{st.session_state['name']}*")
         authenticator.logout('Sair', 'sidebar')
         st.divider()
@@ -73,7 +71,8 @@ if st.session_state.get("authentication_status"):
     pg.run()
 
 elif st.session_state.get("authentication_status") is False:
-    st.error('Usuário ou senha incorretos. (Usuário é "admin")')
+    # AVISO REMOVIDO AQUI
+    st.error('Usuário ou senha incorretos.')
 
 elif st.session_state.get("authentication_status") is None:
-    st.warning('Faça login para continuar.')
+    st.warning('Por favor, faça login para continuar.')
