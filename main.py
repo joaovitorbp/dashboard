@@ -4,7 +4,7 @@ import bcrypt
 st.title("Gerador de Senha 100% Funcional")
 
 # --- SUA SENHA AQUI ---
-senha_desejada = "admin" 
+senha_desejada = "obras@2026" 
 # ----------------------
 
 # Gera o hash manualmente usando bcrypt puro
