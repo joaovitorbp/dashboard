@@ -3,7 +3,7 @@ import streamlit_authenticator as stauth
 import yaml
 
 # ---------------------------------------------------------
-# 1. CONFIGURAÇÃO VISUAL E CSS
+# 1. CONFIGURAÇÃO VISUAL E CSS (AGORA COM SIDEBAR FIXO)
 # ---------------------------------------------------------
 st.set_page_config(page_title="Portal TE Engenharia", layout="wide", page_icon="🏗️")
 
@@ -57,6 +57,24 @@ st.markdown("""
         position: relative;
         top: 60px;
     }
+
+    /* --- CORREÇÃO DA SIDEBAR (BOTÃO NO RODAPÉ) --- */
+    
+    /* 1. Transforma a Sidebar em um container Flexível */
+    section[data-testid="stSidebar"] > div {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between; /* Empurra o conteúdo para as extremidades */
+    }
+    
+    /* 2. Estiliza a área onde fica o botão de sair (User Content) */
+    [data-testid="stSidebarUserContent"] {
+        padding-bottom: 20px; /* Espaço na base */
+        border-top: 1px solid #30363d; /* A LINHA SEPARADORA ÚNICA */
+        padding-top: 20px; /* Espaço entre a linha e o botão */
+    }
+    
 </style>
 """, unsafe_allow_html=True)
 
@@ -105,17 +123,17 @@ if st.session_state.get("authentication_status"):
     
     # === ÁREA LOGADA ===
     
-    # 1. Definimos as páginas
+    # 1. Definimos as páginas (Isso vai para o TOPO da sidebar automaticamente)
     pg = st.navigation([
         st.Page("dashboard_visao_geral.py", title="Visão Geral", icon="🏢"),
         st.Page("dashboard_detalhado.py", title="Detalhamento de Obra", icon="📝"),
         st.Page("configuracoes.py", title="Configurações", icon="⚙️"),
     ])
 
-    # 2. Configuração da Sidebar (Aparece logo abaixo dos links acima)
+    # 2. Sidebar (Isso vai para o FUNDO da sidebar graças ao CSS)
     with st.sidebar:
-        st.divider() # Adiciona a linha separadora
-        authenticator.logout('Desconectar', 'sidebar') # Botão de sair
+        # Repare que NÃO tem st.divider() aqui, o CSS faz a borda
+        authenticator.logout('Desconectar', 'sidebar') 
     
     # 3. Executa a página
     pg.run()
