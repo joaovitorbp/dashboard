@@ -140,10 +140,11 @@ with tab1:
         margem_global = (total_lucro / total_vendido * 100) if total_vendido > 0 else 0
 
         c1, c2, c3 = st.columns(3)
-        with c1: st.markdown(f'<div class="highlight-box" style="border-top: 4px solid #58a6ff"><div class="highlight-lbl">Total Finalizado</div><div class="highlight-val">R$ {total_vendido:,.2f}</div></div>', unsafe_allow_html=True)
+        with c1: st.markdown(f'<div class="highlight-box" style="border-top: 4px solid #3fb950"><div class="highlight-lbl">Total Finalizado</div><div class="highlight-val">R$ {total_vendido:,.2f}</div></div>', unsafe_allow_html=True)
         with c2:
-            st.markdown(f'<div class="highlight-box" style="border-top: 4px solid #8b949e"><div class="highlight-lbl">Margem</div><div class="highlight-val">{margem_global:.1f}%</div></div>', unsafe_allow_html=True)
-        with c3: st.markdown(f'<div class="highlight-box" style="border-top: 4px solid #30363d"><div class="highlight-lbl">Obras Entregues</div><div class="highlight-val">{len(df_finalizadas)}</div></div>', unsafe_allow_html=True)
+            cor_m = "#3fb950" if margem_global >= META_MARGEM else "#da3633"
+            st.markdown(f'<div class="highlight-box" style="border-top: 4px solid {cor_m}"><div class="highlight-lbl">Margem</div><div class="highlight-val" style="color:{cor_m}">{margem_global:.1f}%</div></div>', unsafe_allow_html=True)
+        with c3: st.markdown(f'<div class="highlight-box" style="border-top: 4px solid #8b949e"><div class="highlight-lbl">Obras Entregues</div><div class="highlight-val">{len(df_finalizadas)}</div></div>', unsafe_allow_html=True)
 
         st.divider()
         st.subheader("Ranking por Planta") 
@@ -151,7 +152,7 @@ with tab1:
         df_agrupado['Margem_%'] = (df_agrupado['Lucro'] / df_agrupado['Vendido'] * 100).fillna(0)
         df_agrupado = df_agrupado.sort_values(by='Vendido', ascending=True)
 
-        # Paleta em tons de azul/cinza para o ranking
+        # Gráfico mantido com paleta neutra profissional
         fig_detalhe = px.bar(df_agrupado, y='Cliente_Local', x='Vendido', text_auto='.2s', orientation='h', color='Margem_%', color_continuous_scale=['#1f2937', '#4b5563', '#60a5fa'], labels={'Vendido': 'Valor Vendido (R$)', 'Cliente_Local': '', 'Margem_%': 'Margem %'})
         fig_detalhe.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color='white'), xaxis=dict(showgrid=True, gridcolor='#30363d'), height=500, margin=dict(t=0, l=0, r=0, b=0))
         st.plotly_chart(fig_detalhe, use_container_width=True, config={'displayModeBar': False})
@@ -191,16 +192,21 @@ with tab3:
         saldo = verba_permitida - custo_adm_total
 
         c1, c2, c3 = st.columns(3)
-        with c1: st.markdown(f'<div class="highlight-box" style="border-top: 4px solid #4b5563"><div class="highlight-lbl">Custo Interno</div><div class="highlight-val">R$ {custo_adm_total:,.2f}</div></div>', unsafe_allow_html=True)
-        with c2: st.markdown(f'<div class="highlight-box" style="border-top: 4px solid #58a6ff"><div class="highlight-lbl">Overhead</div><div class="highlight-val">{impacto_percentual:.1f}%</div></div>', unsafe_allow_html=True)
+        with c1: st.markdown(f'<div class="highlight-box" style="border-top: 4px solid #d29922"><div class="highlight-lbl">Custo Interno</div><div class="highlight-val">R$ {custo_adm_total:,.2f}</div></div>', unsafe_allow_html=True)
+        with c2:
+            # Card com cor semafórica para alertar sobre o Overhead
+            cor_impacto = "#3fb950" if impacto_percentual <= META_ADM else "#da3633"
+            st.markdown(f'<div class="highlight-box" style="border-top: 4px solid {cor_impacto}"><div class="highlight-lbl">Overhead</div><div class="highlight-val" style="color: {cor_impacto}">{impacto_percentual:.1f}%</div></div>', unsafe_allow_html=True)
         with c3:
+            # Card com cor semafórica para indicar Saldo Positivo ou Negativo
+            cor_saldo = "#3fb950" if saldo >= 0 else "#da3633"
             sinal = "+" if saldo >= 0 else "-"
-            st.markdown(f'<div class="highlight-box" style="border-top: 4px solid #ffffff"><div class="highlight-lbl">Saldo</div><div class="highlight-val">{sinal} R$ {abs(saldo):,.2f}</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="highlight-box" style="border-top: 4px solid {cor_saldo}"><div class="highlight-lbl">Saldo</div><div class="highlight-val" style="color: {cor_saldo}">{sinal} R$ {abs(saldo):,.2f}</div></div>', unsafe_allow_html=True)
 
         st.divider()
 
         def plotar_consumo(df_input, group_col):
-            # Paleta Corporativa Neutra: Azul Marinho, Azul Slate, Cinza Cool
+            # Paleta Corporativa Neutra
             cores_cat = {'Pessoal': '#003366', 'Despesas': '#4b5563', 'Materiais': '#708090'}
             cores_seq = ['#003366', '#4b5563', '#708090']
             
