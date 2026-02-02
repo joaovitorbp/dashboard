@@ -7,13 +7,11 @@ import os
 # ---------------------------------------------------------
 # 1. ESTILO CSS
 # ---------------------------------------------------------
-# REMOVEMOS st.set_page_config (Já está no main.py)
-
 st.markdown("""
 <style>
     .stApp {background-color: #0e1117;}
     
-    /* --- ALINHAMENTO NO TOPO (IGUAL VISÃO GERAL) --- */
+    /* --- ALINHAMENTO NO TOPO --- */
     .block-container {
         padding-top: 1rem !important;
         padding-bottom: 2rem !important;
@@ -115,6 +113,11 @@ id_projeto = st.sidebar.selectbox("Projeto:", lista_projetos, index=index_padrao
 dados = df_raw[df_raw['Projeto'] == id_projeto].iloc[0]
 
 # ---------------------------------------------------------
+# TÍTULO DA PÁGINA (ADICIONADO)
+# ---------------------------------------------------------
+st.title("Detalhamento de Projeto")
+
+# ---------------------------------------------------------
 # CÁLCULOS
 # ---------------------------------------------------------
 custo_total = dados['Mat_Real'] + dados['Desp_Real'] + dados['HH_Real_Vlr'] + dados['Impostos']
@@ -148,7 +151,7 @@ else:
     cor_status, bg_status = "#da3633", "rgba(218, 54, 51, 0.2)"
 
 # ---------------------------------------------------------
-# CABEÇALHO
+# CABEÇALHO DO PROJETO
 # ---------------------------------------------------------
 st.markdown(f"""
 <div class="header-box" style="border-top: 5px solid {cor_status};">
