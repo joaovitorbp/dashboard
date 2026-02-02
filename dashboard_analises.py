@@ -309,18 +309,15 @@ with tab3:
         st.warning("⚠️ Nenhum projeto 5009, 5010 ou 5011 encontrado.")
     else:
         # --- CÁLCULOS ---
-        # 1. Total de Gastos (SEM IMPOSTOS)
         df_adm['Total_Sem_Imp'] = df_adm['Mat_Real'] + df_adm['Desp_Real'] + df_adm['HH_Real_Vlr']
         custo_adm_total = df_adm['Total_Sem_Imp'].sum()
         
-        # 2. Verba Disponível
         faturamento_global = df_obras['Vendido'].sum()
         verba_permitida = faturamento_global * (META_ADM / 100.0)
         
-        # 3. Impacto %
         impacto_percentual = (custo_adm_total / faturamento_global * 100) if faturamento_global > 0 else 0
 
-        # --- KPI CARDS (ORIGINAIS) ---
+        # --- KPI CARDS ---
         c_kpi1, c_kpi2 = st.columns(2)
         
         with c_kpi1:
@@ -337,78 +334,91 @@ with tab3:
             <div class="adm-box" style="border-color: {cor_impacto}">
                 <div style="color: {cor_impacto}; font-size: 0.9rem; text-transform: uppercase; font-weight: bold;">Overhead (Impacto)</div>
                 <div style="font-size: 2rem; font-weight: 800; color: white;">{impacto_percentual:.1f}%</div>
-                <div style="font-size: 0.7rem; color: #8b949e">Meta Max: {META_ADM:.1f}%</div>
-            </div>
+                </div>
             """, unsafe_allow_html=True)
 
         st.divider()
 
-        # --- GRÁFICO 1: BARRA DE CONSUMO ÚNICA COM % INTERNA ---
-        st.subheader("Consumo do Orçamento")
-        
-        # Prepara dados agrupados por ID para a barra
-        df_gastos_id = df_adm.groupby('Projeto').agg({'Total_Sem_Imp': 'sum', 'Descricao': 'first'}).reset_index()
-        
-        # Calcula a porcentagem de cada ID em relação ao GASTO TOTAL (para mostrar dentro da barra)
-        df_gastos_id['Pct_Do_Total'] = (df_gastos_id['Total_Sem_Imp'] / custo_adm_total * 100).fillna(0)
-        
-        # Formata o texto que vai dentro da barra: "R$ 10k (30%)"
-        df_gastos_id['Rotulo'] = df_gastos_id.apply(
-            lambda x: f"<b>R$ {x['Total_Sem_Imp']/1000:.0f}k</b><br>({x['Pct_Do_Total']:.0f}%)", axis=1
-        )
-        
-        fig_progress = go.Figure()
-        
-        cores = ['#58a6ff', '#a371f7', '#d29922'] # Azul, Roxo, Laranja
-        for i, row in df_gastos_id.iterrows():
-            cor = cores[i % len(cores)]
+        # FUNÇÃO PARA PLOTAR BARRA DE CONSUMO
+        def plotar_consumo(df_input, group_col, title):
+            df_grouped = df_input
             
-            fig_progress.add_trace(go.Bar(
-                y=['Consumo'], 
-                x=[row['Total_Sem_Imp']], 
-                name=f"{row['Projeto']} - {row['Descricao'][:15]}", 
-                orientation='h',
-                marker=dict(color=cor),
-                text=[row['Rotulo']], # O texto formatado
-                textposition='auto',  # Tenta colocar dentro, se não der, põe fora
-                insidetextfont=dict(color='white', size=14, family="Arial Black"), # Fonte forte dentro
-                outsidetextfont=dict(color='white'),
-                hovertemplate=f"<b>{row['Descricao']}</b><br>Gasto: R$ %{{x:,.2f}}<br>Representa %{{text}}<extra></extra>"
-            ))
+            # Se for por categoria, cria o dataframe na mão
+            if group_col == 'Categoria':
+                vals = {
+                    'Pessoal': df_adm['HH_Real_Vlr'].sum(),
+                    'Despesas': df_adm['Desp_Real'].sum(),
+                    'Materiais': df_adm['Mat_Real'].sum()
+                }
+                df_grouped = pd.DataFrame(list(vals.items()), columns=['Categoria', 'Valor'])
+                df_grouped = df_grouped[df_grouped['Valor'] > 0]
+                col_val = 'Valor'
+                col_name = 'Categoria'
+                cores_map = {'Pessoal': '#58a6ff', 'Despesas': '#d29922', 'Materiais': '#a371f7'}
+            else:
+                # Agrupado por Projeto ID
+                df_grouped = df_adm.groupby('Projeto').agg({'Total_Sem_Imp': 'sum', 'Descricao': 'first'}).reset_index()
+                col_val = 'Total_Sem_Imp'
+                col_name = 'Projeto'
+                cores_list = ['#58a6ff', '#a371f7', '#d29922']
             
-        fig_progress.update_layout(
-            barmode='stack',
-            height=220, # Altura boa para ver os números
-            margin=dict(l=0, r=0, t=30, b=10),
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            xaxis=dict(
-                showgrid=True, gridcolor='#30363d',
-                showticklabels=True, tickfont=dict(color='#8b949e'),
-                tickprefix="R$ ",
-                # O eixo vai até onde for maior: A meta ou o gasto real (se estourou)
-                range=[0, max(verba_permitida, custo_adm_total) * 1.15]
-            ),
-            yaxis=dict(showticklabels=False, title=None),
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-        )
+            # Cálculo de % interna
+            df_grouped['Pct'] = (df_grouped[col_val] / custo_adm_total * 100).fillna(0)
+            
+            # Label
+            if group_col == 'Categoria':
+                df_grouped['Rotulo'] = df_grouped.apply(lambda x: f"<b>{x[col_name]}</b><br>({x['Pct']:.0f}%)", axis=1)
+            else:
+                df_grouped['Rotulo'] = df_grouped.apply(lambda x: f"<b>{x[col_name]}</b><br>({x['Pct']:.0f}%)", axis=1)
+
+            fig = go.Figure()
+            
+            for i, row in df_grouped.iterrows():
+                if group_col == 'Categoria':
+                    cor = cores_map.get(row[col_name], '#8b949e')
+                else:
+                    cor = cores_list[i % 3]
+
+                fig.add_trace(go.Bar(
+                    y=['Consumo'], 
+                    x=[row[col_val]], 
+                    name=str(row[col_name]), 
+                    orientation='h',
+                    marker=dict(color=cor),
+                    text=[row['Rotulo']],
+                    textposition='auto',
+                    insidetextfont=dict(color='white', size=14, family="Arial Black"),
+                    hovertemplate=f"R$ %{{x:,.2f}}<extra></extra>"
+                ))
+
+            fig.update_layout(
+                barmode='stack',
+                height=180,
+                margin=dict(l=0, r=0, t=30, b=10),
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                xaxis=dict(
+                    showgrid=True, gridcolor='#30363d',
+                    showticklabels=True, tickfont=dict(color='#8b949e'),
+                    tickprefix="R$ ",
+                    range=[0, max(verba_permitida, custo_adm_total) * 1.15]
+                ),
+                yaxis=dict(showticklabels=False, title=None),
+                showlegend=False,
+                title=dict(text=title, font=dict(color='white', size=16))
+            )
+            
+            # Linha da Meta
+            fig.add_vline(
+                x=verba_permitida, line_width=3, line_dash="dash", line_color="#da3633", 
+                annotation_text=f"Limite: R$ {verba_permitida:,.0f}", annotation_position="top right"
+            )
+            return fig
+
+        # --- GRÁFICO 1: POR CENTRO DE CUSTO (ID) ---
+        st.plotly_chart(plotar_consumo(df_adm, 'Projeto', "Por Centro de Custo"), use_container_width=True)
         
-        # Linha da Meta
-        fig_progress.add_vline(
-            x=verba_permitida, 
-            line_width=3, 
-            line_dash="dash", 
-            line_color="#da3633", 
-            annotation_text=f"Limite Permitido (5%): R$ {verba_permitida:,.0f}", 
-            annotation_position="top right",
-            annotation_font=dict(color="#da3633", size=12, weight="bold")
-        )
+        st.write("")
         
-        st.plotly_chart(fig_progress, use_container_width=True)
-        
-        # Mensagem de status
-        saldo = verba_permitida - custo_adm_total
-        if saldo >= 0:
-            st.success(f"✅ **Dentro do Orçamento:** Você ainda pode gastar **R$ {saldo:,.2f}** antes de atingir o limite de 5%.")
-        else:
-            st.error(f"🚨 **Orçamento Estourado:** Você excedeu o limite em **R$ {abs(saldo):,.2f}**.")
+        # --- GRÁFICO 2: POR NATUREZA (MAT/DESP/HH) ---
+        st.plotly_chart(plotar_consumo(df_adm, 'Categoria', "Por Natureza do Gasto"), use_container_width=True)
