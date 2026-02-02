@@ -45,17 +45,18 @@ st.markdown("""
         height: 0px !important;
     }
     
-    /* Box de Destaque */
+    /* Box de Destaque (Padronizado para todas as abas) */
     .highlight-box {
-        background-color: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 15px; text-align: center;
+        background-color: #161b22; 
+        border: 1px solid #30363d; 
+        border-radius: 8px; 
+        padding: 15px; 
+        text-align: center;
+        height: 100%;
+        display: flex; flex-direction: column; justify-content: center;
     }
     .highlight-val { font-size: 1.5rem; font-weight: 800; color: white; }
-    .highlight-lbl { color: #8b949e; font-size: 0.8rem; text-transform: uppercase; }
-
-    /* Box de Destaque ADM */
-    .adm-box {
-        background-color: #161b22; border: 1px solid #d29922; border-radius: 8px; padding: 20px; text-align: center;
-    }
+    .highlight-lbl { color: #8b949e; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 5px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -316,25 +317,41 @@ with tab3:
         verba_permitida = faturamento_global * (META_ADM / 100.0)
         
         impacto_percentual = (custo_adm_total / faturamento_global * 100) if faturamento_global > 0 else 0
+        
+        # Saldo (Diferença entre o permitido e o gasto)
+        saldo = verba_permitida - custo_adm_total
 
-        # --- KPI CARDS ---
-        c_kpi1, c_kpi2 = st.columns(2)
+        # --- KPI CARDS (PADRONIZADOS COM ABA 1) ---
+        c_kpi1, c_kpi2, c_kpi3 = st.columns(3)
         
         with c_kpi1:
+            # Card 1: Gasto Realizado (Laranja para indicar Custo)
             st.markdown(f"""
-            <div class="adm-box">
-                <div style="color: #d29922; font-size: 0.9rem; text-transform: uppercase; font-weight: bold;">Custo Administrativo</div>
-                <div style="font-size: 2rem; font-weight: 800; color: white;">R$ {custo_adm_total:,.2f}</div>
+            <div class="highlight-box" style="border-top: 4px solid #d29922">
+                <div class="highlight-lbl">Custo Administrativo</div>
+                <div class="highlight-val">R$ {custo_adm_total:,.2f}</div>
             </div>
             """, unsafe_allow_html=True)
             
         with c_kpi2:
+            # Card 2: Impacto (Overhead)
             cor_impacto = "#da3633" if impacto_percentual > META_ADM else "#3fb950"
             st.markdown(f"""
-            <div class="adm-box" style="border-color: {cor_impacto}">
-                <div style="color: {cor_impacto}; font-size: 0.9rem; text-transform: uppercase; font-weight: bold;">Overhead (Impacto)</div>
-                <div style="font-size: 2rem; font-weight: 800; color: white;">{impacto_percentual:.1f}%</div>
-                </div>
+            <div class="highlight-box" style="border-top: 4px solid {cor_impacto}">
+                <div class="highlight-lbl">Overhead (Impacto)</div>
+                <div class="highlight-val" style="color: {cor_impacto}">{impacto_percentual:.1f}%</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with c_kpi3:
+            # Card 3: Saldo (NOVO)
+            cor_saldo = "#3fb950" if saldo >= 0 else "#da3633"
+            lbl_saldo = "Saldo da Verba"
+            st.markdown(f"""
+            <div class="highlight-box" style="border-top: 4px solid {cor_saldo}">
+                <div class="highlight-lbl">{lbl_saldo}</div>
+                <div class="highlight-val" style="color: {cor_saldo}">R$ {abs(saldo):,.2f}</div>
+            </div>
             """, unsafe_allow_html=True)
 
         st.divider()
@@ -401,6 +418,7 @@ with tab3:
                     showgrid=True, gridcolor='#30363d',
                     showticklabels=True, tickfont=dict(color='#8b949e'),
                     tickprefix="R$ ",
+                    # O eixo vai até onde for maior: A meta ou o gasto real (se estourou)
                     range=[0, max(verba_permitida, custo_adm_total) * 1.15]
                 ),
                 yaxis=dict(showticklabels=False, title=None),
