@@ -150,7 +150,6 @@ tab1, tab2, tab3 = st.tabs(["Cliente", "Segmentos", "Custos Internos"])
 # ABA 1: CLIENTE
 # =========================================================
 with tab1:
-    
     if df_finalizadas.empty:
         st.warning("⚠️ Nenhuma obra finalizada encontrada.")
     else:
@@ -301,7 +300,7 @@ with tab2:
             st.plotly_chart(fig_scat, use_container_width=True)
 
 # =========================================================
-# ABA 3: CUSTOS INTERNOS (NOVO LAYOUT)
+# ABA 3: CUSTOS INTERNOS
 # =========================================================
 with tab3:
     st.write("")
@@ -310,150 +309,106 @@ with tab3:
         st.warning("⚠️ Nenhum projeto 5009, 5010 ou 5011 encontrado.")
     else:
         # --- CÁLCULOS ---
-        # 1. Total de Gastos (SEM IMPOSTOS) - Usamos apenas Mat, Desp e HH
-        # Criamos colunas auxiliares para garantir que estamos somando apenas o que importa
+        # 1. Total de Gastos (SEM IMPOSTOS)
         df_adm['Total_Sem_Imp'] = df_adm['Mat_Real'] + df_adm['Desp_Real'] + df_adm['HH_Real_Vlr']
         custo_adm_total = df_adm['Total_Sem_Imp'].sum()
         
-        # 2. Verba Disponível (Baseada no Faturamento Global)
+        # 2. Verba Disponível
         faturamento_global = df_obras['Vendido'].sum()
         verba_permitida = faturamento_global * (META_ADM / 100.0)
         
-        # 3. Saldo
-        saldo = verba_permitida - custo_adm_total
-        percentual_uso = (custo_adm_total / verba_permitida * 100) if verba_permitida > 0 else 0
+        # 3. Impacto %
+        impacto_percentual = (custo_adm_total / faturamento_global * 100) if faturamento_global > 0 else 0
 
-        # --- KPI SUPERIOR ---
-        c_kpi1, c_kpi2, c_kpi3 = st.columns(3)
+        # --- KPI CARDS (ORIGINAIS) ---
+        c_kpi1, c_kpi2 = st.columns(2)
         
         with c_kpi1:
             st.markdown(f"""
             <div class="adm-box">
-                <div style="color: #58a6ff; font-size: 0.8rem; text-transform: uppercase; font-weight: bold;">Verba Permitida ({META_ADM}%)</div>
-                <div style="font-size: 1.8rem; font-weight: 800; color: white;">R$ {verba_permitida:,.2f}</div>
+                <div style="color: #d29922; font-size: 0.9rem; text-transform: uppercase; font-weight: bold;">Custo Administrativo</div>
+                <div style="font-size: 2rem; font-weight: 800; color: white;">R$ {custo_adm_total:,.2f}</div>
             </div>
             """, unsafe_allow_html=True)
             
         with c_kpi2:
+            cor_impacto = "#da3633" if impacto_percentual > META_ADM else "#3fb950"
             st.markdown(f"""
-            <div class="adm-box">
-                <div style="color: #d29922; font-size: 0.8rem; text-transform: uppercase; font-weight: bold;">Gasto Realizado</div>
-                <div style="font-size: 1.8rem; font-weight: 800; color: white;">R$ {custo_adm_total:,.2f}</div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-        with c_kpi3:
-            # Cor do Saldo
-            cor_saldo = "#3fb950" if saldo >= 0 else "#da3633"
-            lbl_saldo = "Saldo Disponível" if saldo >= 0 else "Estouro de Verba"
-            st.markdown(f"""
-            <div class="adm-box" style="border: 1px solid {cor_saldo}">
-                <div style="color: {cor_saldo}; font-size: 0.8rem; text-transform: uppercase; font-weight: bold;">{lbl_saldo}</div>
-                <div style="font-size: 1.8rem; font-weight: 800; color: white;">R$ {abs(saldo):,.2f}</div>
+            <div class="adm-box" style="border-color: {cor_impacto}">
+                <div style="color: {cor_impacto}; font-size: 0.9rem; text-transform: uppercase; font-weight: bold;">Overhead (Impacto)</div>
+                <div style="font-size: 2rem; font-weight: 800; color: white;">{impacto_percentual:.1f}%</div>
+                <div style="font-size: 0.7rem; color: #8b949e">Meta Max: {META_ADM:.1f}%</div>
             </div>
             """, unsafe_allow_html=True)
 
         st.divider()
 
-        # --- GRÁFICO 1: BARRA DE PROGRESSO DE CONSUMO DA VERBA ---
-        st.subheader("Consumo da Verba")
+        # --- GRÁFICO 1: BARRA DE CONSUMO ÚNICA COM % INTERNA ---
+        st.subheader("Consumo do Orçamento")
         
-        # Preparar dados para a barra empilhada horizontal (Progress Bar)
-        # Queremos uma barra única de 0 até o Limite.
-        # Mas o Plotly funciona melhor empilhando valores.
-        
-        # Agrupa gastos por ID para pintar de cores diferentes
+        # Prepara dados agrupados por ID para a barra
         df_gastos_id = df_adm.groupby('Projeto').agg({'Total_Sem_Imp': 'sum', 'Descricao': 'first'}).reset_index()
         
-        # Cria uma barra horizontal empilhada
+        # Calcula a porcentagem de cada ID em relação ao GASTO TOTAL (para mostrar dentro da barra)
+        df_gastos_id['Pct_Do_Total'] = (df_gastos_id['Total_Sem_Imp'] / custo_adm_total * 100).fillna(0)
+        
+        # Formata o texto que vai dentro da barra: "R$ 10k (30%)"
+        df_gastos_id['Rotulo'] = df_gastos_id.apply(
+            lambda x: f"<b>R$ {x['Total_Sem_Imp']/1000:.0f}k</b><br>({x['Pct_Do_Total']:.0f}%)", axis=1
+        )
+        
         fig_progress = go.Figure()
         
-        # Adiciona cada ID como um segmento da barra
         cores = ['#58a6ff', '#a371f7', '#d29922'] # Azul, Roxo, Laranja
         for i, row in df_gastos_id.iterrows():
             cor = cores[i % len(cores)]
+            
             fig_progress.add_trace(go.Bar(
-                y=['Orçamento'], 
+                y=['Consumo'], 
                 x=[row['Total_Sem_Imp']], 
-                name=f"{row['Projeto']} - {row['Descricao'][:15]}...", # Nome curto
+                name=f"{row['Projeto']} - {row['Descricao'][:15]}", 
                 orientation='h',
                 marker=dict(color=cor),
-                hovertemplate="<b>%{x:,.2f}</b><extra></extra>"
+                text=[row['Rotulo']], # O texto formatado
+                textposition='auto',  # Tenta colocar dentro, se não der, põe fora
+                insidetextfont=dict(color='white', size=14, family="Arial Black"), # Fonte forte dentro
+                outsidetextfont=dict(color='white'),
+                hovertemplate=f"<b>{row['Descricao']}</b><br>Gasto: R$ %{{x:,.2f}}<br>Representa %{{text}}<extra></extra>"
             ))
             
-        # Adiciona a "Sombra" do que falta para atingir a meta (se houver saldo)
-        if saldo > 0:
-            fig_progress.add_trace(go.Bar(
-                y=['Orçamento'],
-                x=[saldo],
-                name='Disponível',
-                orientation='h',
-                marker=dict(color='rgba(255,255,255,0.1)', line=dict(width=1, color='#3fb950')), # Transparente com borda verde
-                hovertemplate="Disponível: <b>%{x:,.2f}</b><extra></extra>"
-            ))
-            
-        # Configurações para parecer uma barra de progresso
         fig_progress.update_layout(
             barmode='stack',
-            height=120,
-            margin=dict(l=0, r=0, t=10, b=10),
+            height=220, # Altura boa para ver os números
+            margin=dict(l=0, r=0, t=30, b=10),
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)',
             xaxis=dict(
-                range=[0, max(verba_permitida, custo_adm_total) * 1.1], # Garante que cabe tudo
-                showgrid=False,
-                showticklabels=True,
-                tickfont=dict(color='#8b949e'),
-                tickprefix="R$ "
+                showgrid=True, gridcolor='#30363d',
+                showticklabels=True, tickfont=dict(color='#8b949e'),
+                tickprefix="R$ ",
+                # O eixo vai até onde for maior: A meta ou o gasto real (se estourou)
+                range=[0, max(verba_permitida, custo_adm_total) * 1.15]
             ),
-            yaxis=dict(showticklabels=False),
-            showlegend=True,
+            yaxis=dict(showticklabels=False, title=None),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
         )
         
-        # Linha Vertical da Meta (Limite)
-        fig_progress.add_vline(x=verba_permitida, line_width=2, line_dash="dash", line_color="#3fb950", annotation_text="Limite Permitido", annotation_position="top left")
+        # Linha da Meta
+        fig_progress.add_vline(
+            x=verba_permitida, 
+            line_width=3, 
+            line_dash="dash", 
+            line_color="#da3633", 
+            annotation_text=f"Limite Permitido (5%): R$ {verba_permitida:,.0f}", 
+            annotation_position="top right",
+            annotation_font=dict(color="#da3633", size=12, weight="bold")
+        )
         
         st.plotly_chart(fig_progress, use_container_width=True)
-        st.caption("A linha tracejada verde indica o limite máximo de gastos baseado nas vendas.")
         
-        st.write("")
-        st.write("")
-
-        # --- GRÁFICO 2: DETALHAMENTO SEPARADO (STACKED BAR) ---
-        st.subheader("Detalhamento por Centro de Custo")
-        
-        # Prepara dados: Stacked Bar por Categoria (Mat, Desp, HH) para cada ID
-        # Precisamos "melt" (transformar colunas em linhas)
-        df_melted = df_adm.melt(
-            id_vars=['Projeto', 'Descricao'], 
-            value_vars=['Mat_Real', 'Desp_Real', 'HH_Real_Vlr'],
-            var_name='Categoria', value_name='Valor'
-        )
-        
-        # Renomear categorias para ficar bonito
-        mapa_cat = {'Mat_Real': 'Materiais', 'Desp_Real': 'Despesas', 'HH_Real_Vlr': 'Pessoal'}
-        df_melted['Categoria'] = df_melted['Categoria'].map(mapa_cat)
-        
-        # Remove valores zerados para limpar o gráfico
-        df_melted = df_melted[df_melted['Valor'] > 0]
-        
-        fig_stacked = px.bar(
-            df_melted, 
-            x='Projeto', 
-            y='Valor', 
-            color='Categoria',
-            title="",
-            text_auto='.2s',
-            color_discrete_map={'Pessoal': '#58a6ff', 'Despesas': '#d29922', 'Materiais': '#a371f7'},
-            hover_data=['Descricao']
-        )
-        
-        fig_stacked.update_layout(
-            plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white'),
-            xaxis=dict(showgrid=False, title=None),
-            yaxis=dict(showgrid=True, gridcolor='#30363d', title="Valor Gasto (R$)"),
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-        )
-        st.plotly_chart(fig_stacked, use_container_width=True)
+        # Mensagem de status
+        saldo = verba_permitida - custo_adm_total
+        if saldo >= 0:
+            st.success(f"✅ **Dentro do Orçamento:** Você ainda pode gastar **R$ {saldo:,.2f}** antes de atingir o limite de 5%.")
+        else:
+            st.error(f"🚨 **Orçamento Estourado:** Você excedeu o limite em **R$ {abs(saldo):,.2f}**.")
