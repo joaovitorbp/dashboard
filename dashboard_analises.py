@@ -16,25 +16,32 @@ st.markdown("""
     .block-container {padding-top: 1rem !important; padding-bottom: 2rem !important;}
     h1 {padding-top: 0rem !important; margin-top: -1rem !important;}
     
-    /* Abas customizadas - Ajuste de Tamanho */
+    /* --- ABAS (NOVO VISUAL CLEAN) --- */
+    /* Remove o visual de "Card" e cria uma barra contínua */
     .stTabs [data-baseweb="tab-list"] { 
-        gap: 8px; 
+        gap: 0px; 
+        background-color: transparent;
+        border-bottom: 1px solid #30363d;
+        margin-bottom: 20px;
     }
+    
     .stTabs [data-baseweb="tab"] {
-        height: 50px; 
-        white-space: normal; 
-        background-color: #161b22; 
-        border-radius: 5px; 
-        color: #fff; 
-        border: 1px solid #30363d;
-        flex-grow: 1; 
-        text-align: center;
+        height: 45px; 
+        background-color: transparent; 
+        border: none;
+        color: #8b949e; 
+        border-radius: 0px;
+        flex-grow: 0; /* Não estica, fica elegante */
+        padding-left: 20px;
+        padding-right: 20px;
+        font-weight: 600;
     }
+    
+    /* Aba Selecionada: Apenas um traço azul embaixo e texto branco */
     .stTabs [aria-selected="true"] {
-        background-color: #58a6ff !important; 
-        color: white !important; 
-        border-color: #58a6ff;
-        font-weight: bold;
+        background-color: transparent !important; 
+        color: #58a6ff !important; 
+        border-bottom: 3px solid #58a6ff;
     }
     
     /* Box de Destaque (KPIs) */
@@ -52,7 +59,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 2. CARREGAR CONFIGURAÇÕES (META)
+# 2. CARREGAR CONFIGURAÇÕES
 # ---------------------------------------------------------
 def load_config():
     default_data = {"meta_vendas": 5000000.0, "meta_margem": 25.0, "meta_custo_adm": 5.0}
@@ -67,7 +74,7 @@ config = load_config()
 META_MARGEM = float(config["meta_margem"])
 
 # ---------------------------------------------------------
-# 3. DADOS (CONECTADO AO GOOGLE SHEETS)
+# 3. DADOS
 # ---------------------------------------------------------
 @st.cache_data(ttl=60)
 def load_data():
@@ -110,7 +117,7 @@ for col in cols_numericas:
 df_raw['Custo_Total'] = df_raw['Mat_Real'] + df_raw['Desp_Real'] + df_raw['HH_Real_Vlr'] + df_raw['Impostos']
 df_raw['Lucro'] = df_raw['Vendido'] - df_raw['Custo_Total']
 
-# Criação da Chave Única: Cliente + Local
+# Chave Única: Cliente + Local
 df_raw['Cliente_Local'] = df_raw.apply(
     lambda row: f"{row['Cliente']} ({row['Cidade']})" if pd.notna(row['Cidade']) and str(row['Cidade']).strip() != "" else row['Cliente'], 
     axis=1
@@ -135,14 +142,13 @@ df_finalizadas = df_obras[df_obras['Status'].isin(['Finalizado', 'Apresentado'])
 # ---------------------------------------------------------
 st.title("Análises Estratégicas")
 
-# Abas atualizadas
-tab1, tab2, tab3 = st.tabs(["Clientes & Regiões", "Tipos de Obra", "Custos Internos"])
+# Abas atualizadas com "Segmentos" no lugar de Tipo de Obra
+tab1, tab2, tab3 = st.tabs(["Cliente", "Segmentos", "Custos Internos"])
 
 # =========================================================
-# ABA 1: CLIENTES & REGIÕES
+# ABA 1: CLIENTE
 # =========================================================
 with tab1:
-    st.write("")
     
     if df_finalizadas.empty:
         st.warning("⚠️ Nenhuma obra finalizada encontrada.")
@@ -161,7 +167,6 @@ with tab1:
             </div>
             """, unsafe_allow_html=True)
         with c2:
-            # Cor baseada na META configurada
             cor_m = "#3fb950" if margem_global >= META_MARGEM else "#da3633"
             st.markdown(f"""
             <div class="highlight-box" style="border-top: 4px solid {cor_m}">
@@ -179,8 +184,8 @@ with tab1:
 
         st.divider()
 
-        # --- ORDEM INVERTIDA: VISÃO DETALHADA PRIMEIRO ---
-        st.subheader("Visão Detalhada (Cliente + Local)")
+        # --- RANKING POR PLANTA (VISÃO DETALHADA) ---
+        st.subheader("Ranking por Planta") # Texto alterado
         
         df_agrupado = df_finalizadas.groupby('Cliente_Local').agg({'Vendido': 'sum', 'Lucro': 'sum'}).reset_index()
         df_agrupado['Margem_%'] = (df_agrupado['Lucro'] / df_agrupado['Vendido'] * 100).fillna(0)
@@ -191,7 +196,6 @@ with tab1:
             color='Margem_%', color_continuous_scale=['#da3633', '#e3b341', '#3fb950'],
             labels={'Vendido': 'Faturamento Real (R$)', 'Cliente_Local': '', 'Margem_%': 'Margem %'}
         )
-        # Margin top zerada para colar no título
         fig_detalhe.update_layout(
             plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color='white'),
             xaxis=dict(showgrid=True, gridcolor='#30363d'), height=500, margin=dict(t=0, l=0, r=0, b=0)
@@ -201,10 +205,9 @@ with tab1:
         st.write("")
         st.write("")
 
-        # --- LINHA INFERIOR: GRÁFICOS LADO A LADO ---
+        # --- GRÁFICOS LADO A LADO ---
         col_cli, col_geo = st.columns(2)
 
-        # 1. Gráfico só por CLIENTE
         with col_cli:
             st.subheader("Ranking por Cliente")
             df_cli_only = df_finalizadas.groupby('Cliente').agg({'Vendido': 'sum', 'Lucro': 'sum'}).reset_index()
@@ -223,7 +226,6 @@ with tab1:
             fig_cli.update_traces(marker_line_width=0)
             st.plotly_chart(fig_cli, use_container_width=True)
 
-        # 2. Gráfico só por CIDADE
         with col_geo:
             st.subheader("Ranking por Cidade")
             df_geo = df_finalizadas.groupby('Cidade').agg({'Vendido': 'sum', 'Lucro': 'sum'}).reset_index()
@@ -243,7 +245,7 @@ with tab1:
             st.plotly_chart(fig_geo, use_container_width=True)
 
 # =========================================================
-# ABA 2: TIPOS DE OBRA
+# ABA 2: SEGMENTOS (ANTIGO TIPO DE OBRA)
 # =========================================================
 with tab2:
     st.write("")
@@ -262,17 +264,16 @@ with tab2:
         c1, c2 = st.columns(2)
         
         with c1:
-            st.subheader("Participação no Faturamento (Entregues)")
-            # TREEMAP (Cores melhoradas e sem legenda)
+            st.subheader("Participação na Receita") # Texto alterado
+            # TREEMAP
             fig_tree = px.treemap(
                 df_tipo, path=['Tipo'], values='Vendido',
                 color='Margem_Media', color_continuous_scale=['#da3633', '#e3b341', '#3fb950'],
             )
             fig_tree.update_layout(
                 margin=dict(t=10, l=10, r=10, b=10),
-                coloraxis_showscale=False # Remove a barra lateral de cores
+                coloraxis_showscale=False
             )
-            # Melhora os textos
             fig_tree.update_traces(
                 textinfo="label+value+percent root",
                 textfont=dict(color='white', size=14)
@@ -280,15 +281,14 @@ with tab2:
             st.plotly_chart(fig_tree, use_container_width=True)
             
         with c2:
-            st.subheader("Rentabilidade vs Meta")
-            # SCATTER PLOT (Sem legenda lateral)
+            st.subheader("Matriz Rentabilidade x Receita") # Texto alterado
+            # SCATTER PLOT
             fig_scat = px.scatter(
                 df_tipo, x='Vendido', y='Margem_Media', size='Vendido', color='Tipo',
                 text='Tipo', hover_name='Tipo',
                 labels={'Vendido': 'Volume Financeiro', 'Margem_Media': 'Rentabilidade (%)'}
             )
-            # Adiciona linha da Meta
-            fig_scat.add_hline(y=META_MARGEM, line_dash="dash", line_color="#8b949e", annotation_text=f"Meta: {META_MARGEM}%")
+            fig_scat.add_hline(y=META_MARGEM, line_dash="dash", line_color="#8b949e", annotation_text=f"Meta")
             
             fig_scat.update_traces(textposition='top center', marker=dict(line=dict(width=1, color='White')))
             fig_scat.update_layout(
@@ -296,7 +296,7 @@ with tab2:
                 font=dict(color='white'), 
                 xaxis=dict(showgrid=True, gridcolor='#30363d'), 
                 yaxis=dict(showgrid=True, gridcolor='#30363d'),
-                showlegend=False # Remove a legenda
+                showlegend=False
             )
             st.plotly_chart(fig_scat, use_container_width=True)
 
@@ -313,7 +313,6 @@ with tab3:
         faturamento_global = df_obras['Vendido'].sum() 
         impacto_percentual = (custo_adm_total / faturamento_global * 100) if faturamento_global > 0 else 0
 
-        # KPI Único e Impacto
         c_kpi1, c_kpi2 = st.columns(2)
         with c_kpi1:
             st.markdown(f"""
@@ -323,7 +322,6 @@ with tab3:
             </div>
             """, unsafe_allow_html=True)
         with c_kpi2:
-            # Puxa meta de ADM do config se existir, senao padrao 5%
             meta_adm = config.get("meta_custo_adm", 5.0)
             cor_impacto = "#da3633" if impacto_percentual > meta_adm else "#3fb950"
             st.markdown(f"""
@@ -336,7 +334,6 @@ with tab3:
 
         st.divider()
 
-        # Detalhamento
         c_chart1, c_chart2 = st.columns(2)
         
         with c_chart1:
