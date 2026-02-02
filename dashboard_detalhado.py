@@ -7,12 +7,22 @@ import os
 # ---------------------------------------------------------
 # 1. ESTILO CSS
 # ---------------------------------------------------------
-st.set_page_config(page_title="Detalhes da Obra", layout="wide")
+# REMOVEMOS st.set_page_config (Já está no main.py)
 
 st.markdown("""
 <style>
     .stApp {background-color: #0e1117;}
-    .block-container {padding-top: 3rem; padding-bottom: 3rem;}
+    
+    /* --- ALINHAMENTO NO TOPO (IGUAL VISÃO GERAL) --- */
+    .block-container {
+        padding-top: 1rem !important;
+        padding-bottom: 2rem !important;
+    }
+    h1 {
+        padding-top: 0rem !important;
+        margin-top: -1rem !important;
+    }
+
     .js-plotly-plot .plotly .modebar {display: none !important;}
 
     /* --- LAYOUT DOS CARDS (KPIs) --- */
@@ -87,7 +97,7 @@ except FileNotFoundError:
     st.stop()
 
 # ---------------------------------------------------------
-# SIDEBAR (AJUSTADO AQUI)
+# SIDEBAR
 # ---------------------------------------------------------
 st.sidebar.markdown("### Seleção de Projeto:") 
 
