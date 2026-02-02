@@ -128,6 +128,9 @@ if st.session_state.get("authentication_status"):
     pg = st.navigation([
         st.Page("dashboard_visao_geral.py", title="Visão Geral", icon="🏢"),
         st.Page("dashboard_detalhado.py", title="Detalhamento de Obra", icon="📝"),
+        # --- NOVA PÁGINA ADICIONADA AQUI ---
+        st.Page("dashboard_analises.py", title="Análises Estratégicas", icon="📈"), 
+        # -----------------------------------
         st.Page("configuracoes.py", title="Configurações", icon="⚙️"),
     ])
     
