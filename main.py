@@ -35,7 +35,7 @@ st.markdown("""
         color: white !important;
     }
     
-    /* --- BOTÃO DE ENTRAR (LOGIN) --- */
+    /* --- BOTÃO DE ENTRAR --- */
     div[data-testid="stForm"] .stButton button {
         background-color: #58a6ff !important;
         color: white !important;
@@ -103,22 +103,21 @@ authenticator.login(location='main')
 
 if st.session_state.get("authentication_status"):
     
-    # === ÁREA LOGADA (SIDEBAR AJUSTADA) ===
-    with st.sidebar:
-        # TRUQUE DO ESPAÇAMENTO:
-        # Adicionamos uma caixa vazia alta para empurrar o botão para baixo.
-        # Ajuste o 'height' (ex: 60vh, 70vh) dependendo da quantidade de itens no menu.
-        st.markdown('<div style="height: 65vh;"></div>', unsafe_allow_html=True)
-        
-        # Botão Renomeado para "Desconectar"
-        authenticator.logout('Desconectar', 'sidebar')
+    # === ÁREA LOGADA ===
     
-    # Navegação
+    # 1. Definimos as páginas
     pg = st.navigation([
         st.Page("dashboard_visao_geral.py", title="Visão Geral", icon="🏢"),
         st.Page("dashboard_detalhado.py", title="Detalhamento de Obra", icon="📝"),
         st.Page("configuracoes.py", title="Configurações", icon="⚙️"),
     ])
+
+    # 2. Configuração da Sidebar (Aparece logo abaixo dos links acima)
+    with st.sidebar:
+        st.divider() # Adiciona a linha separadora
+        authenticator.logout('Desconectar', 'sidebar') # Botão de sair
+    
+    # 3. Executa a página
     pg.run()
 
 elif st.session_state.get("authentication_status") is False:
