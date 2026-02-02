@@ -80,16 +80,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 2. PREPARAÇÃO DOS DADOS (CORRIGIDO PARA PERSISTÊNCIA)
+# 2. PREPARAÇÃO DOS DADOS
 # ---------------------------------------------------------
 secrets = st.secrets
 
-# Garante que preauthorized exista mesmo se não estiver no arquivo
-preauthorized_emails = []
-if 'preauthorized' in secrets and 'emails' in secrets['preauthorized']:
-    preauthorized_emails = list(secrets['preauthorized']['emails'])
-
-# Montamos o dicionário forçando expiry_days a ser INT
 config_dict = {
     "credentials": {
         "usernames": {
@@ -97,25 +91,28 @@ config_dict = {
             for username, user_data in secrets['credentials']['usernames'].items()
         }
     },
-    "cookie": {
-        "name": secrets['cookie']['name'],
-        "key": secrets['cookie']['key'],
-        "expiry_days": int(secrets['cookie']['expiry_days']) # <--- O SEGREDO ESTÁ AQUI (int)
-    },
-    "preauthorized": preauthorized_emails
+    "cookie": dict(secrets['cookie']),
+    "preauthorized": list(secrets['preauthorized']['emails'])
 }
 
 # ---------------------------------------------------------
 # 3. AUTENTICAÇÃO
 # ---------------------------------------------------------
-# Inicialização direta usando o dicionário tratado
-authenticator = stauth.Authenticate(
-    config_dict['credentials'],
-    config_dict['cookie']['name'],
-    config_dict['cookie']['key'],
-    config_dict['cookie']['expiry_days'],
-    config_dict['preauthorized']
-)
+try:
+    authenticator = stauth.Authenticate(
+        config_dict['credentials'],
+        config_dict['cookie']['name'],
+        config_dict['cookie']['key'],
+        config_dict['cookie']['expiry_days'],
+        config_dict['preauthorized']
+    )
+except TypeError:
+    authenticator = stauth.Authenticate(
+        config_dict['credentials'],
+        config_dict['cookie']['name'],
+        config_dict['cookie']['key'],
+        config_dict['cookie']['expiry_days']
+    )
 
 authenticator.login(location='main')
 
