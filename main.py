@@ -3,7 +3,7 @@ import streamlit_authenticator as stauth
 import yaml
 
 # ---------------------------------------------------------
-# 1. CONFIGURAÇÃO VISUAL (FOCADA APENAS NO LOGIN)
+# 1. CONFIGURAÇÃO VISUAL (LOGIN ESTILIZADO)
 # ---------------------------------------------------------
 st.set_page_config(page_title="Portal TE Engenharia", layout="wide", page_icon="🏗️")
 
@@ -12,7 +12,8 @@ st.markdown("""
     /* Fundo geral */
     .stApp {background-color: #0e1117;}
     
-    /* --- CARD DE LOGIN (MANTIDO O VISUAL QUE VOCÊ GOSTOU) --- */
+    /* --- CARD DE LOGIN --- */
+    /* Mantivemos o visual do cartão centralizado */
     [data-testid="stForm"] {
         background-color: #161b22;
         padding: 2rem;
@@ -25,14 +26,13 @@ st.markdown("""
         top: 50px; 
     }
 
-    /* --- ESTILO DOS CAMPOS DE TEXTO --- */
+    /* --- INPUTS E BOTÕES DO LOGIN --- */
     .stTextInput input {
         background-color: #0d1117 !important;
         border: 1px solid #30363d !important;
         color: white !important;
     }
     
-    /* --- ESTILO DO BOTÃO DE ENTRAR --- */
     div[data-testid="stForm"] .stButton button {
         background-color: #58a6ff !important;
         color: white !important;
@@ -44,7 +44,6 @@ st.markdown("""
     }
     div[data-testid="stForm"] .stButton button:hover {
         background-color: #79c0ff !important;
-        box-shadow: 0 4px 10px rgba(88, 166, 255, 0.3);
     }
     
     /* Centraliza mensagens de erro */
@@ -54,8 +53,6 @@ st.markdown("""
         position: relative;
         top: 60px;
     }
-    
-    /* NOTA: Todo o CSS que alterava a Sidebar foi removido */
 </style>
 """, unsafe_allow_html=True)
 
@@ -103,21 +100,28 @@ authenticator.login(location='main')
 if st.session_state.get("authentication_status"):
     
     # === USUÁRIO LOGADO ===
-    # O sistema roda normalmente. A sidebar será montada automaticamente
-    # pelo Streamlit (Menu de Navegação + Widgets das páginas).
     
+    # 1. Menu de Navegação (Aparece no Topo)
     pg = st.navigation([
         st.Page("dashboard_visao_geral.py", title="Visão Geral", icon="🏢"),
         st.Page("dashboard_detalhado.py", title="Detalhamento de Obra", icon="📝"),
         st.Page("configuracoes.py", title="Configurações", icon="⚙️"),
     ])
     
+    # 2. Executa a Página (Carrega filtros e conteúdo)
+    # Os filtros (selectbox) aparecerão logo abaixo do menu de navegação
     pg.run()
+
+    # 3. Botão de Desconectar (Aparece no Final)
+    # Como colocamos após o pg.run(), ele ficará abaixo dos filtros da página
+    with st.sidebar:
+        st.divider()
+        authenticator.logout('Desconectar', 'sidebar') 
 
 elif st.session_state.get("authentication_status") is False:
     st.error('Usuário ou senha incorretos.')
 
 elif st.session_state.get("authentication_status") is None:
-    # Esconde o cabeçalho apenas na tela de login para manter o visual limpo
+    # Esconde o cabeçalho apenas na tela de login
     st.markdown('<style>header {visibility: hidden;}</style>', unsafe_allow_html=True)
     pass
