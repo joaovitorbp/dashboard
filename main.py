@@ -3,7 +3,7 @@ import streamlit_authenticator as stauth
 import yaml
 
 # ---------------------------------------------------------
-# 1. CONFIGURAÇÃO VISUAL E CSS (AJUSTE DE ALTURA)
+# 1. CONFIGURAÇÃO VISUAL E CSS (FLEXBOX PURO)
 # ---------------------------------------------------------
 st.set_page_config(page_title="Portal TE Engenharia", layout="wide", page_icon="🏗️")
 
@@ -12,7 +12,7 @@ st.markdown("""
     /* Fundo geral */
     .stApp {background-color: #0e1117;}
     
-    /* --- REMOVE ESPAÇO DO TOPO DA SIDEBAR --- */
+    /* Remove padding excessivo do topo */
     section[data-testid="stSidebar"] .block-container {
         padding-top: 2rem !important;
         padding-bottom: 0rem !important;
@@ -30,57 +30,42 @@ st.markdown("""
         position: relative;
         top: 50px; 
     }
-
-    /* --- INPUTS --- */
-    .stTextInput input {
-        background-color: #0d1117 !important;
-        border: 1px solid #30363d !important;
-        color: white !important;
-    }
     
-    /* --- BOTÃO DE ENTRAR --- */
+    .stTextInput input {background-color: #0d1117 !important; border: 1px solid #30363d !important; color: white !important;}
+    
     div[data-testid="stForm"] .stButton button {
-        background-color: #58a6ff !important;
-        color: white !important;
-        border: none !important;
-        font-weight: bold !important;
-        width: 100%;
-        margin-top: 10px;
-        transition: all 0.2s ease;
+        background-color: #58a6ff !important; color: white !important; border: none !important;
+        width: 100%; margin-top: 10px; font-weight: bold !important;
     }
-    div[data-testid="stForm"] .stButton button:hover {
-        background-color: #79c0ff !important;
-        box-shadow: 0 4px 10px rgba(88, 166, 255, 0.3);
-    }
+    div[data-testid="stForm"] .stButton button:hover {background-color: #79c0ff !important;}
     
-    /* Centraliza mensagens de erro */
-    .stAlert {
-        max-width: 350px;
-        margin: 0 auto;
-        position: relative;
-        top: 60px;
-    }
+    .stAlert {max-width: 350px; margin: 0 auto; position: relative; top: 60px;}
 
-    /* --- CORREÇÃO DA SIDEBAR (SEM ROLAGEM) --- */
+    /* --- SIDEBAR LAYOUT (A MÁGICA ACONTECE AQUI) --- */
     
-    /* 1. Define o container principal da sidebar para não vazar */
+    /* 1. Define a Sidebar inteira como uma coluna Flexível que ocupa 100% da tela */
     section[data-testid="stSidebar"] > div {
         height: 100vh;
-        overflow: hidden; /* Remove barra de rolagem forçada */
-    }
-    
-    /* 2. Área de Conteúdo (Onde ficam os nossos widgets) */
-    /* O PULO DO GATO: Calculamos a altura para ser (Tela - Tamanho do Menu) */
-    /* 170px é uma estimativa segura para os 3 links de navegação + logo */
-    [data-testid="stSidebarUserContent"] {
         display: flex;
         flex-direction: column;
-        height: calc(100vh - 170px); 
+        overflow: hidden; /* Evita barra de rolagem dupla */
     }
     
-    /* 3. Empurra o rodapé para o final do espaço disponível */
+    /* 2. O Menu de Navegação (stSidebarNav) já fica no topo naturalmente */
+    
+    /* 3. A Área de Conteúdo do Usuário (onde nós escrevemos) vai preencher TODO o resto */
+    [data-testid="stSidebarUserContent"] {
+        flex-grow: 1;          /* Ocupa todo o espaço disponível abaixo do menu */
+        display: flex;         /* Transforma em container flexível também */
+        flex-direction: column;
+        overflow-y: auto;      /* Permite rolagem só se o conteúdo for muito grande */
+        max-height: 100%;
+    }
+    
+    /* 4. O ÚLTIMO elemento dentro do UserContent será empurrado para o fundo */
     [data-testid="stSidebarUserContent"] > div:last-child {
-        margin-top: auto;
+        margin-top: auto;      /* Empurra para o chão */
+        padding-bottom: 20px;
     }
 
 </style>
@@ -124,31 +109,32 @@ except TypeError:
 authenticator.login(location='main')
 
 # ---------------------------------------------------------
-# 4. LÓGICA DO LAYOUT
+# 4. LÓGICA DE ORGANIZAÇÃO
 # ---------------------------------------------------------
 
 if st.session_state.get("authentication_status"):
     
-    # 1. Menu de Navegação (Ocupa o topo fixo)
+    # 1. Menu de Navegação (Fica no Topo automaticamente)
     pg = st.navigation([
         st.Page("dashboard_visao_geral.py", title="Visão Geral", icon="🏢"),
         st.Page("dashboard_detalhado.py", title="Detalhamento de Obra", icon="📝"),
         st.Page("configuracoes.py", title="Configurações", icon="⚙️"),
     ])
 
-    # 2. Inicia o "User Content" (Área flexível abaixo do menu)
-    
-    # Separador Superior
+    # 2. Início do Conteúdo da Sidebar (Logo abaixo do menu)
     with st.sidebar:
-        st.divider()
+        st.divider() # <--- LINHA SUPERIOR (Entre menu e selectbox)
 
-    # Widget de Seleção (Logo abaixo do separador)
+    # 3. Execução da Página (Aqui entra o Selectbox se a página tiver um)
+    # Ele será renderizado logo após o divider acima
     pg.run()
 
-    # Rodapé (Empurrado para baixo pelo CSS)
+    # 4. Rodapé (Fica no Fundo automaticamente pelo CSS)
     with st.sidebar:
+        # Agrupamos Linha + Botão em um container
+        # O CSS 'last-child' pega este container e joga para o final da tela
         with st.container():
-            st.divider()
+            st.divider() # <--- LINHA INFERIOR
             authenticator.logout('Desconectar', 'sidebar') 
     
 elif st.session_state.get("authentication_status") is False:
