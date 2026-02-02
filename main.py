@@ -5,7 +5,7 @@ import bcrypt
 st.title("Gerador de Senha")
 
 # 1. Digite sua senha aqui dentro das aspas
-minha_senha_real = "admin" 
+minha_senha_real = "Obras@2026" 
 
 # 2. O código abaixo cria a criptografia
 senha_bytes = minha_senha_real.encode('utf-8')
