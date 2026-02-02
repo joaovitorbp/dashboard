@@ -6,8 +6,48 @@ import shutil
 
 # ---------------------------------------------------------
 # NOTA: REMOVEMOS O st.set_page_config E O CSS DAQUI.
-# ELES JÁ ESTÃO CONFIGURADOS NO main.py E ESTAVAM CAUSANDO CONFLITO.
 # ---------------------------------------------------------
+
+st.markdown("""
+<style>
+    /* Fundo geral */
+    .stApp {background-color: #0e1117;}
+    
+    /* --- ALINHAMENTO NO TOPO (PADRONIZADO) --- */
+    .block-container {
+        padding-top: 1rem !important;
+        padding-bottom: 2rem !important;
+    }
+    h1 {
+        padding-top: 0rem !important;
+        margin-top: -1rem !important;
+    }
+    
+    /* --- Estilização dos Botões (Azul Vibrante) --- */
+    div.stButton > button {
+        background-color: #58a6ff;
+        color: #ffffff; 
+        border: none;
+        font-weight: 700;
+        padding: 0.5rem 1rem;
+        transition: all 0.2s ease-in-out;
+    }
+    div.stButton > button:hover {
+        background-color: #79c0ff;
+        color: #ffffff;
+        box-shadow: 0 4px 8px rgba(88, 166, 255, 0.3);
+    }
+    div.stButton > button:active {
+        background-color: #58a6ff;
+        transform: translateY(2px);
+    }
+
+    /* --- Tipografia --- */
+    h3 {color: #ffffff !important; font-size: 1.3rem; font-weight: 600;}
+    p, .stMarkdown, .stNumberInput label {color: #e6edf3 !important;}
+    
+</style>
+""", unsafe_allow_html=True)
 
 st.title("⚙️ Configurações do Sistema")
 
