@@ -79,6 +79,7 @@ config_atual = load_config()
 # ---------------------------------------------------------
 with st.container(border=True):
     st.subheader("Parâmetros de Metas")
+    st.markdown("Defina aqui as metas globais da empresa. Elas afetarão os indicadores de cor da Visão Geral.")
     st.write("") 
     
     col1, col2, col3 = st.columns(3)
@@ -132,9 +133,11 @@ with st.container(border=True):
     st.subheader("Status da Conexão")
     st.write("")
     
-    st.info("☁️ **Sistema conectado ao Google Sheets**")
-    st.markdown("""
-    Os dados são atualizados automaticamente a cada 60 segundos ou quando você recarrega a página.
+    # Texto e Info unificados para evitar sobreposição visual
+    st.info("""
+    **☁️ Sistema conectado ao Google Sheets**
+    
+    Os dados são atualizados automaticamente a cada 60 segundos.
     
     **Para atualizar os dados:**
     1. Abra a planilha **'dados_dashboard_obras'** no Google Drive.
