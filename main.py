@@ -12,14 +12,14 @@ st.markdown("""
     /* Fundo geral */
     .stApp {background-color: #0e1117;}
     
-    /* --- 1. BOTÃO DE LOGIN (AZUL - PRINCIPAL) --- */
-    /* Este estilo só se aplica ao botão dentro do cartão de login */
+    /* --- 1. BOTÃO DE LOGIN (AZUL E GRANDE) --- */
+    /* Este estilo só se aplica ao botão DENTRO do cartão de login */
     [data-testid="stForm"] .stButton button {
         background-color: #58a6ff !important;
         color: white !important;
         border: none !important;
         font-weight: bold !important;
-        width: 100%;
+        width: 100%; /* Login fica largura total */
         margin-top: 10px;
         transition: all 0.2s ease;
     }
@@ -27,20 +27,22 @@ st.markdown("""
         background-color: #79c0ff !important;
     }
 
-    /* --- 2. BOTÃO DA SIDEBAR (CINZA - PADRÃO) --- */
-    /* Forçamos o botão da barra lateral a voltar ao estilo padrão (transparente/borda) */
+    /* --- 2. BOTÃO DA SIDEBAR (RESET TOTAL PARA PADRÃO) --- */
+    /* Forçamos o botão da barra lateral a ser pequeno e discreto */
     section[data-testid="stSidebar"] .stButton button {
         background-color: transparent !important;
         border: 1px solid #4a4a4a !important;
         color: #fafafa !important;
-        width: 100%; /* Opcional: deixa o botão da largura total da sidebar */
+        width: auto !important; /* <--- ISSO IMPEDE QUE ELE MUDE DE TAMANHO SOZINHO */
+        padding-left: 15px !important;
+        padding-right: 15px !important;
     }
     
-    /* Efeito ao passar o mouse no botão de sair (fica levemente claro ou com borda azul) */
+    /* Efeito ao passar o mouse no botão da sidebar */
     section[data-testid="stSidebar"] .stButton button:hover {
-        border-color: #58a6ff !important;
-        color: #58a6ff !important;
-        background-color: rgba(88, 166, 255, 0.1) !important;
+        border-color: #ff4b4b !important; /* Um vermelho sutil para indicar saída */
+        color: #ff4b4b !important;
+        background-color: rgba(255, 75, 75, 0.1) !important;
     }
 
     /* --- 3. CARD DE LOGIN --- */
@@ -116,19 +118,16 @@ authenticator.login(location='main')
 
 if st.session_state.get("authentication_status"):
     
-    # === LOGADO ===
+    # === USUÁRIO LOGADO ===
     
-    # Menu Topo
     pg = st.navigation([
         st.Page("dashboard_visao_geral.py", title="Visão Geral", icon="🏢"),
         st.Page("dashboard_detalhado.py", title="Detalhamento de Obra", icon="📝"),
         st.Page("configuracoes.py", title="Configurações", icon="⚙️"),
     ])
     
-    # Conteúdo da Página
     pg.run()
 
-    # Rodapé (Botão Padrão/Cinza)
     with st.sidebar:
         st.divider()
         authenticator.logout('Desconectar', 'sidebar') 
