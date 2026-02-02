@@ -7,12 +7,19 @@ import yaml
 # ---------------------------------------------------------
 st.set_page_config(page_title="Portal TE Engenharia", layout="wide", page_icon="🏗️")
 
-# CSS GLOBAL (Aplica em tudo)
+# CSS GLOBAL
 st.markdown("""
 <style>
     /* Fundo geral */
     .stApp {background-color: #0e1117;}
     
+    /* --- REMOVE ESPAÇO VAZIO DO TOPO DA SIDEBAR --- */
+    /* O padrão é 6rem, vamos reduzir para 1rem para subir o menu */
+    section[data-testid="stSidebar"] .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 0rem !important;
+    }
+
     /* --- CARD DE LOGIN --- */
     [data-testid="stForm"] {
         background-color: #161b22;
@@ -56,14 +63,14 @@ st.markdown("""
         top: 60px;
     }
 
-    /* --- SIDEBAR (MENU NO TOPO, BOTÃO NO FUNDO) --- */
+    /* --- SIDEBAR FLEXÍVEL (MENU TOPO, BOTÃO FUNDO) --- */
     section[data-testid="stSidebar"] > div {
         height: 100%;
         display: flex;
         flex-direction: column;
     }
     
-    /* Empurra o rodapé para o fundo */
+    /* Rodapé da Sidebar */
     [data-testid="stSidebarUserContent"] {
         margin-top: auto; 
         padding-bottom: 20px;
@@ -111,35 +118,29 @@ except TypeError:
 authenticator.login(location='main')
 
 # ---------------------------------------------------------
-# 4. LÓGICA CONDICIONAL (AQUI ESTÁ A MÁGICA)
+# 4. LÓGICA DO SISTEMA
 # ---------------------------------------------------------
 
 if st.session_state.get("authentication_status"):
     
-    # === USUÁRIO LOGADO ===
-    # Aqui NÃO escondemos o header, para os botões aparecerem.
-    
-    # Navegação
+    # === LOGADO ===
     pg = st.navigation([
         st.Page("dashboard_visao_geral.py", title="Visão Geral", icon="🏢"),
         st.Page("dashboard_detalhado.py", title="Detalhamento de Obra", icon="📝"),
         st.Page("configuracoes.py", title="Configurações", icon="⚙️"),
     ])
 
-    # Sidebar com botão no fundo
     with st.sidebar:
         authenticator.logout('Desconectar', 'sidebar') 
     
     pg.run()
 
 elif st.session_state.get("authentication_status") is False:
-    # === TELA DE LOGIN (COM ERRO) ===
-    # Se quiser esconder os botões SÓ na tela de login, descomente a linha abaixo:
+    # === ERRO ===
     # st.markdown('<style>header {visibility: hidden;}</style>', unsafe_allow_html=True)
     st.error('Usuário ou senha incorretos.')
 
 elif st.session_state.get("authentication_status") is None:
-    # === TELA DE LOGIN (NORMAL) ===
-    # Aqui escondemos o header para ficar limpo, mas ele volta quando logar
+    # === LOGIN ===
     st.markdown('<style>header {visibility: hidden;}</style>', unsafe_allow_html=True)
     pass
