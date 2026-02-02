@@ -15,27 +15,25 @@ st.markdown("""
     
     /* --- Estilização dos Botões (Azul Vibrante) --- */
     div.stButton > button {
-        background-color: #58a6ff; /* Azul mais vibrante e visível */
+        background-color: #58a6ff;
         color: #ffffff; 
         border: none;
-        font-weight: 700; /* Negrito para destacar a ação */
+        font-weight: 700;
         padding: 0.5rem 1rem;
         transition: all 0.2s ease-in-out;
     }
     div.stButton > button:hover {
-        background-color: #79c0ff; /* Azul ligeiramente mais claro no hover */
+        background-color: #79c0ff;
         color: #ffffff;
-        box-shadow: 0 4px 8px rgba(88, 166, 255, 0.3); /*Sombra suave ao passar o mouse*/
+        box-shadow: 0 4px 8px rgba(88, 166, 255, 0.3);
     }
     div.stButton > button:active {
         background-color: #58a6ff;
-        transform: translateY(2px); /* Efeito de clique */
+        transform: translateY(2px);
     }
 
     /* --- Tipografia --- */
-    /* Títulos dos containers agora são BRANCOS */
     h3 {color: #ffffff !important; font-size: 1.3rem; font-weight: 600;}
-    /* Textos de apoio continuam cinza claro para não cansar a vista */
     p, .stMarkdown, .stNumberInput label {color: #e6edf3 !important;}
     
 </style>
@@ -73,7 +71,7 @@ config_atual = load_config()
 # ---------------------------------------------------------
 with st.container(border=True):
     st.subheader("Parâmetros de Metas")
-    st.write("") # Espaçamento
+    st.write("") 
     
     col1, col2, col3 = st.columns(3)
     
@@ -107,7 +105,7 @@ with st.container(border=True):
         )
     
     st.write("")
-    st.write("") # Espaçamento antes do botão
+    st.write("") 
 
     if st.button("Salvar Novos Parâmetros"):
         novos_dados = {
@@ -125,28 +123,29 @@ with st.container(border=True):
     st.subheader("Base de dados")
     st.write("")
     
-    st.info(f"Arquivo em uso: **{DATA_FILE}**")
+    # Texto simples sem card colorido
+    st.markdown(f"Arquivo interno do sistema: **{DATA_FILE}**")
     st.write("")
     
     uploaded_file = st.file_uploader("Arraste o arquivo atualizado aqui (.xlsx)", type=["xlsx"])
 
     if uploaded_file is not None:
         st.write("")
-        # Usando type="primary" para dar o destaque azul definido no CSS
         if st.button("Confirmar Substituição da Base"):
-            # Salva o arquivo no disco
+            # Salva o arquivo no disco (sobrescrevendo o anterior)
             with open(DATA_FILE, "wb") as f:
                 f.write(uploaded_file.getbuffer())
             
-            # Limpa o cache para forçar recarregamento nas outras páginas
+            # Limpa o cache
             st.cache_data.clear()
             st.success("✅ Base de dados atualizada e cache limpo!")
 
 # ---------------------------------------------------------
-# 3. VISUALIZAÇÃO DE CHECK (OPCIONAL)
+# 3. VISUALIZAÇÃO DE CHECK
 # ---------------------------------------------------------
 if os.path.exists(DATA_FILE):
     st.write("")
     with st.expander("Verificar dados carregados atualmente"):
         df_check = pd.read_excel(DATA_FILE)
-        st.dataframe(df_check.head(10), use_container_width=True)
+        # Removido o .head(10) para permitir ver todos os dados via scroll
+        st.dataframe(df_check, use_container_width=True)
