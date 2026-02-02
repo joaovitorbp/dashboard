@@ -22,12 +22,12 @@ st.markdown("""
     }
     .stTabs [data-baseweb="tab"] {
         height: 50px; 
-        white-space: normal; /* Permite quebrar linha se necessário */
+        white-space: normal; 
         background-color: #161b22; 
         border-radius: 5px; 
         color: #fff; 
         border: 1px solid #30363d;
-        flex-grow: 1; /* Força a aba a ocupar espaço disponível */
+        flex-grow: 1; 
         text-align: center;
     }
     .stTabs [aria-selected="true"] {
@@ -135,7 +135,7 @@ df_finalizadas = df_obras[df_obras['Status'].isin(['Finalizado', 'Apresentado'])
 # ---------------------------------------------------------
 st.title("Análises Estratégicas")
 
-# Abas atualizadas (Sem emojis, Geografia unificada com Clientes)
+# Abas atualizadas
 tab1, tab2, tab3 = st.tabs(["Clientes & Regiões", "Tipos de Obra", "Custos Internos"])
 
 # =========================================================
@@ -154,7 +154,6 @@ with tab1:
 
         c1, c2, c3 = st.columns(3)
         with c1:
-            # Borda Verde Fixa conforme solicitado
             st.markdown(f"""
             <div class="highlight-box" style="border-top: 4px solid #3fb950">
                 <div class="highlight-lbl">Total Finalizado</div>
@@ -168,7 +167,6 @@ with tab1:
             <div class="highlight-box" style="border-top: 4px solid {cor_m}">
                 <div class="highlight-lbl">Margem Real Média</div>
                 <div class="highlight-val" style="color:{cor_m}">{margem_global:.1f}%</div>
-                <div style="font-size: 0.7rem; color: #8b949e">Meta: {META_MARGEM:.1f}%</div>
             </div>
             """, unsafe_allow_html=True)
         with c3:
@@ -181,7 +179,29 @@ with tab1:
 
         st.divider()
 
-        # --- LINHA SUPERIOR: GRÁFICOS LADO A LADO ---
+        # --- ORDEM INVERTIDA: VISÃO DETALHADA PRIMEIRO ---
+        st.subheader("Visão Detalhada (Cliente + Local)")
+        
+        df_agrupado = df_finalizadas.groupby('Cliente_Local').agg({'Vendido': 'sum', 'Lucro': 'sum'}).reset_index()
+        df_agrupado['Margem_%'] = (df_agrupado['Lucro'] / df_agrupado['Vendido'] * 100).fillna(0)
+        df_agrupado = df_agrupado.sort_values(by='Vendido', ascending=True)
+
+        fig_detalhe = px.bar(
+            df_agrupado, y='Cliente_Local', x='Vendido', text_auto='.2s', orientation='h',
+            color='Margem_%', color_continuous_scale=['#da3633', '#e3b341', '#3fb950'],
+            labels={'Vendido': 'Faturamento Real (R$)', 'Cliente_Local': '', 'Margem_%': 'Margem %'}
+        )
+        # Margin top zerada para colar no título
+        fig_detalhe.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color='white'),
+            xaxis=dict(showgrid=True, gridcolor='#30363d'), height=500, margin=dict(t=0, l=0, r=0, b=0)
+        )
+        st.plotly_chart(fig_detalhe, use_container_width=True)
+
+        st.write("")
+        st.write("")
+
+        # --- LINHA INFERIOR: GRÁFICOS LADO A LADO ---
         col_cli, col_geo = st.columns(2)
 
         # 1. Gráfico só por CLIENTE
@@ -203,7 +223,7 @@ with tab1:
             fig_cli.update_traces(marker_line_width=0)
             st.plotly_chart(fig_cli, use_container_width=True)
 
-        # 2. Gráfico só por CIDADE (Geografia)
+        # 2. Gráfico só por CIDADE
         with col_geo:
             st.subheader("Ranking por Cidade")
             df_geo = df_finalizadas.groupby('Cidade').agg({'Vendido': 'sum', 'Lucro': 'sum'}).reset_index()
@@ -221,26 +241,6 @@ with tab1:
             )
             fig_geo.update_traces(marker_line_width=0)
             st.plotly_chart(fig_geo, use_container_width=True)
-
-        st.write("")
-        st.write("")
-        
-        # --- LINHA INFERIOR: DETALHE (CLIENTE + LOCAL) ---
-        st.subheader("Visão Detalhada (Cliente + Local)")
-        df_agrupado = df_finalizadas.groupby('Cliente_Local').agg({'Vendido': 'sum', 'Lucro': 'sum'}).reset_index()
-        df_agrupado['Margem_%'] = (df_agrupado['Lucro'] / df_agrupado['Vendido'] * 100).fillna(0)
-        df_agrupado = df_agrupado.sort_values(by='Vendido', ascending=True)
-
-        fig_detalhe = px.bar(
-            df_agrupado, y='Cliente_Local', x='Vendido', text_auto='.2s', orientation='h',
-            color='Margem_%', color_continuous_scale=['#da3633', '#e3b341', '#3fb950'],
-            labels={'Vendido': 'Faturamento Real (R$)', 'Cliente_Local': '', 'Margem_%': 'Margem %'}
-        )
-        fig_detalhe.update_layout(
-            plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color='white'),
-            xaxis=dict(showgrid=True, gridcolor='#30363d'), height=500
-        )
-        st.plotly_chart(fig_detalhe, use_container_width=True)
 
 # =========================================================
 # ABA 2: TIPOS DE OBRA
@@ -262,19 +262,26 @@ with tab2:
         c1, c2 = st.columns(2)
         
         with c1:
-            st.subheader("Participação no Faturamento")
-            # TREEMAP (Mais moderno que Pizza)
+            st.subheader("Participação no Faturamento (Entregues)")
+            # TREEMAP (Cores melhoradas e sem legenda)
             fig_tree = px.treemap(
                 df_tipo, path=['Tipo'], values='Vendido',
                 color='Margem_Media', color_continuous_scale=['#da3633', '#e3b341', '#3fb950'],
             )
-            fig_tree.update_layout(margin=dict(t=10, l=10, r=10, b=10))
-            fig_tree.data[0].textinfo = "label+text+value+percent root"
+            fig_tree.update_layout(
+                margin=dict(t=10, l=10, r=10, b=10),
+                coloraxis_showscale=False # Remove a barra lateral de cores
+            )
+            # Melhora os textos
+            fig_tree.update_traces(
+                textinfo="label+value+percent root",
+                textfont=dict(color='white', size=14)
+            )
             st.plotly_chart(fig_tree, use_container_width=True)
             
         with c2:
             st.subheader("Rentabilidade vs Meta")
-            # SCATTER PLOT COM LINHA DE META
+            # SCATTER PLOT (Sem legenda lateral)
             fig_scat = px.scatter(
                 df_tipo, x='Vendido', y='Margem_Media', size='Vendido', color='Tipo',
                 text='Tipo', hover_name='Tipo',
@@ -286,8 +293,10 @@ with tab2:
             fig_scat.update_traces(textposition='top center', marker=dict(line=dict(width=1, color='White')))
             fig_scat.update_layout(
                 plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
-                font=dict(color='white'), xaxis=dict(showgrid=True, gridcolor='#30363d'), 
-                yaxis=dict(showgrid=True, gridcolor='#30363d')
+                font=dict(color='white'), 
+                xaxis=dict(showgrid=True, gridcolor='#30363d'), 
+                yaxis=dict(showgrid=True, gridcolor='#30363d'),
+                showlegend=False # Remove a legenda
             )
             st.plotly_chart(fig_scat, use_container_width=True)
 
