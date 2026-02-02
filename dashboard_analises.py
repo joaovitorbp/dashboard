@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import gspread
+import json
 import os
 
 # ---------------------------------------------------------
@@ -15,13 +16,25 @@ st.markdown("""
     .block-container {padding-top: 1rem !important; padding-bottom: 2rem !important;}
     h1 {padding-top: 0rem !important; margin-top: -1rem !important;}
     
-    /* Abas customizadas */
-    .stTabs [data-baseweb="tab-list"] { gap: 10px; }
+    /* Abas customizadas - Ajuste de Tamanho */
+    .stTabs [data-baseweb="tab-list"] { 
+        gap: 8px; 
+    }
     .stTabs [data-baseweb="tab"] {
-        height: 50px; white-space: pre-wrap; background-color: #161b22; border-radius: 5px; color: #fff; border: 1px solid #30363d;
+        height: 50px; 
+        white-space: normal; /* Permite quebrar linha se necessário */
+        background-color: #161b22; 
+        border-radius: 5px; 
+        color: #fff; 
+        border: 1px solid #30363d;
+        flex-grow: 1; /* Força a aba a ocupar espaço disponível */
+        text-align: center;
     }
     .stTabs [aria-selected="true"] {
-        background-color: #58a6ff !important; color: white !important; border-color: #58a6ff;
+        background-color: #58a6ff !important; 
+        color: white !important; 
+        border-color: #58a6ff;
+        font-weight: bold;
     }
     
     /* Box de Destaque (KPIs) */
@@ -39,7 +52,22 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 2. DADOS (CONECTADO AO GOOGLE SHEETS)
+# 2. CARREGAR CONFIGURAÇÕES (META)
+# ---------------------------------------------------------
+def load_config():
+    default_data = {"meta_vendas": 5000000.0, "meta_margem": 25.0, "meta_custo_adm": 5.0}
+    if not os.path.exists("config.json"):
+        return default_data
+    with open("config.json", "r") as f:
+        data = json.load(f)
+        if "meta_margem" not in data: data["meta_margem"] = 25.0
+        return data
+
+config = load_config()
+META_MARGEM = float(config["meta_margem"])
+
+# ---------------------------------------------------------
+# 3. DADOS (CONECTADO AO GOOGLE SHEETS)
 # ---------------------------------------------------------
 @st.cache_data(ttl=60)
 def load_data():
@@ -94,31 +122,24 @@ else:
     df_raw['Tipo'] = df_raw['Tipo'].replace("", "Não Classificado")
 
 # ---------------------------------------------------------
-# 3. FILTROS E SEPARAÇÃO
+# 4. FILTROS E SEPARAÇÃO
 # ---------------------------------------------------------
 
-# IDs Administrativos
 IDS_ADM = [5009.2025, 5010.2025, 5011.2025]
-
-# DataFrame ADM (Apenas 5009, 5010, 5011)
 df_adm = df_raw[df_raw['Projeto'].isin(IDS_ADM)].copy()
-
-# DataFrame OBRAS (Tudo exceto ADM)
 df_obras = df_raw[~df_raw['Projeto'].isin(IDS_ADM)].copy()
-
-# FILTRO CRÍTICO: Apenas Obras Concluídas para análise de cliente/tipo
 df_finalizadas = df_obras[df_obras['Status'].isin(['Finalizado', 'Apresentado'])].copy()
 
 # ---------------------------------------------------------
-# 4. INTERFACE
+# 5. INTERFACE
 # ---------------------------------------------------------
 st.title("Análises Estratégicas")
 
-# As 4 abas contendo todas as análises
-tab1, tab2, tab3, tab4 = st.tabs(["👥 Clientes", "🏗️ Tipos de Obra", "📍 Geografia", "🏢 Custos Internos"])
+# Abas atualizadas (Sem emojis, Geografia unificada com Clientes)
+tab1, tab2, tab3 = st.tabs(["Clientes & Regiões", "Tipos de Obra", "Custos Internos"])
 
 # =========================================================
-# ABA 1: CLIENTES (Atualizado: Sem tabela, Sem dica)
+# ABA 1: CLIENTES & REGIÕES
 # =========================================================
 with tab1:
     st.write("")
@@ -126,25 +147,28 @@ with tab1:
     if df_finalizadas.empty:
         st.warning("⚠️ Nenhuma obra finalizada encontrada.")
     else:
-        # KPI GERAL
+        # --- KPI GERAL ---
         total_vendido = df_finalizadas['Vendido'].sum()
         total_lucro = df_finalizadas['Lucro'].sum()
         margem_global = (total_lucro / total_vendido * 100) if total_vendido > 0 else 0
 
         c1, c2, c3 = st.columns(3)
         with c1:
+            # Borda Verde Fixa conforme solicitado
             st.markdown(f"""
-            <div class="highlight-box" style="border-top: 4px solid #58a6ff">
+            <div class="highlight-box" style="border-top: 4px solid #3fb950">
                 <div class="highlight-lbl">Total Finalizado</div>
                 <div class="highlight-val">R$ {total_vendido:,.2f}</div>
             </div>
             """, unsafe_allow_html=True)
         with c2:
-            cor_m = "#3fb950" if margem_global > 25 else "#da3633"
+            # Cor baseada na META configurada
+            cor_m = "#3fb950" if margem_global >= META_MARGEM else "#da3633"
             st.markdown(f"""
             <div class="highlight-box" style="border-top: 4px solid {cor_m}">
                 <div class="highlight-lbl">Margem Real Média</div>
                 <div class="highlight-val" style="color:{cor_m}">{margem_global:.1f}%</div>
+                <div style="font-size: 0.7rem; color: #8b949e">Meta: {META_MARGEM:.1f}%</div>
             </div>
             """, unsafe_allow_html=True)
         with c3:
@@ -157,34 +181,66 @@ with tab1:
 
         st.divider()
 
-        # GRÁFICO (FULL WIDTH)
-        st.subheader("Performance por Cliente e Local")
-        
-        df_agrupado = df_finalizadas.groupby('Cliente_Local').agg({
-            'Vendido': 'sum', 'Lucro': 'sum', 'Projeto': 'count'
-        }).reset_index()
+        # --- LINHA SUPERIOR: GRÁFICOS LADO A LADO ---
+        col_cli, col_geo = st.columns(2)
 
+        # 1. Gráfico só por CLIENTE
+        with col_cli:
+            st.subheader("Ranking por Cliente")
+            df_cli_only = df_finalizadas.groupby('Cliente').agg({'Vendido': 'sum', 'Lucro': 'sum'}).reset_index()
+            df_cli_only['Margem_%'] = (df_cli_only['Lucro'] / df_cli_only['Vendido'] * 100).fillna(0)
+            df_cli_only = df_cli_only.sort_values(by='Vendido', ascending=True)
+
+            fig_cli = px.bar(
+                df_cli_only, y='Cliente', x='Vendido', text_auto='.2s', orientation='h',
+                color='Margem_%', color_continuous_scale=['#da3633', '#e3b341', '#3fb950'],
+                labels={'Vendido': 'R$', 'Cliente': ''}
+            )
+            fig_cli.update_layout(
+                plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color='white'),
+                xaxis=dict(showgrid=True, gridcolor='#30363d'), height=350, margin=dict(l=0, r=0, t=10, b=0)
+            )
+            fig_cli.update_traces(marker_line_width=0)
+            st.plotly_chart(fig_cli, use_container_width=True)
+
+        # 2. Gráfico só por CIDADE (Geografia)
+        with col_geo:
+            st.subheader("Ranking por Cidade")
+            df_geo = df_finalizadas.groupby('Cidade').agg({'Vendido': 'sum', 'Lucro': 'sum'}).reset_index()
+            df_geo['Margem_%'] = (df_geo['Lucro'] / df_geo['Vendido'] * 100).fillna(0)
+            df_geo = df_geo.sort_values(by='Vendido', ascending=True)
+
+            fig_geo = px.bar(
+                df_geo, y='Cidade', x='Vendido', text_auto='.2s', orientation='h',
+                color='Margem_%', color_continuous_scale=['#da3633', '#e3b341', '#3fb950'],
+                labels={'Vendido': 'R$', 'Cidade': ''}
+            )
+            fig_geo.update_layout(
+                plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color='white'),
+                xaxis=dict(showgrid=True, gridcolor='#30363d'), height=350, margin=dict(l=0, r=0, t=10, b=0)
+            )
+            fig_geo.update_traces(marker_line_width=0)
+            st.plotly_chart(fig_geo, use_container_width=True)
+
+        st.write("")
+        st.write("")
+        
+        # --- LINHA INFERIOR: DETALHE (CLIENTE + LOCAL) ---
+        st.subheader("Visão Detalhada (Cliente + Local)")
+        df_agrupado = df_finalizadas.groupby('Cliente_Local').agg({'Vendido': 'sum', 'Lucro': 'sum'}).reset_index()
         df_agrupado['Margem_%'] = (df_agrupado['Lucro'] / df_agrupado['Vendido'] * 100).fillna(0)
         df_agrupado = df_agrupado.sort_values(by='Vendido', ascending=True)
 
-        fig = px.bar(
-            df_agrupado, 
-            y='Cliente_Local', x='Vendido',
-            text_auto='.2s', orientation='h',
-            color='Margem_%',
-            color_continuous_scale=['#da3633', '#e3b341', '#3fb950'],
-            labels={'Vendido': 'Faturamento Realizado (R$)', 'Cliente_Local': 'Cliente', 'Margem_%': 'Margem Real %'}
+        fig_detalhe = px.bar(
+            df_agrupado, y='Cliente_Local', x='Vendido', text_auto='.2s', orientation='h',
+            color='Margem_%', color_continuous_scale=['#da3633', '#e3b341', '#3fb950'],
+            labels={'Vendido': 'Faturamento Real (R$)', 'Cliente_Local': '', 'Margem_%': 'Margem %'}
         )
-        
-        fig.update_layout(
-            plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white'), xaxis=dict(showgrid=True, gridcolor='#30363d'),
-            height=600, # Aumentei um pouco a altura para ficar mais imponente
-            margin=dict(l=0, r=0, t=30, b=0)
+        fig_detalhe.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color='white'),
+            xaxis=dict(showgrid=True, gridcolor='#30363d'), height=500
         )
-        fig.update_traces(hovertemplate='<b>%{y}</b><br>Faturamento: R$ %{x:,.2f}<br>Margem: %{marker.color:.1f}%<extra></extra>')
-        
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig_detalhe, use_container_width=True)
 
 # =========================================================
 # ABA 2: TIPOS DE OBRA
@@ -192,10 +248,9 @@ with tab1:
 with tab2:
     st.write("")
     
-    # Verifica se a coluna Tipo está preenchida
     tem_tipo = True
     if df_finalizadas['Tipo'].iloc[0] == "Não Classificado" and len(df_finalizadas['Tipo'].unique()) == 1:
-        st.info("💡 Para ativar esta análise, preencha a coluna 'Tipo' na planilha.")
+        st.info("💡 Preencha a coluna 'Tipo' na planilha para ativar esta análise.")
         tem_tipo = False
     
     if tem_tipo:
@@ -207,102 +262,80 @@ with tab2:
         c1, c2 = st.columns(2)
         
         with c1:
-            st.markdown("##### Share de Faturamento")
-            fig_pie = px.pie(
-                df_tipo, values='Vendido', names='Tipo', hole=0.4,
-                color_discrete_sequence=px.colors.qualitative.Pastel
+            st.subheader("Participação no Faturamento")
+            # TREEMAP (Mais moderno que Pizza)
+            fig_tree = px.treemap(
+                df_tipo, path=['Tipo'], values='Vendido',
+                color='Margem_Media', color_continuous_scale=['#da3633', '#e3b341', '#3fb950'],
             )
-            fig_pie.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color='white'))
-            st.plotly_chart(fig_pie, use_container_width=True)
+            fig_tree.update_layout(margin=dict(t=10, l=10, r=10, b=10))
+            fig_tree.data[0].textinfo = "label+text+value+percent root"
+            st.plotly_chart(fig_tree, use_container_width=True)
             
         with c2:
-            st.markdown("##### Matriz de Rentabilidade")
+            st.subheader("Rentabilidade vs Meta")
+            # SCATTER PLOT COM LINHA DE META
             fig_scat = px.scatter(
                 df_tipo, x='Vendido', y='Margem_Media', size='Vendido', color='Tipo',
                 text='Tipo', hover_name='Tipo',
                 labels={'Vendido': 'Volume Financeiro', 'Margem_Media': 'Rentabilidade (%)'}
             )
-            fig_scat.update_traces(textposition='top center')
+            # Adiciona linha da Meta
+            fig_scat.add_hline(y=META_MARGEM, line_dash="dash", line_color="#8b949e", annotation_text=f"Meta: {META_MARGEM}%")
+            
+            fig_scat.update_traces(textposition='top center', marker=dict(line=dict(width=1, color='White')))
             fig_scat.update_layout(
                 plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
-                font=dict(color='white'), xaxis=dict(showgrid=True, gridcolor='#30363d'), yaxis=dict(showgrid=True, gridcolor='#30363d')
+                font=dict(color='white'), xaxis=dict(showgrid=True, gridcolor='#30363d'), 
+                yaxis=dict(showgrid=True, gridcolor='#30363d')
             )
             st.plotly_chart(fig_scat, use_container_width=True)
 
 # =========================================================
-# ABA 3: GEOGRAFIA
+# ABA 3: CUSTOS INTERNOS
 # =========================================================
 with tab3:
-    st.write("")
-    df_geo = df_finalizadas.groupby('Cidade').agg({'Vendido': 'sum', 'Lucro': 'sum'}).reset_index()
-    df_geo['Margem_Media'] = (df_geo['Lucro'] / df_geo['Vendido'] * 100).fillna(0)
-    df_geo = df_geo.sort_values(by='Vendido', ascending=False)
-    
-    st.markdown("##### Resultados por Cidade")
-    fig_geo = px.bar(
-        df_geo, x='Cidade', y='Vendido',
-        color='Margem_Media', color_continuous_scale=['#da3633', '#e3b341', '#3fb950'],
-        text_auto='.2s'
-    )
-    fig_geo.update_layout(
-        plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='white'), yaxis=dict(showgrid=True, gridcolor='#30363d')
-    )
-    st.plotly_chart(fig_geo, use_container_width=True)
-
-# =========================================================
-# ABA 4: CUSTOS INTERNOS (ADM)
-# =========================================================
-with tab4:
     st.write("")
     
     if df_adm.empty:
         st.warning("⚠️ Nenhum projeto 5009, 5010 ou 5011 encontrado.")
     else:
         custo_adm_total = df_adm['Custo_Total'].sum()
-        
-        # Categorias
-        mat = df_adm['Mat_Real'].sum()
-        desp = df_adm['Desp_Real'].sum()
-        hh = df_adm['HH_Real_Vlr'].sum()
-        imp = df_adm['Impostos'].sum()
-        
-        # Impacto no Faturamento Global (Aqui usamos df_obras total, pois o ADM impacta tudo)
         faturamento_global = df_obras['Vendido'].sum() 
         impacto_percentual = (custo_adm_total / faturamento_global * 100) if faturamento_global > 0 else 0
 
+        # KPI Único e Impacto
         c_kpi1, c_kpi2 = st.columns(2)
-        
         with c_kpi1:
             st.markdown(f"""
             <div class="adm-box">
-                <div style="color: #d29922; font-size: 0.9rem; text-transform: uppercase; font-weight: bold;">Custo Administrativo Total</div>
+                <div style="color: #d29922; font-size: 0.9rem; text-transform: uppercase; font-weight: bold;">Custo Administrativo</div>
                 <div style="font-size: 2rem; font-weight: 800; color: white;">R$ {custo_adm_total:,.2f}</div>
-                <div style="color: #8b949e; font-size: 0.8rem; margin-top: 5px;">Soma de 5009, 5010 e 5011</div>
             </div>
             """, unsafe_allow_html=True)
-            
         with c_kpi2:
-            cor_impacto = "#da3633" if impacto_percentual > 10 else "#3fb950"
+            # Puxa meta de ADM do config se existir, senao padrao 5%
+            meta_adm = config.get("meta_custo_adm", 5.0)
+            cor_impacto = "#da3633" if impacto_percentual > meta_adm else "#3fb950"
             st.markdown(f"""
             <div class="adm-box" style="border-color: {cor_impacto}">
                 <div style="color: {cor_impacto}; font-size: 0.9rem; text-transform: uppercase; font-weight: bold;">Impacto no Faturamento</div>
                 <div style="font-size: 2rem; font-weight: 800; color: white;">{impacto_percentual:.1f}%</div>
-                <div style="color: #8b949e; font-size: 0.8rem; margin-top: 5px;">Quanto o escritório consome das vendas</div>
+                <div style="font-size: 0.7rem; color: #8b949e">Meta Max: {meta_adm:.1f}%</div>
             </div>
             """, unsafe_allow_html=True)
 
         st.divider()
 
+        # Detalhamento
         c_chart1, c_chart2 = st.columns(2)
         
         with c_chart1:
-            st.markdown("##### Onde estamos gastando?")
+            st.subheader("Composição do Custo")
             df_pie_adm = pd.DataFrame({
-                'Categoria': ['Materiais/Insumos', 'Despesas Gerais', 'Mão de Obra (Salários)', 'Impostos'],
-                'Valor': [mat, desp, hh, imp]
+                'Categoria': ['Materiais', 'Despesas', 'Mão de Obra', 'Impostos'],
+                'Valor': [df_adm['Mat_Real'].sum(), df_adm['Desp_Real'].sum(), df_adm['HH_Real_Vlr'].sum(), df_adm['Impostos'].sum()]
             })
-            
             fig_adm_pie = px.pie(
                 df_pie_adm, values='Valor', names='Categoria', hole=0.5,
                 color_discrete_sequence=['#a371f7', '#d29922', '#58a6ff', '#8b949e']
@@ -311,13 +344,13 @@ with tab4:
             st.plotly_chart(fig_adm_pie, use_container_width=True)
 
         with c_chart2:
-            st.markdown("##### Detalhe por Centro de Custo")
+            st.subheader("Por Centro de Custo")
             df_ids = df_adm.groupby('Projeto').agg({'Custo_Total': 'sum', 'Descricao': 'first'}).reset_index()
             df_ids['Projeto'] = df_ids['Projeto'].astype(str)
             
             fig_adm_bar = px.bar(
                 df_ids, x='Projeto', y='Custo_Total', color='Projeto',
-                text_auto='.2s', hover_data=['Descricao']
+                text_auto='.2s'
             )
             fig_adm_bar.update_layout(
                 plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', 
