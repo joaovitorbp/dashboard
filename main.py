@@ -3,17 +3,15 @@ import streamlit_authenticator as stauth
 import yaml
 
 # ---------------------------------------------------------
-# 1. CONFIGURAÇÃO VISUAL E CSS (CORREÇÃO DE POSICIONAMENTO)
+# 1. CONFIGURAÇÃO VISUAL
 # ---------------------------------------------------------
 st.set_page_config(page_title="Portal TE Engenharia", layout="wide", page_icon="🏗️")
 
+# CSS GLOBAL (Aplica em tudo)
 st.markdown("""
 <style>
     /* Fundo geral */
     .stApp {background-color: #0e1117;}
-    
-    /* Remove cabeçalho padrão */
-    header {visibility: hidden;}
     
     /* --- CARD DE LOGIN --- */
     [data-testid="stForm"] {
@@ -58,24 +56,20 @@ st.markdown("""
         top: 60px;
     }
 
-    /* --- CORREÇÃO DA SIDEBAR (MENU NO TOPO, BOTÃO NO FUNDO) --- */
-    
-    /* 1. Transforma a Sidebar em Flexbox Vertical */
+    /* --- SIDEBAR (MENU NO TOPO, BOTÃO NO FUNDO) --- */
     section[data-testid="stSidebar"] > div {
         height: 100%;
         display: flex;
         flex-direction: column;
-        /* Removemos o space-between para não espalhar o conteúdo */
     }
     
-    /* 2. O PULO DO GATO: Empurra o rodapé (UserContent) para o fundo */
+    /* Empurra o rodapé para o fundo */
     [data-testid="stSidebarUserContent"] {
-        margin-top: auto; /* Isso joga este bloco para o final da tela */
+        margin-top: auto; 
         padding-bottom: 20px;
         padding-top: 20px;
-        border-top: 1px solid #30363d; /* Linha separadora */
+        border-top: 1px solid #30363d;
     }
-    
 </style>
 """, unsafe_allow_html=True)
 
@@ -114,33 +108,38 @@ except TypeError:
         config_dict['cookie']['expiry_days']
     )
 
-# ---------------------------------------------------------
-# 4. LÓGICA DE EXIBIÇÃO
-# ---------------------------------------------------------
-
 authenticator.login(location='main')
+
+# ---------------------------------------------------------
+# 4. LÓGICA CONDICIONAL (AQUI ESTÁ A MÁGICA)
+# ---------------------------------------------------------
 
 if st.session_state.get("authentication_status"):
     
-    # === ÁREA LOGADA ===
+    # === USUÁRIO LOGADO ===
+    # Aqui NÃO escondemos o header, para os botões aparecerem.
     
-    # 1. Definimos as páginas
-    # Elas aparecem naturalmente no topo
+    # Navegação
     pg = st.navigation([
         st.Page("dashboard_visao_geral.py", title="Visão Geral", icon="🏢"),
         st.Page("dashboard_detalhado.py", title="Detalhamento de Obra", icon="📝"),
         st.Page("configuracoes.py", title="Configurações", icon="⚙️"),
     ])
 
-    # 2. Sidebar (Rodapé)
+    # Sidebar com botão no fundo
     with st.sidebar:
-        # Graças ao CSS 'margin-top: auto', isso vai para o fundo
         authenticator.logout('Desconectar', 'sidebar') 
     
     pg.run()
 
 elif st.session_state.get("authentication_status") is False:
+    # === TELA DE LOGIN (COM ERRO) ===
+    # Se quiser esconder os botões SÓ na tela de login, descomente a linha abaixo:
+    # st.markdown('<style>header {visibility: hidden;}</style>', unsafe_allow_html=True)
     st.error('Usuário ou senha incorretos.')
 
 elif st.session_state.get("authentication_status") is None:
+    # === TELA DE LOGIN (NORMAL) ===
+    # Aqui escondemos o header para ficar limpo, mas ele volta quando logar
+    st.markdown('<style>header {visibility: hidden;}</style>', unsafe_allow_html=True)
     pass
