@@ -23,8 +23,10 @@ st.markdown("""
         margin-top: -1rem !important;
     }
     
-    /* --- Estilização dos Botões (Azul Vibrante) --- */
-    div.stButton > button {
+    /* --- Estilização dos Botões (BLINDADO - SÓ AREA PRINCIPAL) --- */
+    /* Usamos section[data-testid="stMain"] para garantir que a sidebar não seja afetada */
+    
+    section[data-testid="stMain"] div.stButton > button {
         background-color: #58a6ff;
         color: #ffffff; 
         border: none;
@@ -32,12 +34,12 @@ st.markdown("""
         padding: 0.5rem 1rem;
         transition: all 0.2s ease-in-out;
     }
-    div.stButton > button:hover {
+    section[data-testid="stMain"] div.stButton > button:hover {
         background-color: #79c0ff;
         color: #ffffff;
         box-shadow: 0 4px 8px rgba(88, 166, 255, 0.3);
     }
-    div.stButton > button:active {
+    section[data-testid="stMain"] div.stButton > button:active {
         background-color: #58a6ff;
         transform: translateY(2px);
     }
@@ -49,7 +51,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("⚙️ Configurações do Sistema")
+st.title("Configurações do Sistema")
 
 # ARQUIVOS
 CONFIG_FILE = "config.json"
