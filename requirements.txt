@@ -1,6 +1,6 @@
-streamlit>=1.36.0
+streamlit
 pandas
 plotly
 openpyxl
-PyGithub
 streamlit-authenticator
+gspread
