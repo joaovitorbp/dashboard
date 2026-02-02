@@ -1,14 +1,9 @@
 import streamlit as st
+import streamlit_authenticator as stauth
 
-# Configuração da Página Principal
-st.set_page_config(page_title="Portal TE Engenharia", layout="wide", page_icon="🏗️")
+# --- CÓDIGO TEMPORÁRIO PARA GERAR HASH ---
+senha_real = "coloque_sua_senha_aqui"  # <--- DIGITE SUA SENHA AQUI
 
-# Definição do Menu de Navegação
-pg = st.navigation([
-    st.Page("dashboard_visao_geral.py", title="Visão Geral", icon="🏢"),
-    st.Page("dashboard_detalhado.py", title="Detalhamento de Obra", icon="📝"),
-    st.Page("configuracoes.py", title="Configurações", icon="⚙️"),
-])
-
-# Executa a navegação
-pg.run()
+hashed_passwords = stauth.Hasher([senha_real]).generate()
+st.write("Sua senha criptografada é:")
+st.code(hashed_passwords[0], language='text')
