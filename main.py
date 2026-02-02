@@ -1,17 +1,59 @@
 import streamlit as st
-import bcrypt
+import streamlit_authenticator as stauth
 
-# --- GERADOR DE HASH INFALÍVEL ---
-st.title("Gerador de Senha")
+# ---------------------------------------------------------
+# CONFIGURAÇÃO INICIAL
+# ---------------------------------------------------------
+st.set_page_config(page_title="Portal TE Engenharia", layout="wide", page_icon="🏗️")
 
-# 1. Digite sua senha aqui dentro das aspas
-minha_senha_real = "Obras@2026" 
+st.markdown("""
+<style>
+    .stApp {background-color: #0e1117;}
+</style>
+""", unsafe_allow_html=True)
 
-# 2. O código abaixo cria a criptografia
-senha_bytes = minha_senha_real.encode('utf-8')
-salt = bcrypt.gensalt()
-senha_hash = bcrypt.hashpw(senha_bytes, salt)
+# ---------------------------------------------------------
+# SISTEMA DE LOGIN (VIA SECRETS)
+# ---------------------------------------------------------
+# Lê as configurações que você salvou no site do Streamlit
+config = st.secrets
 
-# 3. Mostra o resultado na tela
-st.write("Copie o código abaixo para colocar no Secrets:")
-st.code(senha_hash.decode('utf-8'), language='text')
+authenticator = stauth.Authenticate(
+    config['credentials'],
+    config['cookie']['name'],
+    config['cookie']['key'],
+    config['cookie']['expiry_days'],
+    config['preauthorized']
+)
+
+# Cria a tela de login (Username será 'admin')
+authenticator.login()
+
+# ---------------------------------------------------------
+# LÓGICA DE ACESSO
+# ---------------------------------------------------------
+if st.session_state["authentication_status"]:
+    
+    # === SE O LOGIN DER CERTO, MOSTRA O SISTEMA ===
+    with st.sidebar:
+        # Mostra o botão de Sair
+        authenticator.logout('Sair', 'sidebar')
+        st.divider()
+    
+    # Define as páginas do sistema
+    pg = st.navigation([
+        st.Page("dashboard_visao_geral.py", title="Visão Geral", icon="🏢"),
+        st.Page("dashboard_detalhado.py", title="Detalhamento de Obra", icon="📝"),
+        st.Page("configuracoes.py", title="Configurações", icon="⚙️"),
+    ])
+    
+    # Roda o site
+    pg.run()
+
+elif st.session_state["authentication_status"] is False:
+    # === SENHA ERRADA ===
+    st.error('Usuário ou senha incorretos')
+
+elif st.session_state["authentication_status"] is None:
+    # === AGUARDANDO LOGIN ===
+    st.warning('Por favor, faça login para acessar o sistema.')
