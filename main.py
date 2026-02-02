@@ -3,58 +3,16 @@ import streamlit_authenticator as stauth
 import yaml
 
 # ---------------------------------------------------------
-# 1. CONFIGURAÇÃO VISUAL (COM CORREÇÃO DE PULO DE TELA E CSS BLINDADO)
+# 1. CONFIGURAÇÃO VISUAL
 # ---------------------------------------------------------
 st.set_page_config(page_title="Portal TE Engenharia", layout="wide", page_icon="🏗️")
 
 st.markdown("""
 <style>
-    /* 1. CORREÇÃO GLOBAL DE SCROLL (Evita o pulo da tela) */
-    .stApp {
-        background-color: #0e1117;
-        overflow-y: scroll; 
-    }
+    /* Fundo geral */
+    .stApp {background-color: #0e1117;}
     
-    /* 2. TRAVAMENTO TOTAL DO BOTÃO DA SIDEBAR */
-    /* Isso garante que nenhum outro CSS mude o tamanho deste botão */
-    section[data-testid="stSidebar"] .stButton {
-        width: 100% !important; 
-    }
-    
-    section[data-testid="stSidebar"] .stButton button {
-        background-color: transparent !important;
-        border: 1px solid #4a4a4a !important;
-        color: #fafafa !important;
-        
-        /* AQUI ESTÁ O SEGREDO DO TRAVAMENTO: */
-        width: 100% !important;
-        min-width: 100% !important;
-        max-width: 100% !important;
-        box-sizing: border-box !important; 
-        display: block !important;
-        margin: 0px !important;
-    }
-    
-    section[data-testid="stSidebar"] .stButton button:hover {
-        border-color: #ff4b4b !important;
-        color: #ff4b4b !important;
-        background-color: rgba(255, 75, 75, 0.1) !important;
-    }
-
-    /* 3. BOTÃO DE LOGIN (AZUL) */
-    [data-testid="stForm"] .stButton button {
-        background-color: #58a6ff !important;
-        color: white !important;
-        border: none !important;
-        font-weight: bold !important;
-        width: 100%;
-        margin-top: 10px;
-    }
-    [data-testid="stForm"] .stButton button:hover {
-        background-color: #79c0ff !important;
-    }
-
-    /* 4. CARD DE LOGIN */
+    /* --- ESTILO DO CARD DE LOGIN --- */
     [data-testid="stForm"] {
         background-color: #161b22;
         padding: 2rem;
@@ -66,13 +24,36 @@ st.markdown("""
         position: relative;
         top: 50px; 
     }
+
+    /* Inputs do Login */
     .stTextInput input {
         background-color: #0d1117 !important;
         border: 1px solid #30363d !important;
         color: white !important;
     }
     
-    /* Mensagens de erro */
+    /* --- BOTÕES --- */
+    
+    /* 1. Botão "Entrar" (Azul e destacado) */
+    div[data-testid="stForm"] .stButton button {
+        background-color: #58a6ff !important;
+        color: white !important;
+        border: none !important;
+        font-weight: bold !important;
+        width: 100%;
+        margin-top: 10px;
+        transition: all 0.2s ease;
+    }
+    div[data-testid="stForm"] .stButton button:hover {
+        background-color: #79c0ff !important;
+    }
+
+    /* 2. Botão da Sidebar (Padrão, largura total) */
+    section[data-testid="stSidebar"] .stButton button {
+        width: 100% !important;
+    }
+    
+    /* Centraliza mensagens de erro */
     .stAlert {
         max-width: 350px;
         margin: 0 auto;
@@ -137,7 +118,7 @@ if st.session_state.get("authentication_status"):
     # 2. Executa a Página
     pg.run()
 
-    # 3. Botão de Desconectar
+    # 3. Botão de Desconectar (Rodapé)
     with st.sidebar:
         st.divider()
         authenticator.logout('Desconectar', 'sidebar') 
