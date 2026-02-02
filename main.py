@@ -3,23 +3,25 @@ import streamlit_authenticator as stauth
 import yaml
 
 # ---------------------------------------------------------
-# 1. CONFIGURAÇÃO VISUAL
+# 1. CONFIGURAÇÃO VISUAL (COM CORREÇÃO DE PULO DE TELA)
 # ---------------------------------------------------------
 st.set_page_config(page_title="Portal TE Engenharia", layout="wide", page_icon="🏗️")
 
 st.markdown("""
 <style>
-    /* Fundo geral */
-    .stApp {background-color: #0e1117;}
+    /* Fundo geral e Correção de Scroll */
+    .stApp {
+        background-color: #0e1117;
+        overflow-y: scroll; /* Força a barra de rolagem para evitar pulos */
+    }
     
-    /* --- 1. BOTÃO DE LOGIN (AZUL E GRANDE) --- */
-    /* Este estilo só se aplica ao botão DENTRO do cartão de login */
+    /* --- 1. BOTÃO DE LOGIN (AZUL) --- */
     [data-testid="stForm"] .stButton button {
         background-color: #58a6ff !important;
         color: white !important;
         border: none !important;
         font-weight: bold !important;
-        width: 100%; /* Login fica largura total */
+        width: 100%;
         margin-top: 10px;
         transition: all 0.2s ease;
     }
@@ -27,20 +29,16 @@ st.markdown("""
         background-color: #79c0ff !important;
     }
 
-    /* --- 2. BOTÃO DA SIDEBAR (RESET TOTAL PARA PADRÃO) --- */
-    /* Forçamos o botão da barra lateral a ser pequeno e discreto */
+    /* --- 2. BOTÃO DA SIDEBAR (TRAVADO / PADRÃO) --- */
     section[data-testid="stSidebar"] .stButton button {
         background-color: transparent !important;
         border: 1px solid #4a4a4a !important;
         color: #fafafa !important;
-        width: auto !important; /* <--- ISSO IMPEDE QUE ELE MUDE DE TAMANHO SOZINHO */
-        padding-left: 15px !important;
-        padding-right: 15px !important;
+        width: 100% !important; /* Largura total travada */
     }
     
-    /* Efeito ao passar o mouse no botão da sidebar */
     section[data-testid="stSidebar"] .stButton button:hover {
-        border-color: #ff4b4b !important; /* Um vermelho sutil para indicar saída */
+        border-color: #ff4b4b !important;
         color: #ff4b4b !important;
         background-color: rgba(255, 75, 75, 0.1) !important;
     }
@@ -58,14 +56,12 @@ st.markdown("""
         top: 50px; 
     }
 
-    /* Inputs do Login */
     .stTextInput input {
         background-color: #0d1117 !important;
         border: 1px solid #30363d !important;
         color: white !important;
     }
     
-    /* Mensagens de erro */
     .stAlert {
         max-width: 350px;
         margin: 0 auto;
@@ -120,14 +116,17 @@ if st.session_state.get("authentication_status"):
     
     # === USUÁRIO LOGADO ===
     
+    # 1. Menu de Navegação
     pg = st.navigation([
         st.Page("dashboard_visao_geral.py", title="Visão Geral", icon="🏢"),
         st.Page("dashboard_detalhado.py", title="Detalhamento de Obra", icon="📝"),
         st.Page("configuracoes.py", title="Configurações", icon="⚙️"),
     ])
     
+    # 2. Executa a Página
     pg.run()
 
+    # 3. Botão de Desconectar
     with st.sidebar:
         st.divider()
         authenticator.logout('Desconectar', 'sidebar') 
