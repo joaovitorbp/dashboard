@@ -7,14 +7,12 @@ import yaml
 # ---------------------------------------------------------
 st.set_page_config(page_title="Portal TE Engenharia", layout="wide", page_icon="🏗️")
 
-# CSS GLOBAL
 st.markdown("""
 <style>
     /* Fundo geral */
     .stApp {background-color: #0e1117;}
     
-    /* --- REMOVE ESPAÇO VAZIO DO TOPO DA SIDEBAR --- */
-    /* Ajusta o padding padrão para subir os itens do menu */
+    /* --- REMOVE ESPAÇO DO TOPO DA SIDEBAR --- */
     section[data-testid="stSidebar"] .block-container {
         padding-top: 2rem !important;
         padding-bottom: 0rem !important;
@@ -63,20 +61,28 @@ st.markdown("""
         top: 60px;
     }
 
-    /* --- SIDEBAR FLEXÍVEL (MENU TOPO, BOTÃO FUNDO) --- */
+    /* --- CORREÇÃO DA SIDEBAR (O PULO DO GATO) --- */
+    
+    /* 1. Define a Sidebar como uma coluna Flexível */
     section[data-testid="stSidebar"] > div {
         height: 100%;
         display: flex;
         flex-direction: column;
     }
     
-    /* Rodapé da Sidebar (Botão Desconectar) */
+    /* 2. Área de Conteúdo do Usuário (Onde ficam Selectbox e Botão) */
     [data-testid="stSidebarUserContent"] {
-        margin-top: auto; 
-        padding-bottom: 20px;
-        padding-top: 20px;
-        border-top: 1px solid #30363d;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1; /* Ocupa todo o espaço vertical disponível */
+        /* Removemos o margin-top: auto daqui, pois ele empurrava tudo */
     }
+    
+    /* 3. Apenas o ÚLTIMO container (nosso rodapé) vai para o fundo */
+    [data-testid="stSidebarUserContent"] > div:last-child {
+        margin-top: auto;
+    }
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -85,7 +91,6 @@ st.markdown("""
 # ---------------------------------------------------------
 secrets = st.secrets
 
-# Criação do dicionário de credenciais a partir dos segredos
 config_dict = {
     "credentials": {
         "usernames": {
@@ -109,7 +114,6 @@ try:
         config_dict['preauthorized']
     )
 except TypeError:
-    # Fallback para compatibilidade de versões
     authenticator = stauth.Authenticate(
         config_dict['credentials'],
         config_dict['cookie']['name'],
@@ -117,37 +121,37 @@ except TypeError:
         config_dict['cookie']['expiry_days']
     )
 
-# Renderiza o widget de login
 authenticator.login(location='main')
 
 # ---------------------------------------------------------
-# 4. LÓGICA DO SISTEMA
+# 4. LÓGICA DO SISTEMA (ORDEM CORRIGIDA)
 # ---------------------------------------------------------
 
 if st.session_state.get("authentication_status"):
     
-    # === USUÁRIO LOGADO ===
-    
-    # Define as páginas (Menu Topo)
+    # === 1. DEFINIÇÃO DAS PÁGINAS ===
     pg = st.navigation([
         st.Page("dashboard_visao_geral.py", title="Visão Geral", icon="🏢"),
         st.Page("dashboard_detalhado.py", title="Detalhamento de Obra", icon="📝"),
         st.Page("configuracoes.py", title="Configurações", icon="⚙️"),
     ])
 
-    # Barra Lateral (Botão Fundo)
-    with st.sidebar:
-        authenticator.logout('Desconectar', 'sidebar') 
-    
-    # Executa a aplicação
+    # === 2. EXECUTAR A PÁGINA (ISSO CRIA O SELETOR DE OBRAS) ===
+    # Executamos o pg.run() ANTES do rodapé. 
+    # Assim, o seletor entra na sidebar primeiro (no topo).
     pg.run()
 
+    # === 3. CRIAR O RODAPÉ (ISSO VAI PARA O FUNDO) ===
+    with st.sidebar:
+        # Usamos um container para agrupar a linha e o botão
+        # O CSS 'last-child' vai pegar esse container e jogar pro fundo
+        with st.container():
+            st.divider()
+            authenticator.logout('Desconectar', 'sidebar') 
+    
 elif st.session_state.get("authentication_status") is False:
-    # === ERRO DE LOGIN ===
     st.error('Usuário ou senha incorretos.')
 
 elif st.session_state.get("authentication_status") is None:
-    # === TELA DE LOGIN (AGUARDANDO) ===
-    # Esconde o cabeçalho padrão para ficar mais limpo
     st.markdown('<style>header {visibility: hidden;}</style>', unsafe_allow_html=True)
     pass
