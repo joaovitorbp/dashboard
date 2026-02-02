@@ -5,7 +5,7 @@ import yaml
 # ---------------------------------------------------------
 # 1. CONFIGURAÇÃO VISUAL
 # ---------------------------------------------------------
-st.set_page_config(page_title="Portal TE Engenharia", layout="wide", page_icon="🏗️")
+st.set_page_config(page_title="Dashboard Obras", layout="wide", page_icon="📊")
 
 st.markdown("""
 <style>
