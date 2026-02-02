@@ -16,17 +16,13 @@ st.markdown("""
     .block-container {padding-top: 1rem !important; padding-bottom: 2rem !important;}
     h1 {padding-top: 0rem !important; margin-top: -1rem !important;}
     
-    /* --- ABAS (CSS CORRIGIDO - REMOVE LINHAS DUPLAS E CORES PADRÃO) --- */
-    
-    /* 1. A régua (container das abas) */
+    /* --- ABAS (VISUAL CLEAN) --- */
     .stTabs [data-baseweb="tab-list"] { 
         gap: 0px; 
         background-color: transparent;
-        border-bottom: 1px solid #30363d; /* Linha cinza única */
+        border-bottom: 1px solid #30363d; 
         padding-bottom: 0px;
     }
-    
-    /* 2. O botão da aba (estado normal) */
     .stTabs [data-baseweb="tab"] {
         height: 45px; 
         background-color: transparent; 
@@ -37,30 +33,26 @@ st.markdown("""
         padding-left: 20px;
         padding-right: 20px;
         font-weight: 600;
-        margin-bottom: -1px; /* Faz a borda da aba ativa sobrepor a linha cinza */
+        margin-bottom: -1px;
     }
-    
-    /* 3. O botão da aba (estado SELECIONADO) */
     .stTabs [aria-selected="true"] {
         background-color: transparent !important; 
-        color: #58a6ff !important; /* Texto Azul */
-        border-bottom: 2px solid #58a6ff; /* Borda Azul */
+        color: #58a6ff !important; 
+        border-bottom: 2px solid #58a6ff;
     }
-    
-    /* 4. Remove a "barra vermelha" animada padrão do Streamlit */
     .stTabs [data-baseweb="tab-highlight"] {
         background-color: transparent !important;
         height: 0px !important;
     }
     
-    /* Box de Destaque (KPIs) */
+    /* Box de Destaque */
     .highlight-box {
         background-color: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 15px; text-align: center;
     }
     .highlight-val { font-size: 1.5rem; font-weight: 800; color: white; }
     .highlight-lbl { color: #8b949e; font-size: 0.8rem; text-transform: uppercase; }
 
-    /* Box de Destaque para ADM */
+    /* Box de Destaque ADM */
     .adm-box {
         background-color: #161b22; border: 1px solid #d29922; border-radius: 8px; padding: 20px; text-align: center;
     }
@@ -126,7 +118,6 @@ for col in cols_numericas:
 df_raw['Custo_Total'] = df_raw['Mat_Real'] + df_raw['Desp_Real'] + df_raw['HH_Real_Vlr'] + df_raw['Impostos']
 df_raw['Lucro'] = df_raw['Vendido'] - df_raw['Custo_Total']
 
-# Chave Única: Cliente + Local
 df_raw['Cliente_Local'] = df_raw.apply(
     lambda row: f"{row['Cliente']} ({row['Cidade']})" if pd.notna(row['Cidade']) and str(row['Cidade']).strip() != "" else row['Cliente'], 
     axis=1
@@ -161,7 +152,7 @@ with tab1:
     if df_finalizadas.empty:
         st.warning("⚠️ Nenhuma obra finalizada encontrada.")
     else:
-        # --- KPI GERAL ---
+        # KPI GERAL
         total_vendido = df_finalizadas['Vendido'].sum()
         total_lucro = df_finalizadas['Lucro'].sum()
         margem_global = (total_lucro / total_vendido * 100) if total_vendido > 0 else 0
@@ -178,7 +169,8 @@ with tab1:
             cor_m = "#3fb950" if margem_global >= META_MARGEM else "#da3633"
             st.markdown(f"""
             <div class="highlight-box" style="border-top: 4px solid {cor_m}">
-                <div class="highlight-lbl">Margem</div> <div class="highlight-val" style="color:{cor_m}">{margem_global:.1f}%</div>
+                <div class="highlight-lbl">Margem</div>
+                <div class="highlight-val" style="color:{cor_m}">{margem_global:.1f}%</div>
             </div>
             """, unsafe_allow_html=True)
         with c3:
@@ -191,7 +183,7 @@ with tab1:
 
         st.divider()
 
-        # --- RANKING POR PLANTA (VISÃO DETALHADA) ---
+        # RANKING POR PLANTA
         st.subheader("Ranking por Planta") 
         
         df_agrupado = df_finalizadas.groupby('Cliente_Local').agg({'Vendido': 'sum', 'Lucro': 'sum'}).reset_index()
@@ -201,7 +193,7 @@ with tab1:
         fig_detalhe = px.bar(
             df_agrupado, y='Cliente_Local', x='Vendido', text_auto='.2s', orientation='h',
             color='Margem_%', color_continuous_scale=['#da3633', '#e3b341', '#3fb950'],
-            labels={'Vendido': 'Faturamento Real (R$)', 'Cliente_Local': '', 'Margem_%': 'Margem %'}
+            labels={'Vendido': 'Valor Vendido (R$)', 'Cliente_Local': '', 'Margem_%': 'Margem %'}
         )
         fig_detalhe.update_layout(
             plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color='white'),
@@ -212,7 +204,6 @@ with tab1:
         st.write("")
         st.write("")
 
-        # --- GRÁFICOS LADO A LADO ---
         col_cli, col_geo = st.columns(2)
 
         with col_cli:
@@ -224,7 +215,7 @@ with tab1:
             fig_cli = px.bar(
                 df_cli_only, y='Cliente', x='Vendido', text_auto='.2s', orientation='h',
                 color='Margem_%', color_continuous_scale=['#da3633', '#e3b341', '#3fb950'],
-                labels={'Vendido': 'R$', 'Cliente': ''}
+                labels={'Vendido': 'Valor Vendido (R$)', 'Cliente': ''}
             )
             fig_cli.update_layout(
                 plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color='white'),
@@ -242,7 +233,7 @@ with tab1:
             fig_geo = px.bar(
                 df_geo, y='Cidade', x='Vendido', text_auto='.2s', orientation='h',
                 color='Margem_%', color_continuous_scale=['#da3633', '#e3b341', '#3fb950'],
-                labels={'Vendido': 'R$', 'Cidade': ''}
+                labels={'Vendido': 'Valor Vendido (R$)', 'Cidade': ''}
             )
             fig_geo.update_layout(
                 plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color='white'),
@@ -293,7 +284,7 @@ with tab2:
             fig_scat = px.scatter(
                 df_tipo, x='Vendido', y='Margem_Media', size='Vendido', color='Tipo',
                 text='Tipo', hover_name='Tipo',
-                labels={'Vendido': 'Volume Financeiro', 'Margem_Media': 'Rentabilidade (%)'}
+                labels={'Vendido': 'Volume Vendido (R$)', 'Margem_Media': 'Rentabilidade (%)'}
             )
             fig_scat.add_hline(y=META_MARGEM, line_dash="dash", line_color="#8b949e", annotation_text=f"Meta")
             
