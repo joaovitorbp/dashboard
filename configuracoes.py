@@ -79,7 +79,6 @@ config_atual = load_config()
 # ---------------------------------------------------------
 with st.container(border=True):
     st.subheader("Parâmetros de Metas")
-    st.markdown("Defina aqui as metas globais da empresa. Elas afetarão os indicadores de cor da Visão Geral.")
     st.write("") 
     
     col1, col2, col3 = st.columns(3)
@@ -133,8 +132,8 @@ with st.container(border=True):
     st.subheader("Status da Conexão")
     st.write("")
     
-    # Texto e Info unificados para evitar sobreposição visual
-    st.info("""
+    # Substituído st.info por st.markdown direto para evitar bugs visuais
+    st.markdown("""
     **☁️ Sistema conectado ao Google Sheets**
     
     Os dados são atualizados automaticamente a cada 60 segundos.
