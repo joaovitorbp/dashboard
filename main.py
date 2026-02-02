@@ -3,7 +3,7 @@ import streamlit_authenticator as stauth
 import yaml
 
 # ---------------------------------------------------------
-# 1. CONFIGURAÇÃO VISUAL E CSS (AGORA COM SIDEBAR FIXO)
+# 1. CONFIGURAÇÃO VISUAL E CSS (CORREÇÃO DE POSICIONAMENTO)
 # ---------------------------------------------------------
 st.set_page_config(page_title="Portal TE Engenharia", layout="wide", page_icon="🏗️")
 
@@ -58,21 +58,22 @@ st.markdown("""
         top: 60px;
     }
 
-    /* --- CORREÇÃO DA SIDEBAR (BOTÃO NO RODAPÉ) --- */
+    /* --- CORREÇÃO DA SIDEBAR (MENU NO TOPO, BOTÃO NO FUNDO) --- */
     
-    /* 1. Transforma a Sidebar em um container Flexível */
+    /* 1. Transforma a Sidebar em Flexbox Vertical */
     section[data-testid="stSidebar"] > div {
         height: 100%;
         display: flex;
         flex-direction: column;
-        justify-content: space-between; /* Empurra o conteúdo para as extremidades */
+        /* Removemos o space-between para não espalhar o conteúdo */
     }
     
-    /* 2. Estiliza a área onde fica o botão de sair (User Content) */
+    /* 2. O PULO DO GATO: Empurra o rodapé (UserContent) para o fundo */
     [data-testid="stSidebarUserContent"] {
-        padding-bottom: 20px; /* Espaço na base */
-        border-top: 1px solid #30363d; /* A LINHA SEPARADORA ÚNICA */
-        padding-top: 20px; /* Espaço entre a linha e o botão */
+        margin-top: auto; /* Isso joga este bloco para o final da tela */
+        padding-bottom: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #30363d; /* Linha separadora */
     }
     
 </style>
@@ -123,19 +124,19 @@ if st.session_state.get("authentication_status"):
     
     # === ÁREA LOGADA ===
     
-    # 1. Definimos as páginas (Isso vai para o TOPO da sidebar automaticamente)
+    # 1. Definimos as páginas
+    # Elas aparecem naturalmente no topo
     pg = st.navigation([
         st.Page("dashboard_visao_geral.py", title="Visão Geral", icon="🏢"),
         st.Page("dashboard_detalhado.py", title="Detalhamento de Obra", icon="📝"),
         st.Page("configuracoes.py", title="Configurações", icon="⚙️"),
     ])
 
-    # 2. Sidebar (Isso vai para o FUNDO da sidebar graças ao CSS)
+    # 2. Sidebar (Rodapé)
     with st.sidebar:
-        # Repare que NÃO tem st.divider() aqui, o CSS faz a borda
+        # Graças ao CSS 'margin-top: auto', isso vai para o fundo
         authenticator.logout('Desconectar', 'sidebar') 
     
-    # 3. Executa a página
     pg.run()
 
 elif st.session_state.get("authentication_status") is False:
