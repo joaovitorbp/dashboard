@@ -3,7 +3,7 @@ import streamlit_authenticator as stauth
 import yaml
 
 # ---------------------------------------------------------
-# 1. CONFIGURAÇÃO VISUAL E CSS (CORRIGIDO)
+# 1. CONFIGURAÇÃO VISUAL E CSS (AJUSTADO PARA CARD PEQUENO)
 # ---------------------------------------------------------
 st.set_page_config(page_title="Portal TE Engenharia", layout="wide", page_icon="🏗️")
 
@@ -12,16 +12,24 @@ st.markdown("""
     /* Fundo geral */
     .stApp {background-color: #0e1117;}
     
-    /* Remove o cabeçalho padrão do Streamlit na tela de login */
+    /* Remove cabeçalho padrão */
     header {visibility: hidden;}
     
-    /* --- CARD DE LOGIN --- */
+    /* --- CARD DE LOGIN (AGORA PEQUENO E CENTRALIZADO) --- */
     [data-testid="stForm"] {
         background-color: #161b22;
         padding: 2rem;
         border-radius: 12px;
         border: 1px solid #30363d;
         box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        
+        /* O PULO DO GATO PARA O TAMANHO: */
+        max-width: 350px !important;  /* Largura fixa pequena */
+        margin: 0 auto !important;    /* Centraliza na tela */
+        
+        /* Centraliza verticalmente (opcional, mas ajuda visualmente) */
+        position: relative;
+        top: 50px; 
     }
 
     /* --- INPUTS --- */
@@ -31,8 +39,7 @@ st.markdown("""
         color: white !important;
     }
     
-    /* --- BOTÃO DE ENTRAR (CORREÇÃO DO BUG) --- */
-    /* Agora aplicamos o estilo APENAS no botão de ação, ignorando o "olho" da senha */
+    /* --- BOTÃO DE ENTRAR --- */
     div[data-testid="stForm"] .stButton button {
         background-color: #58a6ff !important;
         color: white !important;
@@ -45,6 +52,14 @@ st.markdown("""
     div[data-testid="stForm"] .stButton button:hover {
         background-color: #79c0ff !important;
         box-shadow: 0 4px 10px rgba(88, 166, 255, 0.3);
+    }
+    
+    /* Ajuste para centralizar também a mensagem de erro caso apareça */
+    .stAlert {
+        max-width: 350px;
+        margin: 0 auto;
+        position: relative;
+        top: 60px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -88,7 +103,7 @@ except TypeError:
 # 4. LÓGICA DE EXIBIÇÃO
 # ---------------------------------------------------------
 
-# Renderiza o login primeiro para checar o estado
+# Renderiza o login (O CSS acima vai forçá-lo a ficar pequeno e no meio)
 authenticator.login(location='main')
 
 if st.session_state.get("authentication_status"):
@@ -107,18 +122,8 @@ if st.session_state.get("authentication_status"):
     pg.run()
 
 elif st.session_state.get("authentication_status") is False:
-    # === TELA DE ERRO ===
-    # Centraliza o erro também
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        st.error('Usuário ou senha incorretos.')
+    # Mensagem de erro padrão do Streamlit (O CSS .stAlert vai centralizá-la)
+    st.error('Usuário ou senha incorretos.')
 
 elif st.session_state.get("authentication_status") is None:
-    # === TELA DE LOGIN (LIMPA) ===
-    # O formulário aparece automaticamente, mas usamos colunas 
-    # vazias antes apenas para "empurrar" o layout para o centro
-    # se necessário, mas o location='main' já tenta centralizar.
-    
-    # Se quiser forçar a largura do card para não ficar gigante:
-    # O CSS já cuida do visual do card.
     pass
