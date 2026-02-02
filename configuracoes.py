@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import json
 import os
-import shutil # Biblioteca para mover arquivos
+import shutil
 
 # ---------------------------------------------------------
 # CONFIGURAÇÃO DA PÁGINA
@@ -14,8 +14,7 @@ st.markdown("""
     .stApp {background-color: #0e1117;}
     .block-container {padding-top: 3rem; padding-bottom: 3rem;}
     
-    /* --- Estilização dos Botões --- */
-    /* Botão Padrão (Salvar/Confirmar) - Azul */
+    /* --- Estilização dos Botões (Azul Vibrante) --- */
     div.stButton > button {
         background-color: #58a6ff;
         color: #ffffff; 
@@ -29,10 +28,10 @@ st.markdown("""
         color: #ffffff;
         box-shadow: 0 4px 8px rgba(88, 166, 255, 0.3);
     }
-    
-    /* Botão de Reset (Vermelho/Alerta) - Truque de CSS usando nth-of-type se necessário, 
-       mas aqui aplicaremos via key específica do Streamlit se possível ou manteremos azul 
-       para consistência, diferenciando pelo texto. */
+    div.stButton > button:active {
+        background-color: #58a6ff;
+        transform: translateY(2px);
+    }
 
     /* --- Tipografia --- */
     h3 {color: #ffffff !important; font-size: 1.3rem; font-weight: 600;}
@@ -46,17 +45,16 @@ st.title("⚙️ Configurações do Sistema")
 # ARQUIVOS
 CONFIG_FILE = "config.json"
 DATA_FILE = "dados_obras_v5.xlsx"
-BACKUP_FILE = "dados_obras_v5.bak" # Arquivo de segurança
+BACKUP_FILE = "dados_obras_v5.bak"
 
 # ---------------------------------------------------------
-# SISTEMA DE BACKUP AUTOMÁTICO (SEGURANÇA)
+# SISTEMA DE BACKUP AUTOMÁTICO
 # ---------------------------------------------------------
-# Se o backup não existe, cria ele agora (presume-se que o estado atual é o original ou estável)
 if os.path.exists(DATA_FILE) and not os.path.exists(BACKUP_FILE):
     shutil.copy(DATA_FILE, BACKUP_FILE)
 
 # ---------------------------------------------------------
-# FUNÇÕES DE CONFIGURAÇÃO
+# FUNÇÕES
 # ---------------------------------------------------------
 def load_config():
     default_data = {"meta_vendas": 5000000.0, "meta_margem": 25.0, "meta_custo_adm": 5.0}
@@ -77,7 +75,7 @@ def save_config(data):
 config_atual = load_config()
 
 # ---------------------------------------------------------
-# 1. PARÂMETROS DE GESTÃO (METAS)
+# 1. PARÂMETROS DE GESTÃO
 # ---------------------------------------------------------
 with st.container(border=True):
     st.subheader("Parâmetros de Metas")
@@ -127,7 +125,7 @@ with st.container(border=True):
         st.success("✅ Parâmetros atualizados! Os indicadores foram recalculados.")
 
 # ---------------------------------------------------------
-# 2. ATUALIZAÇÃO DE DADOS (UPLOAD & RESTORE)
+# 2. ATUALIZAÇÃO DE DADOS
 # ---------------------------------------------------------
 with st.container(border=True):
     st.subheader("Base de dados")
@@ -136,13 +134,12 @@ with st.container(border=True):
     st.markdown(f"Arquivo interno do sistema: **{DATA_FILE}**")
     st.write("")
     
-    # --- ÁREA DE UPLOAD ---
-    uploaded_file = st.file_uploader("Substituir base atual (.xlsx)", type=["xlsx"])
+    uploaded_file = st.file_uploader("Arraste o arquivo atualizado aqui (.xlsx)", type=["xlsx"])
 
     if uploaded_file is not None:
         st.write("")
         if st.button("Confirmar Substituição da Base"):
-            # Antes de substituir, garante que temos um backup do arquivo ANTERIOR (O Original)
+            # Backup antes de substituir
             if os.path.exists(DATA_FILE) and not os.path.exists(BACKUP_FILE):
                 shutil.copy(DATA_FILE, BACKUP_FILE)
             
@@ -151,17 +148,22 @@ with st.container(border=True):
             
             st.cache_data.clear()
             st.success("✅ Base de dados atualizada temporariamente!")
-            st.rerun() # Recarrega a página para limpar o uploader
+            st.rerun()
 
-    # --- ÁREA DE RESTAURAÇÃO (O BOTÃO DE RESET) ---
-    if os.path.exists(BACKUP_FILE):
-        st.divider()
-        st.warning("♻️ **Modo de Restauração**")
+# ---------------------------------------------------------
+# 3. RESTAURAÇÃO (PADRONIZADO)
+# ---------------------------------------------------------
+if os.path.exists(BACKUP_FILE):
+    st.write("")
+    with st.container(border=True):
+        st.subheader("Modo de Restauração")
+        st.write("")
         st.markdown("Caso tenha enviado um arquivo errado, clique abaixo para voltar ao arquivo original do sistema.")
+        st.write("")
         
-        if st.button("Restaurar Arquivo Original (GitHub)"):
+        if st.button("Restaurar Arquivo Original"):
             try:
-                shutil.copy(BACKUP_FILE, DATA_FILE) # Sobrescreve o atual com o backup
+                shutil.copy(BACKUP_FILE, DATA_FILE)
                 st.cache_data.clear()
                 st.success("✅ Base original restaurada com sucesso!")
                 st.rerun()
@@ -169,7 +171,7 @@ with st.container(border=True):
                 st.error(f"Erro ao restaurar: {e}")
 
 # ---------------------------------------------------------
-# 3. VISUALIZAÇÃO DE CHECK
+# 4. VISUALIZAÇÃO DE CHECK
 # ---------------------------------------------------------
 if os.path.exists(DATA_FILE):
     st.write("")
