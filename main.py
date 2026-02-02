@@ -110,8 +110,7 @@ if st.session_state.get("authentication_status"):
     
     # === ÁREA LOGADA ===
     with st.sidebar:
-        st.write(f"👋 Olá, *{st.session_state['name']}*")
-        authenticator.logout('Sair', 'sidebar')
+        authenticator.logout('Desconectar', 'sidebar')
         st.divider()
     
     pg = st.navigation([
