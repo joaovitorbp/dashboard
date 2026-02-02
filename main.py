@@ -4,7 +4,7 @@ import streamlit_authenticator as stauth
 # --- CÓDIGO TEMPORÁRIO PARA GERAR HASH ---
 try:
     # Tenta usar a versão mais nova da biblioteca
-    hasher = stauth.Hasher(["coloque_sua_senha_aqui"]) 
+    hasher = stauth.Hasher(["Obras@2026"]) 
     hashed_passwords = hasher.generate()
 except:
     # Fallback para versões antigas ou comportamento diferente
