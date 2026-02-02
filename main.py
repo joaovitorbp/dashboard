@@ -3,7 +3,7 @@ import streamlit_authenticator as stauth
 import yaml
 
 # ---------------------------------------------------------
-# 1. CONFIGURAÇÃO VISUAL E CSS (DEFINITIVO)
+# 1. CONFIGURAÇÃO VISUAL E CSS (AJUSTE DE ALTURA)
 # ---------------------------------------------------------
 st.set_page_config(page_title="Portal TE Engenharia", layout="wide", page_icon="🏗️")
 
@@ -61,23 +61,24 @@ st.markdown("""
         top: 60px;
     }
 
-    /* --- SIDEBAR FLEXÍVEL (LAYOUT TOPO/FUNDO) --- */
+    /* --- CORREÇÃO DA SIDEBAR (SEM ROLAGEM) --- */
     
-    /* 1. Faz a área de conteúdo do usuário ocupar a altura total */
+    /* 1. Define o container principal da sidebar para não vazar */
     section[data-testid="stSidebar"] > div {
         height: 100vh;
+        overflow: hidden; /* Remove barra de rolagem forçada */
     }
     
-    /* 2. Configura o container interno como Flex Column */
+    /* 2. Área de Conteúdo (Onde ficam os nossos widgets) */
+    /* O PULO DO GATO: Calculamos a altura para ser (Tela - Tamanho do Menu) */
+    /* 170px é uma estimativa segura para os 3 links de navegação + logo */
     [data-testid="stSidebarUserContent"] {
         display: flex;
         flex-direction: column;
-        height: 100%;
+        height: calc(100vh - 170px); 
     }
     
-    /* 3. O PULO DO GATO: */
-    /* Seleciona o ÚLTIMO container dentro da sidebar (nosso rodapé) */
-    /* e aplica margem automática no topo, empurrando-o para o final */
+    /* 3. Empurra o rodapé para o final do espaço disponível */
     [data-testid="stSidebarUserContent"] > div:last-child {
         margin-top: auto;
     }
@@ -123,34 +124,31 @@ except TypeError:
 authenticator.login(location='main')
 
 # ---------------------------------------------------------
-# 4. LÓGICA DE ORGANIZAÇÃO (AQUI ESTÁ O LAYOUT)
+# 4. LÓGICA DO LAYOUT
 # ---------------------------------------------------------
 
 if st.session_state.get("authentication_status"):
     
-    # === PARTE 1: MENU NAVEGAÇÃO (AUTOMÁTICO NO TOPO) ===
+    # 1. Menu de Navegação (Ocupa o topo fixo)
     pg = st.navigation([
         st.Page("dashboard_visao_geral.py", title="Visão Geral", icon="🏢"),
         st.Page("dashboard_detalhado.py", title="Detalhamento de Obra", icon="📝"),
         st.Page("configuracoes.py", title="Configurações", icon="⚙️"),
     ])
 
-    # === PARTE 2: SEPARADOR SUPERIOR ===
-    # Colocamos isso ANTES de rodar a página, para ficar acima do Selectbox
+    # 2. Inicia o "User Content" (Área flexível abaixo do menu)
+    
+    # Separador Superior
     with st.sidebar:
-        st.divider() # <--- O SEPARADOR DE CIMA
+        st.divider()
 
-    # === PARTE 3: CONTEÚDO DA PÁGINA (SELETOR DE PROJETO) ===
-    # Ao rodar a página, se ela tiver um sidebar.selectbox, 
-    # ele aparecerá logo abaixo do divider que criamos acima.
+    # Widget de Seleção (Logo abaixo do separador)
     pg.run()
 
-    # === PARTE 4: RODAPÉ (PRESO NO FUNDO) ===
+    # Rodapé (Empurrado para baixo pelo CSS)
     with st.sidebar:
-        # IMPORTANTE: Usamos st.container para agrupar Linha + Botão
-        # O CSS 'last-child' vai pegar esse container inteiro e jogar pro chão
         with st.container():
-            st.divider() # <--- O SEPARADOR DE BAIXO
+            st.divider()
             authenticator.logout('Desconectar', 'sidebar') 
     
 elif st.session_state.get("authentication_status") is False:
