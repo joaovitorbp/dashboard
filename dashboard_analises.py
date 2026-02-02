@@ -16,32 +16,41 @@ st.markdown("""
     .block-container {padding-top: 1rem !important; padding-bottom: 2rem !important;}
     h1 {padding-top: 0rem !important; margin-top: -1rem !important;}
     
-    /* --- ABAS (NOVO VISUAL CLEAN) --- */
-    /* Remove o visual de "Card" e cria uma barra contínua */
+    /* --- ABAS (CSS CORRIGIDO - REMOVE LINHAS DUPLAS E CORES PADRÃO) --- */
+    
+    /* 1. A régua (container das abas) */
     .stTabs [data-baseweb="tab-list"] { 
         gap: 0px; 
         background-color: transparent;
-        border-bottom: 1px solid #30363d;
-        margin-bottom: 20px;
+        border-bottom: 1px solid #30363d; /* Linha cinza única */
+        padding-bottom: 0px;
     }
     
+    /* 2. O botão da aba (estado normal) */
     .stTabs [data-baseweb="tab"] {
         height: 45px; 
         background-color: transparent; 
         border: none;
         color: #8b949e; 
         border-radius: 0px;
-        flex-grow: 0; /* Não estica, fica elegante */
+        flex-grow: 0;
         padding-left: 20px;
         padding-right: 20px;
         font-weight: 600;
+        margin-bottom: -1px; /* Faz a borda da aba ativa sobrepor a linha cinza */
     }
     
-    /* Aba Selecionada: Apenas um traço azul embaixo e texto branco */
+    /* 3. O botão da aba (estado SELECIONADO) */
     .stTabs [aria-selected="true"] {
         background-color: transparent !important; 
-        color: #58a6ff !important; 
-        border-bottom: 3px solid #58a6ff;
+        color: #58a6ff !important; /* Texto Azul */
+        border-bottom: 2px solid #58a6ff; /* Borda Azul */
+    }
+    
+    /* 4. Remove a "barra vermelha" animada padrão do Streamlit */
+    .stTabs [data-baseweb="tab-highlight"] {
+        background-color: transparent !important;
+        height: 0px !important;
     }
     
     /* Box de Destaque (KPIs) */
@@ -142,7 +151,6 @@ df_finalizadas = df_obras[df_obras['Status'].isin(['Finalizado', 'Apresentado'])
 # ---------------------------------------------------------
 st.title("Análises Estratégicas")
 
-# Abas atualizadas com "Segmentos" no lugar de Tipo de Obra
 tab1, tab2, tab3 = st.tabs(["Cliente", "Segmentos", "Custos Internos"])
 
 # =========================================================
@@ -170,8 +178,7 @@ with tab1:
             cor_m = "#3fb950" if margem_global >= META_MARGEM else "#da3633"
             st.markdown(f"""
             <div class="highlight-box" style="border-top: 4px solid {cor_m}">
-                <div class="highlight-lbl">Margem Real Média</div>
-                <div class="highlight-val" style="color:{cor_m}">{margem_global:.1f}%</div>
+                <div class="highlight-lbl">Margem</div> <div class="highlight-val" style="color:{cor_m}">{margem_global:.1f}%</div>
             </div>
             """, unsafe_allow_html=True)
         with c3:
@@ -185,7 +192,7 @@ with tab1:
         st.divider()
 
         # --- RANKING POR PLANTA (VISÃO DETALHADA) ---
-        st.subheader("Ranking por Planta") # Texto alterado
+        st.subheader("Ranking por Planta") 
         
         df_agrupado = df_finalizadas.groupby('Cliente_Local').agg({'Vendido': 'sum', 'Lucro': 'sum'}).reset_index()
         df_agrupado['Margem_%'] = (df_agrupado['Lucro'] / df_agrupado['Vendido'] * 100).fillna(0)
@@ -245,7 +252,7 @@ with tab1:
             st.plotly_chart(fig_geo, use_container_width=True)
 
 # =========================================================
-# ABA 2: SEGMENTOS (ANTIGO TIPO DE OBRA)
+# ABA 2: SEGMENTOS
 # =========================================================
 with tab2:
     st.write("")
@@ -264,7 +271,7 @@ with tab2:
         c1, c2 = st.columns(2)
         
         with c1:
-            st.subheader("Participação na Receita") # Texto alterado
+            st.subheader("Participação na Receita")
             # TREEMAP
             fig_tree = px.treemap(
                 df_tipo, path=['Tipo'], values='Vendido',
@@ -281,7 +288,7 @@ with tab2:
             st.plotly_chart(fig_tree, use_container_width=True)
             
         with c2:
-            st.subheader("Matriz Rentabilidade x Receita") # Texto alterado
+            st.subheader("Matriz Rentabilidade x Receita")
             # SCATTER PLOT
             fig_scat = px.scatter(
                 df_tipo, x='Vendido', y='Margem_Media', size='Vendido', color='Tipo',
