@@ -6,12 +6,11 @@ import os
 # ---------------------------------------------------------
 # 1. CONFIGURAÇÃO VISUAL
 # ---------------------------------------------------------
-st.set_page_config(page_title="Dashboard TE", layout="wide")
+# NOTA: O st.set_page_config foi removido daqui para não dar conflito.
 
 st.markdown("""
 <style>
-    .stApp {background-color: #0e1117;}
-    .block-container {padding-top: 2rem;}
+    /* Removemos o padding manual daqui. Ele agora obedece ao main.py */
 
     /* --- LAYOUT DOS KPIS (CABEÇALHO) --- */
     .kpi-card {
