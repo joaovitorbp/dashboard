@@ -1,40 +1,28 @@
-import streamlit as st
-import streamlit_authenticator as stauth
-import yaml
-
-# ---------------------------------------------------------
-# 1. CONFIGURAÇÃO VISUAL (COM CORREÇÃO DE PULO DE TELA)
-# ---------------------------------------------------------
-st.set_page_config(page_title="Portal TE Engenharia", layout="wide", page_icon="🏗️")
-
 st.markdown("""
 <style>
-    /* Fundo geral e Correção de Scroll */
+    /* 1. CORREÇÃO GLOBAL DE SCROLL (Evita o pulo da tela) */
     .stApp {
         background-color: #0e1117;
-        overflow-y: scroll; /* Força a barra de rolagem para evitar pulos */
+        overflow-y: scroll; 
     }
     
-    /* --- 1. BOTÃO DE LOGIN (AZUL) --- */
-    [data-testid="stForm"] .stButton button {
-        background-color: #58a6ff !important;
-        color: white !important;
-        border: none !important;
-        font-weight: bold !important;
-        width: 100%;
-        margin-top: 10px;
-        transition: all 0.2s ease;
+    /* 2. TRAVAMENTO TOTAL DO BOTÃO DA SIDEBAR */
+    section[data-testid="stSidebar"] .stButton {
+        width: 100% !important; /* Trava o container do botão */
     }
-    [data-testid="stForm"] .stButton button:hover {
-        background-color: #79c0ff !important;
-    }
-
-    /* --- 2. BOTÃO DA SIDEBAR (TRAVADO / PADRÃO) --- */
+    
     section[data-testid="stSidebar"] .stButton button {
         background-color: transparent !important;
         border: 1px solid #4a4a4a !important;
         color: #fafafa !important;
-        width: 100% !important; /* Largura total travada */
+        
+        /* AQUI ESTÁ O SEGREDO DO TRAVAMENTO: */
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important; /* Garante que a borda não aumente o tamanho */
+        display: block !important;
+        margin: 0px !important;
     }
     
     section[data-testid="stSidebar"] .stButton button:hover {
@@ -43,7 +31,20 @@ st.markdown("""
         background-color: rgba(255, 75, 75, 0.1) !important;
     }
 
-    /* --- 3. CARD DE LOGIN --- */
+    /* 3. BOTÃO DE LOGIN (AZUL) */
+    [data-testid="stForm"] .stButton button {
+        background-color: #58a6ff !important;
+        color: white !important;
+        border: none !important;
+        font-weight: bold !important;
+        width: 100%;
+        margin-top: 10px;
+    }
+    [data-testid="stForm"] .stButton button:hover {
+        background-color: #79c0ff !important;
+    }
+
+    /* 4. CARD DE LOGIN */
     [data-testid="stForm"] {
         background-color: #161b22;
         padding: 2rem;
@@ -55,85 +56,10 @@ st.markdown("""
         position: relative;
         top: 50px; 
     }
-
     .stTextInput input {
         background-color: #0d1117 !important;
         border: 1px solid #30363d !important;
         color: white !important;
     }
-    
-    .stAlert {
-        max-width: 350px;
-        margin: 0 auto;
-        position: relative;
-        top: 60px;
-    }
 </style>
 """, unsafe_allow_html=True)
-
-# ---------------------------------------------------------
-# 2. PREPARAÇÃO DOS DADOS
-# ---------------------------------------------------------
-secrets = st.secrets
-
-config_dict = {
-    "credentials": {
-        "usernames": {
-            username: dict(user_data) 
-            for username, user_data in secrets['credentials']['usernames'].items()
-        }
-    },
-    "cookie": dict(secrets['cookie']),
-    "preauthorized": list(secrets['preauthorized']['emails'])
-}
-
-# ---------------------------------------------------------
-# 3. AUTENTICAÇÃO
-# ---------------------------------------------------------
-try:
-    authenticator = stauth.Authenticate(
-        config_dict['credentials'],
-        config_dict['cookie']['name'],
-        config_dict['cookie']['key'],
-        config_dict['cookie']['expiry_days'],
-        config_dict['preauthorized']
-    )
-except TypeError:
-    authenticator = stauth.Authenticate(
-        config_dict['credentials'],
-        config_dict['cookie']['name'],
-        config_dict['cookie']['key'],
-        config_dict['cookie']['expiry_days']
-    )
-
-authenticator.login(location='main')
-
-# ---------------------------------------------------------
-# 4. LÓGICA DO SISTEMA
-# ---------------------------------------------------------
-
-if st.session_state.get("authentication_status"):
-    
-    # === USUÁRIO LOGADO ===
-    
-    # 1. Menu de Navegação
-    pg = st.navigation([
-        st.Page("dashboard_visao_geral.py", title="Visão Geral", icon="🏢"),
-        st.Page("dashboard_detalhado.py", title="Detalhamento de Obra", icon="📝"),
-        st.Page("configuracoes.py", title="Configurações", icon="⚙️"),
-    ])
-    
-    # 2. Executa a Página
-    pg.run()
-
-    # 3. Botão de Desconectar
-    with st.sidebar:
-        st.divider()
-        authenticator.logout('Desconectar', 'sidebar') 
-
-elif st.session_state.get("authentication_status") is False:
-    st.error('Usuário ou senha incorretos.')
-
-elif st.session_state.get("authentication_status") is None:
-    st.markdown('<style>header {visibility: hidden;}</style>', unsafe_allow_html=True)
-    pass
