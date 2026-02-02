@@ -87,9 +87,11 @@ except FileNotFoundError:
     st.stop()
 
 # ---------------------------------------------------------
-# SIDEBAR
+# SIDEBAR (ALTERADO AQUI)
 # ---------------------------------------------------------
-st.sidebar.markdown("### Seleção de Obra")
+# Mudança 1: Texto do título
+st.sidebar.markdown("### Seleção de Projeto") 
+
 lista_projetos = sorted(df_raw['Projeto'].unique())
 
 index_padrao = 0
@@ -99,7 +101,9 @@ if "projeto_foco" in st.session_state:
     except ValueError:
         index_padrao = 0
 
-id_projeto = st.sidebar.selectbox("Projeto:", lista_projetos, index=index_padrao)
+# Mudança 2: label_visibility="collapsed" esconde o texto "Projeto:"
+id_projeto = st.sidebar.selectbox("Projeto:", lista_projetos, index=index_padrao, label_visibility="collapsed")
+
 dados = df_raw[df_raw['Projeto'] == id_projeto].iloc[0]
 
 # ---------------------------------------------------------
@@ -304,7 +308,7 @@ with st.container(border=True):
         connector = {"line":{"color":"#30363d"}},
         decreasing = {"marker":{"color":"#da3633"}}, 
         increasing = {"marker":{"color":"#3fb950"}}, 
-        totals = {"marker":{"color":"#58a6ff"}},     
+        totals = {"marker":{"color":"#58a6ff"}},      
         cliponaxis = False
     ))
     
