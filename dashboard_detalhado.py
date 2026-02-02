@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+import gspread
 import json
 import os
 
@@ -74,7 +75,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# FUNÇÕES E DADOS
+# FUNÇÕES E DADOS (GOOGLE SHEETS)
 # ---------------------------------------------------------
 def format_currency(value):
     if pd.isna(value): return "R$ 0,00"
@@ -84,14 +85,23 @@ def format_percent(value):
     if pd.isna(value): return "0,0%"
     return f"{value:.1f}%".replace(".", ",")
 
-@st.cache_data
+@st.cache_data(ttl=60)
 def load_data():
-    return pd.read_excel("dados_obras_v5.xlsx")
+    try:
+        gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
+        # Conecta a planilha "dados_dashboard_obras"
+        sh = gc.open("dados_dashboard_obras") 
+        worksheet = sh.sheet1
+        dados = worksheet.get_all_records()
+        df = pd.DataFrame(dados)
+        return df
+    except Exception as e:
+        return None
 
-try:
-    df_raw = load_data()
-except FileNotFoundError:
-    st.error("⚠️ Arquivo 'dados_obras_v5.xlsx' não encontrado.")
+df_raw = load_data()
+
+if df_raw is None:
+    st.error("⚠️ Erro ao conectar com o Google Sheets.")
     st.stop()
 
 # ---------------------------------------------------------
@@ -113,7 +123,7 @@ id_projeto = st.sidebar.selectbox("Projeto:", lista_projetos, index=index_padrao
 dados = df_raw[df_raw['Projeto'] == id_projeto].iloc[0]
 
 # ---------------------------------------------------------
-# TÍTULO DA PÁGINA (ADICIONADO)
+# TÍTULO DA PÁGINA
 # ---------------------------------------------------------
 st.title("Detalhamento de Projeto")
 
