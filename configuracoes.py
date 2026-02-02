@@ -2,12 +2,11 @@ import streamlit as st
 import pandas as pd
 import json
 import os
-import shutil
+import gspread
 
 # ---------------------------------------------------------
-# NOTA: REMOVEMOS O st.set_page_config E O CSS DAQUI.
+# ESTILO CSS
 # ---------------------------------------------------------
-
 st.markdown("""
 <style>
     /* Fundo geral */
@@ -24,8 +23,6 @@ st.markdown("""
     }
     
     /* --- Estilização dos Botões (BLINDADO - SÓ AREA PRINCIPAL) --- */
-    /* Usamos section[data-testid="stMain"] para garantir que a sidebar não seja afetada */
-    
     section[data-testid="stMain"] div.stButton > button {
         background-color: #58a6ff;
         color: #ffffff; 
@@ -55,14 +52,6 @@ st.title("Configurações")
 
 # ARQUIVOS
 CONFIG_FILE = "config.json"
-DATA_FILE = "dados_obras_v5.xlsx"
-BACKUP_FILE = "dados_obras_v5.bak"
-
-# ---------------------------------------------------------
-# SISTEMA DE BACKUP AUTOMÁTICO
-# ---------------------------------------------------------
-if os.path.exists(DATA_FILE) and not os.path.exists(BACKUP_FILE):
-    shutil.copy(DATA_FILE, BACKUP_FILE)
 
 # ---------------------------------------------------------
 # FUNÇÕES
@@ -136,59 +125,33 @@ with st.container(border=True):
         st.success("✅ Parâmetros atualizados! Os indicadores foram recalculados.")
 
 # ---------------------------------------------------------
-# 2. ATUALIZAÇÃO DE DADOS
+# 2. STATUS DA BASE DE DADOS (GOOGLE SHEETS)
 # ---------------------------------------------------------
+st.write("")
 with st.container(border=True):
-    st.subheader("Base de dados")
+    st.subheader("Status da Conexão")
     st.write("")
     
-    st.markdown(f"Arquivo interno do sistema: **{DATA_FILE}**")
+    st.info("☁️ **Sistema conectado ao Google Sheets**")
+    st.markdown("""
+    Os dados são atualizados automaticamente a cada 60 segundos ou quando você recarrega a página.
+    
+    **Para atualizar os dados:**
+    1. Abra a planilha **'dados_dashboard_obras'** no Google Drive.
+    2. Edite ou cole os novos dados.
+    3. As alterações aparecerão aqui automaticamente.
+    """)
+    
     st.write("")
     
-    uploaded_file = st.file_uploader("Arraste o arquivo atualizado aqui (.xlsx)", type=["xlsx"])
-
-    if uploaded_file is not None:
-        st.write("")
-        if st.button("Confirmar Substituição da Base"):
-            # Backup antes de substituir
-            if os.path.exists(DATA_FILE) and not os.path.exists(BACKUP_FILE):
-                shutil.copy(DATA_FILE, BACKUP_FILE)
-            
-            with open(DATA_FILE, "wb") as f:
-                f.write(uploaded_file.getbuffer())
-            
-            st.cache_data.clear()
-            st.success("✅ Base de dados atualizada temporariamente!")
-            st.rerun()
-
-# ---------------------------------------------------------
-# 3. RESTAURAÇÃO (PADRONIZADO)
-# ---------------------------------------------------------
-if os.path.exists(BACKUP_FILE):
-    st.write("")
-    with st.container(border=True):
-        st.subheader("Modo de Restauração")
-        st.write("")
-        st.markdown("Caso tenha enviado um arquivo errado, clique abaixo para voltar ao arquivo original do sistema.")
-        st.write("")
-        
-        if st.button("Restaurar Arquivo Original"):
-            try:
-                shutil.copy(BACKUP_FILE, DATA_FILE)
-                st.cache_data.clear()
-                st.success("✅ Base original restaurada com sucesso!")
-                st.rerun()
-            except Exception as e:
-                st.error(f"Erro ao restaurar: {e}")
-
-# ---------------------------------------------------------
-# 4. VISUALIZAÇÃO DE CHECK
-# ---------------------------------------------------------
-if os.path.exists(DATA_FILE):
-    st.write("")
-    with st.expander("Verificar dados carregados atualmente"):
+    # Check de conexão para o usuário ver se está tudo ok
+    with st.expander("Verificar dados carregados da nuvem"):
         try:
-            df_check = pd.read_excel(DATA_FILE)
+            gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
+            sh = gc.open("dados_dashboard_obras")
+            worksheet = sh.sheet1
+            dados = worksheet.get_all_records()
+            df_check = pd.DataFrame(dados)
             st.dataframe(df_check, use_container_width=True)
         except Exception as e:
-            st.error("O arquivo atual parece estar corrompido ou inválido.")
+            st.error(f"Erro ao conectar: {e}")
