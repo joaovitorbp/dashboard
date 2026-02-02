@@ -12,6 +12,13 @@ st.markdown("""
     /* Fundo geral */
     .stApp {background-color: #0e1117;}
     
+    /* --- 0. REMOVE MARGEM DO TOPO (GLOBAL) --- */
+    /* Isso força o conteúdo de TODAS as páginas a começar mais acima */
+    .block-container {
+        padding-top: 1rem !important; /* Padrão é 6rem, reduzimos para 1rem */
+        padding-bottom: 2rem !important;
+    }
+    
     /* --- ESTILO DO CARD DE LOGIN --- */
     [data-testid="stForm"] {
         background-color: #161b22;
