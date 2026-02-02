@@ -89,7 +89,6 @@ def format_percent(value):
 def load_data():
     try:
         gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
-        # Conecta a planilha "dados_dashboard_obras"
         sh = gc.open("dados_dashboard_obras") 
         worksheet = sh.sheet1
         dados = worksheet.get_all_records()
@@ -103,6 +102,33 @@ df_raw = load_data()
 if df_raw is None:
     st.error("⚠️ Erro ao conectar com o Google Sheets.")
     st.stop()
+
+# --- LIMPEZA DE DADOS (CRÍTICO) ---
+def clean_google_number(x):
+    if isinstance(x, (int, float)):
+        return float(x)
+    if x is None:
+        return 0.0
+    s = str(x).strip()
+    if s == "":
+        return 0.0
+    try:
+        s = s.replace('R$', '').replace('%', '').replace(' ', '')
+        s = s.replace('.', '').replace(',', '.')
+        return float(s)
+    except:
+        return 0.0
+
+cols_numericas = [
+    'Vendido', 'Faturado', 'Mat_Real', 'Desp_Real', 'HH_Real_Vlr', 'Impostos', 'Mat_Orc', 
+    'Desp_Orc', 'HH_Orc_Vlr', 'HH_Orc_Qtd', 'HH_Real_Qtd', 'Conclusao_%'
+]
+
+for col in cols_numericas:
+    if col in df_raw.columns:
+        df_raw[col] = df_raw[col].apply(clean_google_number)
+    else:
+        df_raw[col] = 0.0
 
 # ---------------------------------------------------------
 # SIDEBAR
