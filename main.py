@@ -3,7 +3,7 @@ import streamlit_authenticator as stauth
 import yaml
 
 # ---------------------------------------------------------
-# 1. CONFIGURAÇÃO VISUAL E CSS (AJUSTADO PARA CARD PEQUENO)
+# 1. CONFIGURAÇÃO VISUAL E CSS
 # ---------------------------------------------------------
 st.set_page_config(page_title="Portal TE Engenharia", layout="wide", page_icon="🏗️")
 
@@ -15,19 +15,15 @@ st.markdown("""
     /* Remove cabeçalho padrão */
     header {visibility: hidden;}
     
-    /* --- CARD DE LOGIN (AGORA PEQUENO E CENTRALIZADO) --- */
+    /* --- CARD DE LOGIN --- */
     [data-testid="stForm"] {
         background-color: #161b22;
         padding: 2rem;
         border-radius: 12px;
         border: 1px solid #30363d;
         box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-        
-        /* O PULO DO GATO PARA O TAMANHO: */
-        max-width: 350px !important;  /* Largura fixa pequena */
-        margin: 0 auto !important;    /* Centraliza na tela */
-        
-        /* Centraliza verticalmente (opcional, mas ajuda visualmente) */
+        max-width: 350px !important;
+        margin: 0 auto !important;
         position: relative;
         top: 50px; 
     }
@@ -39,7 +35,7 @@ st.markdown("""
         color: white !important;
     }
     
-    /* --- BOTÃO DE ENTRAR --- */
+    /* --- BOTÃO DE ENTRAR (LOGIN) --- */
     div[data-testid="stForm"] .stButton button {
         background-color: #58a6ff !important;
         color: white !important;
@@ -54,7 +50,7 @@ st.markdown("""
         box-shadow: 0 4px 10px rgba(88, 166, 255, 0.3);
     }
     
-    /* Ajuste para centralizar também a mensagem de erro caso apareça */
+    /* Centraliza mensagens de erro */
     .stAlert {
         max-width: 350px;
         margin: 0 auto;
@@ -103,16 +99,21 @@ except TypeError:
 # 4. LÓGICA DE EXIBIÇÃO
 # ---------------------------------------------------------
 
-# Renderiza o login (O CSS acima vai forçá-lo a ficar pequeno e no meio)
 authenticator.login(location='main')
 
 if st.session_state.get("authentication_status"):
     
-    # === ÁREA LOGADA ===
+    # === ÁREA LOGADA (SIDEBAR AJUSTADA) ===
     with st.sidebar:
+        # TRUQUE DO ESPAÇAMENTO:
+        # Adicionamos uma caixa vazia alta para empurrar o botão para baixo.
+        # Ajuste o 'height' (ex: 60vh, 70vh) dependendo da quantidade de itens no menu.
+        st.markdown('<div style="height: 65vh;"></div>', unsafe_allow_html=True)
+        
+        # Botão Renomeado para "Desconectar"
         authenticator.logout('Desconectar', 'sidebar')
-        st.divider()
     
+    # Navegação
     pg = st.navigation([
         st.Page("dashboard_visao_geral.py", title="Visão Geral", icon="🏢"),
         st.Page("dashboard_detalhado.py", title="Detalhamento de Obra", icon="📝"),
@@ -121,7 +122,6 @@ if st.session_state.get("authentication_status"):
     pg.run()
 
 elif st.session_state.get("authentication_status") is False:
-    # Mensagem de erro padrão do Streamlit (O CSS .stAlert vai centralizá-la)
     st.error('Usuário ou senha incorretos.')
 
 elif st.session_state.get("authentication_status") is None:
