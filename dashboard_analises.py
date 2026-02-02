@@ -69,10 +69,12 @@ def load_config():
     with open("config.json", "r") as f:
         data = json.load(f)
         if "meta_margem" not in data: data["meta_margem"] = 25.0
+        if "meta_custo_adm" not in data: data["meta_custo_adm"] = 5.0
         return data
 
 config = load_config()
 META_MARGEM = float(config["meta_margem"])
+META_ADM = float(config["meta_custo_adm"])
 
 # ---------------------------------------------------------
 # 3. DADOS
@@ -299,7 +301,7 @@ with tab2:
             st.plotly_chart(fig_scat, use_container_width=True)
 
 # =========================================================
-# ABA 3: CUSTOS INTERNOS
+# ABA 3: CUSTOS INTERNOS (NOVO LAYOUT)
 # =========================================================
 with tab3:
     st.write("")
@@ -307,58 +309,122 @@ with tab3:
     if df_adm.empty:
         st.warning("⚠️ Nenhum projeto 5009, 5010 ou 5011 encontrado.")
     else:
-        custo_adm_total = df_adm['Custo_Total'].sum()
+        # 1. CÁLCULO DE ORÇAMENTO
+        # Faturamento total (incluindo em andamento) para base de cálculo da verba
         faturamento_global = df_obras['Vendido'].sum() 
+        
+        # Verba Disponível = Faturamento Total * Meta% (Ex: 5%)
+        verba_disponivel = faturamento_global * (META_ADM / 100.0)
+        
+        # O que já gastamos
+        custo_adm_total = df_adm['Custo_Total'].sum()
+        
+        # Saldo
+        saldo = verba_disponivel - custo_adm_total
         impacto_percentual = (custo_adm_total / faturamento_global * 100) if faturamento_global > 0 else 0
 
+        # --- CARDS KPI ---
         c_kpi1, c_kpi2 = st.columns(2)
         with c_kpi1:
             st.markdown(f"""
             <div class="adm-box">
-                <div style="color: #d29922; font-size: 0.9rem; text-transform: uppercase; font-weight: bold;">Custo Administrativo</div>
+                <div style="color: #d29922; font-size: 0.9rem; text-transform: uppercase; font-weight: bold;">Custo Administrativo (Real)</div>
                 <div style="font-size: 2rem; font-weight: 800; color: white;">R$ {custo_adm_total:,.2f}</div>
+                <div style="font-size: 0.75rem; color: #8b949e">Gastos acumulados</div>
             </div>
             """, unsafe_allow_html=True)
         with c_kpi2:
-            meta_adm = config.get("meta_custo_adm", 5.0)
-            cor_impacto = "#da3633" if impacto_percentual > meta_adm else "#3fb950"
+            # Lógica de cor: Se Impacto > Meta, Vermelho
+            cor_impacto = "#da3633" if impacto_percentual > META_ADM else "#3fb950"
             st.markdown(f"""
             <div class="adm-box" style="border-color: {cor_impacto}">
                 <div style="color: {cor_impacto}; font-size: 0.9rem; text-transform: uppercase; font-weight: bold;">Impacto no Faturamento</div>
                 <div style="font-size: 2rem; font-weight: 800; color: white;">{impacto_percentual:.1f}%</div>
-                <div style="font-size: 0.7rem; color: #8b949e">Meta Max: {meta_adm:.1f}%</div>
-            </div>
+                </div>
             """, unsafe_allow_html=True)
 
         st.divider()
 
-        c_chart1, c_chart2 = st.columns(2)
-        
-        with c_chart1:
-            st.subheader("Composição do Custo")
-            df_pie_adm = pd.DataFrame({
-                'Categoria': ['Materiais', 'Despesas', 'Mão de Obra', 'Impostos'],
-                'Valor': [df_adm['Mat_Real'].sum(), df_adm['Desp_Real'].sum(), df_adm['HH_Real_Vlr'].sum(), df_adm['Impostos'].sum()]
-            })
-            fig_adm_pie = px.pie(
-                df_pie_adm, values='Valor', names='Categoria', hole=0.5,
-                color_discrete_sequence=['#a371f7', '#d29922', '#58a6ff', '#8b949e']
-            )
-            fig_adm_pie.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color='white'))
-            st.plotly_chart(fig_adm_pie, use_container_width=True)
+        # --- NOVA VISUALIZAÇÃO: CASCATA E VELOCÍMETRO ---
+        col_waterfall, col_gauge = st.columns([2, 1])
 
-        with c_chart2:
-            st.subheader("Por Centro de Custo")
-            df_ids = df_adm.groupby('Projeto').agg({'Custo_Total': 'sum', 'Descricao': 'first'}).reset_index()
-            df_ids['Projeto'] = df_ids['Projeto'].astype(str)
+        with col_waterfall:
+            st.subheader("Consumo da Verba")
             
-            fig_adm_bar = px.bar(
-                df_ids, x='Projeto', y='Custo_Total', color='Projeto',
-                text_auto='.2s'
+            # Dados para Cascata
+            hh = df_adm['HH_Real_Vlr'].sum()
+            desp = df_adm['Desp_Real'].sum()
+            mat = df_adm['Mat_Real'].sum()
+            imp = df_adm['Impostos'].sum()
+            
+            fig_water = go.Figure(go.Waterfall(
+                name = "Orçamento", orientation = "v",
+                measure = ["absolute", "relative", "relative", "relative", "relative", "total"],
+                x = [f"Verba Permitida ({META_ADM}%)", "Pessoal", "Despesas", "Materiais", "Impostos", "Saldo Final"],
+                textposition = "outside",
+                # O Orçamento entra positivo, os gastos entram negativos
+                y = [verba_disponivel, -hh, -desp, -mat, -imp, None],
+                connector = {"line":{"color":"#30363d"}},
+                decreasing = {"marker":{"color":"#da3633"}}, # Gastos em Vermelho
+                increasing = {"marker":{"color":"#3fb950"}}, # Verba e Saldo Positivo em Verde
+                totals = {"marker":{"color":"#58a6ff"}},     # Coluna de Saldo em Azul (Neutro/Resultado)
+            ))
+            
+            fig_water.update_layout(
+                plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
+                font=dict(color='white'), xaxis=dict(showgrid=False), 
+                yaxis=dict(showgrid=True, gridcolor='#30363d'),
+                height=450
             )
-            fig_adm_bar.update_layout(
-                plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', 
-                font=dict(color='white'), showlegend=False,
-                xaxis=dict(showgrid=False), yaxis=dict(showgrid=True, gridcolor='#30363d')
-            )
-            st.plotly_chart(fig_adm_bar, use_container_width=True)
+            st.plotly_chart(fig_water, use_container_width=True)
+            st.info("💡 A primeira barra é quanto você **pode** gastar (baseado nas vendas). As vermelhas são os gastos. A última é o que sobrou.")
+
+        with col_gauge:
+            st.subheader("Status do Orçamento")
+            
+            # Títulos dinâmicos
+            if saldo >= 0:
+                titulo_saldo = "Saldo Disponível"
+                cor_delta = "green"
+            else:
+                titulo_saldo = "Estouro de Verba"
+                cor_delta = "red"
+                
+            fig_gauge = go.Figure(go.Indicator(
+                mode = "gauge+number+delta",
+                value = custo_adm_total,
+                domain = {'x': [0, 1], 'y': [0, 1]},
+                title = {'text': f"Limite: R$ {verba_disponivel:,.0f}", 'font': {'size': 14, 'color': '#8b949e'}},
+                
+                # Delta mostra quanto falta para atingir o limite (ou quanto passou)
+                delta = {'reference': verba_disponivel, 'position': "top", 'increasing': {'color': "#da3633"}, 'decreasing': {'color': "#3fb950"}},
+                
+                gauge = {
+                    'axis': {'range': [0, max(verba_disponivel * 1.2, custo_adm_total * 1.1)], 'tickwidth': 1, 'tickcolor': "#30363d"},
+                    'bar': {'color': "#da3633" if custo_adm_total > verba_disponivel else "#58a6ff"},
+                    'bgcolor': "#0d1117",
+                    'borderwidth': 2,
+                    'bordercolor': "#30363d",
+                    'steps': [
+                        {'range': [0, verba_disponivel], 'color': "rgba(63, 185, 80, 0.1)"}, # Zona Segura
+                        {'range': [verba_disponivel, max(verba_disponivel * 1.5, custo_adm_total * 1.2)], 'color': "rgba(218, 54, 51, 0.1)"} # Zona de Perigo
+                    ],
+                    'threshold': {
+                        'line': {'color': "white", 'width': 4},
+                        'thickness': 0.75,
+                        'value': verba_disponivel
+                    }
+                }
+            ))
+            
+            fig_gauge.update_layout(height=400, margin=dict(t=50, b=10, l=20, r=20), paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"})
+            st.plotly_chart(fig_gauge, use_container_width=True)
+            
+            st.markdown(f"""
+            <div style="text-align:center; padding: 10px; border: 1px solid #30363d; border-radius: 8px; background-color: #161b22">
+                <div style="font-size: 0.8rem; color: #8b949e; text-transform: uppercase">{titulo_saldo}</div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: {cor_delta == 'green' and '#3fb950' or '#da3633'}">
+                    R$ {abs(saldo):,.2f}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
