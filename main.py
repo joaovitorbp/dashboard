@@ -1,23 +1,21 @@
 import streamlit as st
-import streamlit_authenticator as stauth
+import bcrypt
 
-st.title("Gerador de Senha Definitivo")
+st.title("Gerador de Senha 100% Funcional")
 
-# --- DIGITE SUA SENHA AQUI EMBAIXO ---
-minha_senha = "admin" 
-# -------------------------------------
+# --- SUA SENHA AQUI ---
+senha_desejada = "admin" 
+# ----------------------
 
+# Gera o hash manualmente usando bcrypt puro
 try:
-    # Tenta gerar usando a versão mais nova da biblioteca
-    hashed_passwords = stauth.Hasher([minha_senha]).generate()
-    if isinstance(hashed_passwords, list):
-        hash_final = hashed_passwords[0]
-    else:
-        hash_final = hashed_passwords
+    senha_bytes = senha_desejada.encode('utf-8')
+    salt = bcrypt.gensalt()
+    senha_hash = bcrypt.hashpw(senha_bytes, salt).decode('utf-8')
+    
+    st.success("Senha gerada com sucesso!")
+    st.write(f"Senha original: **{senha_desejada}**")
+    st.write("Copie o código abaixo para o Secrets:")
+    st.code(senha_hash, language='text')
 except Exception as e:
-    st.error(f"Erro ao gerar: {e}")
-    hash_final = "Erro"
-
-st.write(f"Senha escolhida: **{minha_senha}**")
-st.write("Copie o código abaixo EXATAMENTE como está (sem aspas extras):")
-st.code(hash_final, language='text')
+    st.error(f"Erro: {e}")
