@@ -90,16 +90,9 @@ st.markdown("""
 @st.cache_data(ttl=60)
 def load_data():
     try:
-        # Conexão com Google Sheets
         gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
-        
-        # Abre a planilha pelo nome exato
         sh = gc.open("dados_dashboard_obras") 
-        
-        # Seleciona a primeira aba
         worksheet = sh.sheet1
-        
-        # Pega os dados
         dados = worksheet.get_all_records()
         df = pd.DataFrame(dados)
         return df
@@ -112,18 +105,36 @@ df_raw = load_data()
 if df_raw is None:
     st.stop()
 
-def clean_currency_brazil(x):
-    if isinstance(x, (int, float)): return x
+# --- FUNÇÃO DE LIMPEZA ROBUSTA ---
+def clean_google_number(x):
+    """Limpa strings do Google Sheets (R$, %, pontos, vírgulas) e converte para float."""
+    if isinstance(x, (int, float)):
+        return float(x)
+    if x is None:
+        return 0.0
+    
+    s = str(x).strip()
+    if s == "":
+        return 0.0
+        
     try:
-        s = str(x).replace('R$', '').replace('%', '').replace(' ', '')
+        # Remove caracteres de moeda e porcentagem
+        s = s.replace('R$', '').replace('%', '').replace(' ', '')
+        # Remove separador de milhar (.) e troca vírgula decimal por ponto
         s = s.replace('.', '').replace(',', '.')
         return float(s)
-    except: return 0.0
+    except:
+        return 0.0
 
-cols_monetarias = ['Vendido', 'Faturado', 'Mat_Real', 'Desp_Real', 'HH_Real_Vlr', 'Impostos', 'Mat_Orc']
-for col in cols_monetarias:
+# Lista de TODAS as colunas que precisam ser números
+cols_numericas = [
+    'Vendido', 'Faturado', 'Mat_Real', 'Desp_Real', 'HH_Real_Vlr', 'Impostos', 'Mat_Orc',
+    'HH_Orc_Qtd', 'HH_Real_Qtd', 'Conclusao_%' # Adicionamos as colunas de horas e %
+]
+
+for col in cols_numericas:
     if col in df_raw.columns:
-        df_raw[col] = df_raw[col].apply(clean_currency_brazil)
+        df_raw[col] = df_raw[col].apply(clean_google_number)
     else:
         df_raw[col] = 0.0
 
@@ -175,7 +186,6 @@ qtd_total = len(df_obras)
 
 # --- CARREGAR METAS (CONFIG) ---
 def load_config():
-    # Padrão: Venda 5M, Margem 25%, Custo Adm 5%
     default_data = {"meta_vendas": 5000000.0, "meta_margem": 25.0, "meta_custo_adm": 5.0}
     if not os.path.exists("config.json"):
         with open("config.json", "w") as f:
@@ -191,7 +201,6 @@ config = load_config()
 META_VENDAS = float(config["meta_vendas"])
 META_MARGEM_BRUTA = float(config["meta_margem"])
 META_CUSTO_ADM = float(config["meta_custo_adm"])
-# A meta líquida é o que sobra da meta bruta depois de pagar o ADM
 META_MARGEM_LIQUIDA = META_MARGEM_BRUTA - META_CUSTO_ADM
 
 # ---------------------------------------------------------
@@ -229,7 +238,6 @@ with row1_c2:
     </div>
     """, unsafe_allow_html=True)
 
-# Cor condicional do Custo Adm: Se for maior que a meta (ex: 5%), fica vermelho
 cor_adm = "txt-red" if overhead_pct > META_CUSTO_ADM else "txt-orange"
 with row1_c3:
     st.markdown(f"""
@@ -247,7 +255,6 @@ st.write("")
 # LINHA 2 (4 Colunas)
 row2_c1, row2_c2, row2_c3, row2_c4 = st.columns(4)
 
-# Compara com Margem Bruta
 cor_m_geral = "txt-green" if mg_geral >= META_MARGEM_BRUTA else "txt-red"
 with row2_c1:
     st.markdown(f"""
@@ -272,7 +279,6 @@ with row2_c2:
     </div>
     """, unsafe_allow_html=True)
 
-# Compara com Margem Líquida (Bruta - Adm)
 cor_m_liq = "txt-green" if mg_liquida_pos_adm >= META_MARGEM_LIQUIDA else "txt-red"
 with row2_c3:
     st.markdown(f"""
@@ -303,16 +309,16 @@ st.divider()
 # ---------------------------------------------------------
 
 def calcular_dados_extras(row):
-    vendido = float(row['Vendido'])
-    custo = float(row['Mat_Real'] + row['Desp_Real'] + row['HH_Real_Vlr'] + row['Impostos'])
+    # Aqui não precisamos mais de converter float() pois já limpamos tudo antes
+    vendido = row['Vendido']
+    custo = row['Mat_Real'] + row['Desp_Real'] + row['HH_Real_Vlr'] + row['Impostos']
     lucro = vendido - custo
     margem = (lucro / vendido * 100) if vendido > 0 else 0
-    hh_orc, hh_real = float(row['HH_Orc_Qtd']), float(row['HH_Real_Qtd'])
+    hh_orc, hh_real = row['HH_Orc_Qtd'], row['HH_Real_Qtd']
     hh_perc = (hh_real / hh_orc * 100) if hh_orc > 0 else 0
-    fisico = float(row['Conclusao_%'])
+    fisico = row['Conclusao_%']
     critico = False
     
-    # Critério: Margem abaixo da meta bruta OU estouro de horas
     if (margem < META_MARGEM_BRUTA and row['Status'] != 'Apresentado') or (hh_perc > fisico + 10):
         critico = True
     return pd.Series([margem, critico, hh_perc])
@@ -361,11 +367,11 @@ for i, (index, row) in enumerate(df_show.iterrows()):
 
         cor_margem = "#da3633" if row['Margem_%'] < META_MARGEM_BRUTA else "#3fb950"
         
-        hh_orc, hh_real = float(row['HH_Orc_Qtd']), float(row['HH_Real_Qtd'])
+        hh_orc, hh_real = row['HH_Orc_Qtd'], row['HH_Real_Qtd']
         pct_horas = (hh_real / hh_orc * 100) if hh_orc > 0 else 0
         cor_horas = "#da3633" if pct_horas > 100 else "#e6edf3"
         
-        mat_orc, mat_real = float(row['Mat_Orc']), float(row['Mat_Real'])
+        mat_orc, mat_real = row['Mat_Orc'], row['Mat_Real']
         pct_mat = (mat_real / mat_orc * 100) if mat_orc > 0 else 0
         cor_mat = "#da3633" if pct_mat > 100 else "#e6edf3"
         
