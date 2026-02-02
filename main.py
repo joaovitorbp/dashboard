@@ -3,7 +3,7 @@ import streamlit_authenticator as stauth
 import yaml
 
 # ---------------------------------------------------------
-# 1. CONFIGURAÇÃO VISUAL (LOGIN ESTILIZADO)
+# 1. CONFIGURAÇÃO VISUAL
 # ---------------------------------------------------------
 st.set_page_config(page_title="Portal TE Engenharia", layout="wide", page_icon="🏗️")
 
@@ -12,8 +12,38 @@ st.markdown("""
     /* Fundo geral */
     .stApp {background-color: #0e1117;}
     
-    /* --- CARD DE LOGIN --- */
-    /* Mantivemos o visual do cartão centralizado */
+    /* --- 1. BOTÃO DE LOGIN (AZUL - PRINCIPAL) --- */
+    /* Este estilo só se aplica ao botão dentro do cartão de login */
+    [data-testid="stForm"] .stButton button {
+        background-color: #58a6ff !important;
+        color: white !important;
+        border: none !important;
+        font-weight: bold !important;
+        width: 100%;
+        margin-top: 10px;
+        transition: all 0.2s ease;
+    }
+    [data-testid="stForm"] .stButton button:hover {
+        background-color: #79c0ff !important;
+    }
+
+    /* --- 2. BOTÃO DA SIDEBAR (CINZA - PADRÃO) --- */
+    /* Forçamos o botão da barra lateral a voltar ao estilo padrão (transparente/borda) */
+    section[data-testid="stSidebar"] .stButton button {
+        background-color: transparent !important;
+        border: 1px solid #4a4a4a !important;
+        color: #fafafa !important;
+        width: 100%; /* Opcional: deixa o botão da largura total da sidebar */
+    }
+    
+    /* Efeito ao passar o mouse no botão de sair (fica levemente claro ou com borda azul) */
+    section[data-testid="stSidebar"] .stButton button:hover {
+        border-color: #58a6ff !important;
+        color: #58a6ff !important;
+        background-color: rgba(88, 166, 255, 0.1) !important;
+    }
+
+    /* --- 3. CARD DE LOGIN --- */
     [data-testid="stForm"] {
         background-color: #161b22;
         padding: 2rem;
@@ -26,27 +56,14 @@ st.markdown("""
         top: 50px; 
     }
 
-    /* --- INPUTS E BOTÕES DO LOGIN --- */
+    /* Inputs do Login */
     .stTextInput input {
         background-color: #0d1117 !important;
         border: 1px solid #30363d !important;
         color: white !important;
     }
     
-    div[data-testid="stForm"] .stButton button {
-        background-color: #58a6ff !important;
-        color: white !important;
-        border: none !important;
-        font-weight: bold !important;
-        width: 100%;
-        margin-top: 10px;
-        transition: all 0.2s ease;
-    }
-    div[data-testid="stForm"] .stButton button:hover {
-        background-color: #79c0ff !important;
-    }
-    
-    /* Centraliza mensagens de erro */
+    /* Mensagens de erro */
     .stAlert {
         max-width: 350px;
         margin: 0 auto;
@@ -99,21 +116,19 @@ authenticator.login(location='main')
 
 if st.session_state.get("authentication_status"):
     
-    # === USUÁRIO LOGADO ===
+    # === LOGADO ===
     
-    # 1. Menu de Navegação (Aparece no Topo)
+    # Menu Topo
     pg = st.navigation([
         st.Page("dashboard_visao_geral.py", title="Visão Geral", icon="🏢"),
         st.Page("dashboard_detalhado.py", title="Detalhamento de Obra", icon="📝"),
         st.Page("configuracoes.py", title="Configurações", icon="⚙️"),
     ])
     
-    # 2. Executa a Página (Carrega filtros e conteúdo)
-    # Os filtros (selectbox) aparecerão logo abaixo do menu de navegação
+    # Conteúdo da Página
     pg.run()
 
-    # 3. Botão de Desconectar (Aparece no Final)
-    # Como colocamos após o pg.run(), ele ficará abaixo dos filtros da página
+    # Rodapé (Botão Padrão/Cinza)
     with st.sidebar:
         st.divider()
         authenticator.logout('Desconectar', 'sidebar') 
@@ -122,6 +137,5 @@ elif st.session_state.get("authentication_status") is False:
     st.error('Usuário ou senha incorretos.')
 
 elif st.session_state.get("authentication_status") is None:
-    # Esconde o cabeçalho apenas na tela de login
     st.markdown('<style>header {visibility: hidden;}</style>', unsafe_allow_html=True)
     pass
