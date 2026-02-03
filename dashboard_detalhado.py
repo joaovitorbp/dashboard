@@ -79,13 +79,11 @@ st.markdown("""
 # ---------------------------------------------------------
 def format_currency(value):
     if pd.isna(value): return "R$ 0,00"
-    # Formatação BRL: R$ 1.000,00
     return f"R$ {value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 def format_percent(value):
-    if pd.isna(value): return "0.0%"
-    # Mantém o ponto decimal conforme solicitado (ex: 25.5%)
-    return f"{value:.1f}%"
+    if pd.isna(value): return "0,0%"
+    return f"{value:.1f}%".replace(".", ",")
 
 @st.cache_data(ttl=60)
 def load_data():
@@ -196,7 +194,7 @@ st.markdown(f"""
     <div>
         <div class="header-title">{dados['Projeto']} - {dados['Descricao']}</div>
         <div class="header-subtitle">
-            🏢 {dados['Cliente']} &nbsp;&nbsp;📍 {dados['Cidade']}
+            {dados['Cliente']} | {dados['Cidade']}
         </div>
     </div>
     <div class="header-status" style="background-color: {bg_status}; color: {cor_status}; border: 1px solid {cor_status};">
@@ -308,17 +306,17 @@ with st.container(border=True):
         
         if perc_hh > (dados['Conclusao_%'] + 10):
             border_c = "#da3633" 
-            titulo = "⚠️ Baixa Eficiência"
+            titulo = "Baixa Eficiência"
             texto = "O consumo de horas está desproporcional ao avanço físico."
             saldo_txt = f"Excedente: {int(hh_real - hh_orc)}h"
         elif perc_hh < dados['Conclusao_%']:
             border_c = "#3fb950"
-            titulo = "✅ Alta Eficiência"
+            titulo = "Alta Eficiência"
             texto = "A obra está avançada economizando horas."
             saldo_txt = f"Saldo Positivo: {int(saldo_hh)}h"
         else:
             border_c = "#58a6ff"
-            titulo = "⚖️ Equilibrado"
+            titulo = "Equilibrado"
             texto = "O ritmo segue conforme o planejado."
             saldo_txt = f"Saldo: {int(saldo_hh)}h"
 
@@ -345,7 +343,6 @@ with st.container(border=True):
     
     if modo_vis == "Valores (R$)":
         vals = [dados['Vendido'], -dados['Impostos'], -dados['Mat_Real'], -dados['Desp_Real'], -dados['HH_Real_Vlr'], lucro_liquido]
-        # BRL formatado
         text_vals = [format_currency(v).replace("R$ ", "") for v in vals]
     else:
         base = dados['Vendido'] if dados['Vendido'] > 0 else 1
