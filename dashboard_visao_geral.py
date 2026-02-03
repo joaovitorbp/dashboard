@@ -212,7 +212,7 @@ META_MARGEM_LIQUIDA = META_MARGEM_BRUTA - META_CUSTO_ADM
 # ---------------------------------------------------------
 # 4. INTERFACE
 # ---------------------------------------------------------
-st.title("Dashboard de Resultados")
+st.title("Gestão da Carteira")
 
 # LINHA 1 (3 Colunas) - KPIS GRANDES (Formatação COMPLETA)
 row1_c1, row1_c2, row1_c3 = st.columns(3)
