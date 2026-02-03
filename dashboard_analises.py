@@ -184,7 +184,6 @@ with tab1:
             fig_geo.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color='white'), xaxis=dict(showgrid=True, gridcolor='#30363d'), height=350, margin=dict(l=10, r=10, t=10, b=0))
             st.plotly_chart(fig_geo, use_container_width=True, config={'displayModeBar': False})
         
-        # NOTA DE RODAPÉ - CLIENTE
         st.caption("ℹ️ **Nota:** Estas análises consideram apenas obras com status 'Finalizado' ou 'Apresentado'.")
 
 # ABA SEGMENTOS
@@ -199,7 +198,8 @@ with tab2:
         with c1:
             st.subheader("Participação na Receita")
             fig_tree = px.treemap(df_tipo, path=['Tipo'], values='Vendido', color='Margem_Media', color_continuous_scale=['#da3633', '#e3b341', '#3fb950'])
-            fig_tree.update_layout(margin=dict(t=10, l=10, r=10, b=10), coloraxis_showscale=False)
+            # CORREÇÃO AQUI: Fundo transparente e margens zeradas
+            fig_tree.update_layout(margin=dict(t=0, l=0, r=0, b=0), coloraxis_showscale=False, plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
             fig_tree.update_traces(textinfo="label+value+percent root", textfont=dict(color='white', size=14))
             st.plotly_chart(fig_tree, use_container_width=True, config={'displayModeBar': False})
         with c2:
@@ -210,7 +210,6 @@ with tab2:
             fig_scat.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color='white'), xaxis=dict(showgrid=True, gridcolor='#30363d'), yaxis=dict(showgrid=True, gridcolor='#30363d'), showlegend=False)
             st.plotly_chart(fig_scat, use_container_width=True, config={'displayModeBar': False})
         
-        # NOTA DE RODAPÉ - SEGMENTOS
         st.caption("ℹ️ **Nota:** Estas análises consideram apenas obras com status 'Finalizado' ou 'Apresentado'.")
 
 # ABA CUSTOS INTERNOS
@@ -222,9 +221,6 @@ with tab3:
         df_adm['Total_Sem_Imp'] = df_adm['Mat_Real'] + df_adm['Desp_Real'] + df_adm['HH_Real_Vlr']
         custo_adm_total = df_adm['Total_Sem_Imp'].sum()
         
-        # ---------------------------------------------------------
-        # SELETOR DE BASE DE CÁLCULO
-        # ---------------------------------------------------------
         col_sel, _ = st.columns([1, 2])
         with col_sel:
             base_calculo = st.radio(
@@ -321,5 +317,4 @@ with tab3:
         st.subheader("Por Natureza do Gasto")
         st.plotly_chart(plotar_consumo(df_adm, 'Categoria'), use_container_width=True, config={'displayModeBar': False})
         
-        # NOTA DE RODAPÉ - CUSTOS INTERNOS
         st.caption("ℹ️ **Nota:** O cálculo de overhead e saldo varia conforme a base de faturamento selecionada acima.")
