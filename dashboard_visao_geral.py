@@ -118,9 +118,7 @@ def clean_google_number(x):
         return 0.0
         
     try:
-        # Remove caracteres de moeda e porcentagem
         s = s.replace('R$', '').replace('%', '').replace(' ', '')
-        # Remove separador de milhar (.) e troca vírgula decimal por ponto
         s = s.replace('.', '').replace(',', '.')
         return float(s)
     except:
@@ -129,7 +127,7 @@ def clean_google_number(x):
 # Lista de TODAS as colunas que precisam ser números
 cols_numericas = [
     'Vendido', 'Faturado', 'Mat_Real', 'Desp_Real', 'HH_Real_Vlr', 'Impostos', 'Mat_Orc',
-    'HH_Orc_Qtd', 'HH_Real_Qtd', 'Conclusao_%' # Adicionamos as colunas de horas e %
+    'HH_Orc_Qtd', 'HH_Real_Qtd', 'Conclusao_%' 
 ]
 
 for col in cols_numericas:
@@ -138,10 +136,12 @@ for col in cols_numericas:
     else:
         df_raw[col] = 0.0
 
-def formatar_valor_ptbr(valor):
-    if valor >= 1_000_000: return f"R$ {valor/1_000_000:.1f}M".replace(".", ",")
-    elif valor >= 1_000: return f"R$ {valor/1_000:.1f}k".replace(".", ",")
-    else: return f"{valor:,.0f}".replace(",", ".")
+# --- FORMATAÇÃO BRL COMPLETA ---
+def format_brl(valor):
+    # Substituindo a função antiga que abreviava (1k, 1M)
+    # Agora retorna sempre R$ 1.000,00
+    if pd.isna(valor): return "R$ 0,00"
+    return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 # ---------------------------------------------------------
 # 3. LÓGICA DE NEGÓCIO
@@ -216,10 +216,10 @@ with row1_c1:
     st.markdown(f"""
     <div class="kpi-card" style="border-top: 4px solid #58a6ff;">
         <div class="kpi-title">Valor Vendido</div>
-        <div class="kpi-val">{formatar_valor_ptbr(valor_vendido_total)}</div>
+        <div class="kpi-val">{format_brl(valor_vendido_total)}</div>
         <div class="kpi-sub">
             <span>Meta: {pct_meta_venda:.0f}%</span>
-            <span class="txt-blue">{formatar_valor_ptbr(valor_faturado_total)} faturados</span>
+            <span class="txt-blue">{format_brl(valor_faturado_total)} faturados</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -230,7 +230,7 @@ with row1_c2:
     st.markdown(f"""
     <div class="kpi-card" style="border-top: 4px solid #3fb950;">
         <div class="kpi-title">Valor Concluído</div>
-        <div class="kpi-val">{formatar_valor_ptbr(valor_concluido)}</div>
+        <div class="kpi-val">{format_brl(valor_concluido)}</div>
         <div class="kpi-sub">
             <span>Meta: {pct_meta_concluido:.0f}%</span>
             <span class="txt-green">{pct_concluido_carteira:.0f}% do total</span>
@@ -243,7 +243,7 @@ with row1_c3:
     st.markdown(f"""
     <div class="kpi-card" style="border-top: 4px solid #d29922;">
         <div class="kpi-title">Custos internos</div>
-        <div class="kpi-val">{formatar_valor_ptbr(custo_adm_total)}</div>
+        <div class="kpi-val">{format_brl(custo_adm_total)}</div>
         <div class="kpi-sub">
             <span class="{cor_adm}" style="font-weight:bold">{overhead_pct:.1f}% do valor vendido</span>
         </div>
@@ -375,7 +375,8 @@ for i, (index, row) in enumerate(df_show.iterrows()):
         pct_mat = (mat_real / mat_orc * 100) if mat_orc > 0 else 0
         cor_mat = "#da3633" if pct_mat > 100 else "#e6edf3"
         
-        valor_formatado = formatar_valor_ptbr(row['Vendido'])
+        # AQUI: APLICAÇÃO DA NOVA FORMATAÇÃO NO CARD DO PROJETO
+        valor_formatado = format_brl(row['Vendido'])
         
         with st.container(border=True):
             st.markdown(f"""
