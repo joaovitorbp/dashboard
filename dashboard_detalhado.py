@@ -151,7 +151,7 @@ dados = df_raw[df_raw['Projeto'] == id_projeto].iloc[0]
 # ---------------------------------------------------------
 # TÍTULO DA PÁGINA
 # ---------------------------------------------------------
-st.title("Detalhamento de Projeto")
+st.title("Painel de Obra")
 
 # ---------------------------------------------------------
 # CÁLCULOS
