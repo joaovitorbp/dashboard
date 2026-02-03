@@ -249,12 +249,13 @@ with tab3:
             # 3. PALETA "MIDNIGHT BLUE" (Degradê do mais escuro para o mais claro)
             cores_seq = ['#001f3f', '#003366', '#00509d']
             
-            # Cálculo de % e rótulos EM LINHA ÚNICA para corrigir alinhamento visual
+            # Cálculo de % e rótulos
             total_deste_grafico = df_grouped[col_val].sum()
             df_grouped['Pct'] = (df_grouped[col_val] / total_deste_grafico * 100).fillna(0)
             
+            # AQUI ESTÁ O RÓTULO COM QUEBRA DE LINHA (COMO ERA ANTES)
             df_grouped['Rotulo'] = df_grouped.apply(
-                lambda x: f"<b>{x[col_name]}</b> | {format_brl(x[col_val])} | ({x['Pct']:.1f}%)", 
+                lambda x: f"<b>{x[col_name]}</b><br>{format_brl(x[col_val])}<br>({x['Pct']:.1f}%)", 
                 axis=1
             )
 
@@ -271,7 +272,7 @@ with tab3:
                     marker=dict(color=cor), 
                     text=[row['Rotulo']], 
                     textposition='inside', 
-                    insidetextanchor='end', # Garante que o texto fique no final da barra
+                    insidetextanchor='end', # Mantém o bloco de texto no final da barra
                     insidetextfont=dict(color='white', size=13, family="Arial Black")
                 ))
 
