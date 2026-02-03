@@ -241,9 +241,9 @@ with tab3:
             # 2. ORDENAÇÃO DECRESCENTE
             df_grouped = df_grouped.sort_values(by=col_val, ascending=False)
 
-            # 3. NOVAS CORES: Degradê de Amarelos/Dourados (Escuro -> Claro)
-            # Bronze Escuro -> Dourado Forte -> Amarelo Médio -> Amarelo Claro
-            cores_seq = ['#b47d00', '#d29922', '#e3b341', '#ffe082'] 
+            # 3. NOVAS CORES: Degradê Monocromático Roxo/Violeta (Escuro -> Claro)
+            # Roxo Profundo -> Roxo Médio -> Violeta -> Lavanda
+            cores_seq = ['#4A148C', '#7B1FA2', '#AB47BC', '#CE93D8']
             
             # Cálculo de % e rótulos
             total_deste_grafico = df_grouped[col_val].sum()
@@ -251,7 +251,7 @@ with tab3:
             df_grouped['Rotulo'] = df_grouped.apply(lambda x: f"<b>{x[col_name]}</b><br>R$ {x[col_val]/1000:.0f}k<br>({x['Pct']:.1f}%)", axis=1)
 
             fig = go.Figure()
-            # Usa a mesma sequência de cores para ambos os gráficos, baseada na ordem decrescente
+            # Iterar e atribuir cor baseada na ordem (índice)
             for i, row in df_grouped.iterrows():
                 cor = cores_seq[i % len(cores_seq)]
                 
