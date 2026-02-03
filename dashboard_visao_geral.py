@@ -136,12 +136,17 @@ for col in cols_numericas:
     else:
         df_raw[col] = 0.0
 
-# --- FORMATAÇÃO BRL COMPLETA ---
-def format_brl(valor):
-    # Substituindo a função antiga que abreviava (1k, 1M)
-    # Agora retorna sempre R$ 1.000,00
+# --- FORMATAÇÃO 1: COMPLETA (Para KPIs Grandes) ---
+def format_brl_full(valor):
     if pd.isna(valor): return "R$ 0,00"
     return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+# --- FORMATAÇÃO 2: ABREVIADA (Para Cards de Obras - Espaço Curto) ---
+def format_brl_short(valor):
+    if pd.isna(valor): return "R$ 0"
+    if valor >= 1_000_000: return f"R$ {valor/1_000_000:.1f}M".replace(".", ",")
+    elif valor >= 1_000: return f"R$ {valor/1_000:.1f}k".replace(".", ",")
+    else: return f"R$ {valor:,.0f}".replace(",", ".")
 
 # ---------------------------------------------------------
 # 3. LÓGICA DE NEGÓCIO
@@ -208,7 +213,7 @@ META_MARGEM_LIQUIDA = META_MARGEM_BRUTA - META_CUSTO_ADM
 # ---------------------------------------------------------
 st.title("Dashboard de Resultados")
 
-# LINHA 1 (3 Colunas)
+# LINHA 1 (3 Colunas) - KPIS GRANDES (Formatação COMPLETA)
 row1_c1, row1_c2, row1_c3 = st.columns(3)
 
 pct_meta_venda = (valor_vendido_total / META_VENDAS * 100)
@@ -216,10 +221,10 @@ with row1_c1:
     st.markdown(f"""
     <div class="kpi-card" style="border-top: 4px solid #58a6ff;">
         <div class="kpi-title">Valor Vendido</div>
-        <div class="kpi-val">{format_brl(valor_vendido_total)}</div>
+        <div class="kpi-val">{format_brl_full(valor_vendido_total)}</div>
         <div class="kpi-sub">
             <span>Meta: {pct_meta_venda:.0f}%</span>
-            <span class="txt-blue">{format_brl(valor_faturado_total)} faturados</span>
+            <span class="txt-blue">{format_brl_full(valor_faturado_total)} faturados</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -230,7 +235,7 @@ with row1_c2:
     st.markdown(f"""
     <div class="kpi-card" style="border-top: 4px solid #3fb950;">
         <div class="kpi-title">Valor Concluído</div>
-        <div class="kpi-val">{format_brl(valor_concluido)}</div>
+        <div class="kpi-val">{format_brl_full(valor_concluido)}</div>
         <div class="kpi-sub">
             <span>Meta: {pct_meta_concluido:.0f}%</span>
             <span class="txt-green">{pct_concluido_carteira:.0f}% do total</span>
@@ -243,7 +248,7 @@ with row1_c3:
     st.markdown(f"""
     <div class="kpi-card" style="border-top: 4px solid #d29922;">
         <div class="kpi-title">Custos internos</div>
-        <div class="kpi-val">{format_brl(custo_adm_total)}</div>
+        <div class="kpi-val">{format_brl_full(custo_adm_total)}</div>
         <div class="kpi-sub">
             <span class="{cor_adm}" style="font-weight:bold">{overhead_pct:.1f}% do valor vendido</span>
         </div>
@@ -252,7 +257,7 @@ with row1_c3:
 
 st.write("")
 
-# LINHA 2 (4 Colunas)
+# LINHA 2 (4 Colunas) - MARGENS (Formatação padrão %)
 row2_c1, row2_c2, row2_c3, row2_c4 = st.columns(4)
 
 cor_m_geral = "txt-green" if mg_geral >= META_MARGEM_BRUTA else "txt-red"
@@ -305,11 +310,10 @@ with row2_c4:
 st.divider()
 
 # ---------------------------------------------------------
-# 5. CARDS DE PROJETOS
+# 5. CARDS DE PROJETOS (TILES)
 # ---------------------------------------------------------
 
 def calcular_dados_extras(row):
-    # Aqui não precisamos mais de converter float() pois já limpamos tudo antes
     vendido = row['Vendido']
     custo = row['Mat_Real'] + row['Desp_Real'] + row['HH_Real_Vlr'] + row['Impostos']
     lucro = vendido - custo
@@ -375,8 +379,8 @@ for i, (index, row) in enumerate(df_show.iterrows()):
         pct_mat = (mat_real / mat_orc * 100) if mat_orc > 0 else 0
         cor_mat = "#da3633" if pct_mat > 100 else "#e6edf3"
         
-        # AQUI: APLICAÇÃO DA NOVA FORMATAÇÃO NO CARD DO PROJETO
-        valor_formatado = format_brl(row['Vendido'])
+        # AQUI USAMOS A FORMATAÇÃO ABREVIADA (SHORT)
+        valor_formatado = format_brl_short(row['Vendido'])
         
         with st.container(border=True):
             st.markdown(f"""
