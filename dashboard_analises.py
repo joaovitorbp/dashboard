@@ -241,9 +241,9 @@ with tab3:
             # 2. ORDENAÇÃO DECRESCENTE (Maior para Menor)
             df_grouped = df_grouped.sort_values(by=col_val, ascending=False)
 
-            # 3. NOVAS CORES: Degradê Monocromático "Midnight Blue" (Escuro Profundo -> Azul Médio)
-            # Azul Noite -> Azul Marinho -> Azul Royal -> Azul Aço
-            cores_seq = ['#001f3f', '#003366', '#00509d', '#4ea8de']
+            # 3. NOVAS CORES: Degradê Monocromático "Midnight Blue" (3 Cores)
+            # Azul Noite (Maior) -> Azul Marinho (Médio) -> Azul Royal (Menor)
+            cores_seq = ['#001f3f', '#003366', '#00509d']
             
             # Cálculo de % e rótulos
             total_deste_grafico = df_grouped[col_val].sum()
@@ -251,7 +251,7 @@ with tab3:
             df_grouped['Rotulo'] = df_grouped.apply(lambda x: f"<b>{x[col_name]}</b><br>R$ {x[col_val]/1000:.0f}k<br>({x['Pct']:.1f}%)", axis=1)
 
             fig = go.Figure()
-            # Iterar usando ENUMERATE para garantir a cor baseada na POSIÇÃO do ranking, não no índice original
+            # Iterar usando ENUMERATE para garantir a cor baseada na POSIÇÃO do ranking
             for i, (idx, row) in enumerate(df_grouped.iterrows()):
                 cor = cores_seq[i % len(cores_seq)]
                 
