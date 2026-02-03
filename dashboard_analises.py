@@ -197,8 +197,8 @@ with tab2:
         c1, c2 = st.columns(2)
         with c1:
             st.subheader("Participação na Receita")
-            fig_tree = px.treemap(df_tipo, path=['Tipo'], values='Vendido', color='Margem_Media', color_continuous_scale=['#da3633', '#e3b341', '#3fb950'])
-            # CORREÇÃO AQUI: Fundo transparente e margens zeradas
+            # CORREÇÃO AQUI: template dark e margens zeradas para remover borda cinza
+            fig_tree = px.treemap(df_tipo, path=['Tipo'], values='Vendido', color='Margem_Media', color_continuous_scale=['#da3633', '#e3b341', '#3fb950'], template="plotly_dark")
             fig_tree.update_layout(margin=dict(t=0, l=0, r=0, b=0), coloraxis_showscale=False, plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
             fig_tree.update_traces(textinfo="label+value+percent root", textfont=dict(color='white', size=14))
             st.plotly_chart(fig_tree, use_container_width=True, config={'displayModeBar': False})
@@ -223,6 +223,7 @@ with tab3:
         
         col_sel, _ = st.columns([1, 2])
         with col_sel:
+            # BOTÕES RENOMEADOS
             base_calculo = st.radio(
                 "Base de Faturamento:",
                 ["Valor Concluído", "Valor Total"],
@@ -242,6 +243,7 @@ with tab3:
         with c1: st.markdown(f'<div class="highlight-box" style="border-top: 4px solid #d29922"><div class="highlight-lbl">Custo Interno</div><div class="highlight-val">{format_brl(custo_adm_total)}</div></div>', unsafe_allow_html=True)
         with c2:
             cor_impacto = "#3fb950" if impacto_percentual <= META_ADM else "#da3633"
+            # NOMENCLATURA OVERHEAD MANTIDA (SEM O TEXTO DINÂMICO)
             st.markdown(f'<div class="highlight-box" style="border-top: 4px solid {cor_impacto}"><div class="highlight-lbl">Overhead</div><div class="highlight-val" style="color: {cor_impacto}">{impacto_percentual:.1f}%</div></div>', unsafe_allow_html=True)
         with c3:
             cor_saldo = "#3fb950" if saldo >= 0 else "#da3633"
