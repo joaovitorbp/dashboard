@@ -155,37 +155,31 @@ with tab1:
         with c3: st.markdown(f'<div class="highlight-box" style="border-top: 4px solid #8b949e"><div class="highlight-lbl">Obras Entregues</div><div class="highlight-val">{len(df_finalizadas)}</div></div>', unsafe_allow_html=True)
 
         st.divider()
-        st.subheader("Matriz Valor x Margem (Por Planta)") 
-        
+        st.subheader("Ranking por Planta") 
+        # --- RESTAURADO: GRÁFICO DE BARRAS HORIZONTAL ---
         df_agrupado = df_finalizadas.groupby('Cliente_Local').agg({'Vendido': 'sum', 'Lucro': 'sum'}).reset_index()
         df_agrupado['Margem_%'] = (df_agrupado['Lucro'] / df_agrupado['Vendido'] * 100).fillna(0)
-        
-        fig_matriz = px.scatter(
+        df_agrupado = df_agrupado.sort_values(by='Vendido', ascending=True)
+
+        fig_detalhe = px.bar(
             df_agrupado, 
+            y='Cliente_Local', 
             x='Vendido', 
-            y='Margem_%', 
-            size='Vendido', 
-            color='Margem_%',
-            text='Cliente_Local',
-            color_continuous_scale=['#da3633', '#e3b341', '#3fb950'],
-            labels={'Vendido': 'Valor Vendido (R$)', 'Margem_%': 'Margem (%)', 'Cliente_Local': 'Planta'},
-            hover_name='Cliente_Local'
+            text_auto='.2s', 
+            orientation='h', 
+            color='Margem_%', 
+            color_continuous_scale=['#da3633', '#e3b341', '#3fb950'], 
+            labels={'Vendido': 'Valor Vendido (R$)', 'Cliente_Local': '', 'Margem_%': 'Margem %'}
         )
-        
-        fig_matriz.add_hline(y=META_MARGEM, line_dash="dash", line_color="#8b949e", annotation_text="Meta")
-        
-        # CORREÇÃO AQUI: Voltamos para 'top center' (suportado) e mantemos a altura 650
-        fig_matriz.update_traces(textposition='top center', marker=dict(line=dict(width=1, color='White')))
-        fig_matriz.update_layout(
+        fig_detalhe.update_layout(
             plot_bgcolor='rgba(0,0,0,0)', 
             paper_bgcolor='rgba(0,0,0,0)', 
             font=dict(color='white'), 
             xaxis=dict(showgrid=True, gridcolor='#30363d'), 
-            yaxis=dict(showgrid=True, gridcolor='#30363d'),
-            height=650, # Altura maior para evitar sobreposição
-            margin=dict(t=10, l=10, r=10, b=10)
+            height=500, 
+            margin=dict(t=0, l=0, r=0, b=0)
         )
-        st.plotly_chart(fig_matriz, use_container_width=True, config={'displayModeBar': False})
+        st.plotly_chart(fig_detalhe, use_container_width=True, config={'displayModeBar': False})
 
         st.write("")
         col_cli, col_geo = st.columns(2)
