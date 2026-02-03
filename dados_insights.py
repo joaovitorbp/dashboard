@@ -174,15 +174,15 @@ with tab1:
         
         fig_matriz.add_hline(y=META_MARGEM, line_dash="dash", line_color="#8b949e", annotation_text="Meta")
         
-        # AJUSTE AQUI: textposition='auto' e height=650
-        fig_matriz.update_traces(textposition='auto', marker=dict(line=dict(width=1, color='White')))
+        # CORREÇÃO AQUI: Voltamos para 'top center' (suportado) e mantemos a altura 650
+        fig_matriz.update_traces(textposition='top center', marker=dict(line=dict(width=1, color='White')))
         fig_matriz.update_layout(
             plot_bgcolor='rgba(0,0,0,0)', 
             paper_bgcolor='rgba(0,0,0,0)', 
             font=dict(color='white'), 
             xaxis=dict(showgrid=True, gridcolor='#30363d'), 
             yaxis=dict(showgrid=True, gridcolor='#30363d'),
-            height=650, # Aumentado para dar mais espaço
+            height=650, # Altura maior para evitar sobreposição
             margin=dict(t=10, l=10, r=10, b=10)
         )
         st.plotly_chart(fig_matriz, use_container_width=True, config={'displayModeBar': False})
