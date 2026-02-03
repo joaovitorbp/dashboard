@@ -79,11 +79,13 @@ st.markdown("""
 # ---------------------------------------------------------
 def format_currency(value):
     if pd.isna(value): return "R$ 0,00"
+    # Formatação BRL: R$ 1.000,00
     return f"R$ {value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 def format_percent(value):
-    if pd.isna(value): return "0,0%"
-    return f"{value:.1f}%".replace(".", ",")
+    if pd.isna(value): return "0.0%"
+    # Mantém o ponto decimal conforme solicitado (ex: 25.5%)
+    return f"{value:.1f}%"
 
 @st.cache_data(ttl=60)
 def load_data():
@@ -343,6 +345,7 @@ with st.container(border=True):
     
     if modo_vis == "Valores (R$)":
         vals = [dados['Vendido'], -dados['Impostos'], -dados['Mat_Real'], -dados['Desp_Real'], -dados['HH_Real_Vlr'], lucro_liquido]
+        # BRL formatado
         text_vals = [format_currency(v).replace("R$ ", "") for v in vals]
     else:
         base = dados['Vendido'] if dados['Vendido'] > 0 else 1
