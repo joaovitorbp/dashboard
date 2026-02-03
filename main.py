@@ -124,13 +124,11 @@ if st.session_state.get("authentication_status"):
     
     # === USUÁRIO LOGADO ===
     
-    # 1. Menu de Navegação
+    # 1. Menu de Navegação (ATUALIZADO COM NOVOS NOMES DE ARQUIVO)
     pg = st.navigation([
-        st.Page("dashboard_visao_geral.py", title="Gestão da Carteira", icon="🏢"),
-        st.Page("dashboard_detalhado.py", title="Painel de Obra", icon="📝"),
-        # --- NOVA PÁGINA ADICIONADA AQUI ---
-        st.Page("dashboard_analises.py", title="Dados & Insights", icon="📈"), 
-        # -----------------------------------
+        st.Page("gestao_carteira.py", title="Gestão da Carteira", icon="🏢"),
+        st.Page("painel_obra.py", title="Painel de Obra", icon="📝"),
+        st.Page("dados_insights.py", title="Dados & Insights", icon="📈"), 
         st.Page("configuracoes.py", title="Configurações", icon="⚙️"),
     ])
     
