@@ -228,9 +228,7 @@ with tab3:
         st.divider()
 
         def plotar_consumo(df_input, group_col):
-            cores_cat = {'Pessoal': '#0969da', 'Despesas': '#6e7681', 'Materiais': '#2da44e'}
-            cores_seq = ['#0969da', '#2da44e', '#6e7681']
-            
+            # 1. Preparação dos Dados
             if group_col == 'Categoria':
                 vals = {'Pessoal': df_adm['HH_Real_Vlr'].sum(), 'Despesas': df_adm['Desp_Real'].sum(), 'Materiais': df_adm['Mat_Real'].sum()}
                 df_grouped = pd.DataFrame(list(vals.items()), columns=['Categoria', 'Valor'])
@@ -240,15 +238,44 @@ with tab3:
                 df_grouped = df_adm.groupby('Projeto').agg({'Total_Sem_Imp': 'sum', 'Descricao': 'first'}).reset_index()
                 col_val, col_name = 'Total_Sem_Imp', 'Projeto'
             
-            df_grouped['Pct'] = (df_grouped[col_val] / df_grouped[col_val].sum() * 100).fillna(0)
+            # 2. ORDENAÇÃO DECRESCENTE: Maior valor primeiro
+            df_grouped = df_grouped.sort_values(by=col_val, ascending=False)
+
+            # 3. NOVAS CORES: Paleta Profissional e Vibrante (Azul Royal, Laranja Ouro, Roxo)
+            cores_cat = {'Pessoal': '#2f81f7', 'Despesas': '#d29922', 'Materiais': '#a371f7'}
+            cores_seq = ['#2f81f7', '#d29922', '#a371f7', '#6e7681'] # Sequência para quando não for categoria
+            
+            # Cálculo de % e rótulos
+            total_deste_grafico = df_grouped[col_val].sum()
+            df_grouped['Pct'] = (df_grouped[col_val] / total_deste_grafico * 100).fillna(0)
             df_grouped['Rotulo'] = df_grouped.apply(lambda x: f"<b>{x[col_name]}</b><br>R$ {x[col_val]/1000:.0f}k<br>({x['Pct']:.1f}%)", axis=1)
 
             fig = go.Figure()
+            # Iterar na ordem já classificada para garantir que a barra maior fique à esquerda
             for i, row in df_grouped.iterrows():
-                cor = cores_cat.get(row[col_name], '#8b949e') if group_col == 'Categoria' else cores_seq[i % 3]
-                fig.add_trace(go.Bar(y=['Consumo'], x=[row[col_val]], name=str(row[col_name]), orientation='h', marker=dict(color=cor), text=[row['Rotulo']], textposition='auto', insidetextfont=dict(color='white', size=13)))
+                cor = cores_cat.get(row[col_name], '#8b949e') if group_col == 'Categoria' else cores_seq[i % len(cores_seq)]
+                
+                fig.add_trace(go.Bar(
+                    y=['Consumo'], 
+                    x=[row[col_val]], 
+                    name=str(row[col_name]), 
+                    orientation='h', 
+                    marker=dict(color=cor), 
+                    text=[row['Rotulo']], 
+                    textposition='auto', 
+                    insidetextfont=dict(color='white', size=13, family="Arial Black")
+                ))
 
-            fig.update_layout(barmode='stack', height=180, margin=dict(l=0, r=0, t=10, b=10), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', xaxis=dict(showgrid=True, gridcolor='#30363d', tickfont=dict(color='#8b949e'), tickprefix="R$ ", range=[0, max(verba_permitida, custo_adm_total) * 1.15]), yaxis=dict(showticklabels=False), showlegend=False)
+            fig.update_layout(
+                barmode='stack', 
+                height=200, 
+                margin=dict(l=0, r=0, t=10, b=10), 
+                paper_bgcolor='rgba(0,0,0,0)', 
+                plot_bgcolor='rgba(0,0,0,0)', 
+                xaxis=dict(showgrid=True, gridcolor='#30363d', showticklabels=True, tickfont=dict(color='#8b949e'), tickprefix="R$ ", range=[0, max(verba_permitida, custo_adm_total) * 1.15]), 
+                yaxis=dict(showticklabels=False), 
+                showlegend=False
+            )
             fig.add_vline(x=verba_permitida, line_width=3, line_dash="dash", line_color="#da3633", annotation_text=f"Limite: R$ {verba_permitida:,.0f}", annotation_position="top right", annotation_font=dict(color="#da3633"))
             return fig
 
