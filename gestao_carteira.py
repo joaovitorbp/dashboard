@@ -75,7 +75,7 @@ st.markdown("""
     
     .tile-footer { padding: 10px 15px; }
     
-    /* CORREÇÃO AQUI: Alinhamento da linha de rodapé (Status --- %) */
+    /* Alinhamento da linha de rodapé (Status --- %) */
     .footer-row { display: flex; justify-content: space-between; align-items: center; }
     
     .progress-track { background-color: #21262d; height: 4px; border-radius: 2px; width: 100%; margin-bottom: 10px; overflow: hidden; }
@@ -408,4 +408,5 @@ for i, (index, row) in enumerate(df_show.iterrows()):
             with col_btn:
                 if st.button("Abrir ↗", key=f"btn_{row['Projeto']}", use_container_width=True):
                     st.session_state["projeto_foco"] = row['Projeto']
-                    st.switch_page("dashboard_detalhado.py")
+                    # ATUALIZAÇÃO AQUI: Redirecionando para o nome novo
+                    st.switch_page("painel_obra.py")
