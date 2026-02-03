@@ -241,10 +241,9 @@ with tab3:
             # 2. ORDENAÇÃO DECRESCENTE
             df_grouped = df_grouped.sort_values(by=col_val, ascending=False)
 
-            # 3. NOVAS CORES: Paleta Monocromática de Azuis (Profissional)
-            # Azul Forte, Azul Médio, Azul Claro, Azul Muito Claro
-            cores_cat = {'Pessoal': '#1565c0', 'Materiais': '#42a5f5', 'Despesas': '#90caf9'}
-            cores_seq = ['#1565c0', '#42a5f5', '#90caf9', '#bbdefb'] 
+            # 3. NOVAS CORES: Degradê de Amarelos/Dourados (Escuro -> Claro)
+            # Bronze Escuro -> Dourado Forte -> Amarelo Médio -> Amarelo Claro
+            cores_seq = ['#b47d00', '#d29922', '#e3b341', '#ffe082'] 
             
             # Cálculo de % e rótulos
             total_deste_grafico = df_grouped[col_val].sum()
@@ -252,8 +251,9 @@ with tab3:
             df_grouped['Rotulo'] = df_grouped.apply(lambda x: f"<b>{x[col_name]}</b><br>R$ {x[col_val]/1000:.0f}k<br>({x['Pct']:.1f}%)", axis=1)
 
             fig = go.Figure()
+            # Usa a mesma sequência de cores para ambos os gráficos, baseada na ordem decrescente
             for i, row in df_grouped.iterrows():
-                cor = cores_cat.get(row[col_name], '#8b949e') if group_col == 'Categoria' else cores_seq[i % len(cores_seq)]
+                cor = cores_seq[i % len(cores_seq)]
                 
                 fig.add_trace(go.Bar(
                     y=['Consumo'], 
