@@ -1,21 +1,24 @@
 import streamlit as st
 import pandas as pd
-import gspread
 import json
 import os
 
 # ---------------------------------------------------------
 # 1. CONFIGURAÇÃO VISUAL
 # ---------------------------------------------------------
+# REMOVEMOS st.set_page_config DAQUI (Já está no main.py)
+
 st.markdown("""
 <style>
-    /* FORÇAR ALINHAMENTO NO TOPO */
+    /* FORÇAR ALINHAMENTO NO TOPO 
+       Isso garante que esta página obedeça ao main.py e zera a margem do título 
+    */
     .block-container {
         padding-top: 1rem !important;
         padding-bottom: 2rem !important;
     }
     
-    /* Remove a margem extra do título */
+    /* Remove a margem extra que o st.title coloca automaticamente */
     h1 {
         padding-top: 0rem !important;
         margin-top: -1rem !important;
@@ -85,68 +88,37 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 2. DADOS E TRATAMENTO (GOOGLE SHEETS)
+# 2. DADOS E TRATAMENTO
 # ---------------------------------------------------------
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=0)
 def load_data():
-    try:
-        gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
-        sh = gc.open("dados_dashboard_obras") 
-        worksheet = sh.sheet1
-        dados = worksheet.get_all_records()
-        df = pd.DataFrame(dados)
-        return df
-    except Exception as e:
-        st.error(f"Erro na conexão com o Google Sheets: {e}")
-        return None
+    return pd.read_excel("dados_obras_v5.xlsx")
 
-df_raw = load_data()
-
-if df_raw is None:
+try:
+    df_raw = load_data()
+except FileNotFoundError:
+    st.error("⚠️ Base de dados 'dados_obras_v5.xlsx' não encontrada.")
     st.stop()
 
-# --- FUNÇÃO DE LIMPEZA ROBUSTA ---
-def clean_google_number(x):
-    """Limpa strings do Google Sheets (R$, %, pontos, vírgulas) e converte para float."""
-    if isinstance(x, (int, float)):
-        return float(x)
-    if x is None:
-        return 0.0
-    
-    s = str(x).strip()
-    if s == "":
-        return 0.0
-        
+def clean_currency_brazil(x):
+    if isinstance(x, (int, float)): return x
     try:
-        s = s.replace('R$', '').replace('%', '').replace(' ', '')
+        s = str(x).replace('R$', '').replace('%', '').replace(' ', '')
         s = s.replace('.', '').replace(',', '.')
         return float(s)
-    except:
-        return 0.0
+    except: return 0.0
 
-# Lista de TODAS as colunas que precisam ser números
-cols_numericas = [
-    'Vendido', 'Faturado', 'Mat_Real', 'Desp_Real', 'HH_Real_Vlr', 'Impostos', 'Mat_Orc',
-    'HH_Orc_Qtd', 'HH_Real_Qtd', 'Conclusao_%' 
-]
-
-for col in cols_numericas:
+cols_monetarias = ['Vendido', 'Faturado', 'Mat_Real', 'Desp_Real', 'HH_Real_Vlr', 'Impostos', 'Mat_Orc']
+for col in cols_monetarias:
     if col in df_raw.columns:
-        df_raw[col] = df_raw[col].apply(clean_google_number)
+        df_raw[col] = df_raw[col].apply(clean_currency_brazil)
     else:
         df_raw[col] = 0.0
 
-# --- FORMATAÇÃO 1: COMPLETA (Para KPIs Grandes) ---
-def format_brl_full(valor):
-    if pd.isna(valor): return "R$ 0,00"
-    return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-
-# --- FORMATAÇÃO 2: ABREVIADA (Para Cards de Obras - Espaço Curto) ---
-def format_brl_short(valor):
-    if pd.isna(valor): return "R$ 0"
+def formatar_valor_ptbr(valor):
     if valor >= 1_000_000: return f"R$ {valor/1_000_000:.1f}M".replace(".", ",")
     elif valor >= 1_000: return f"R$ {valor/1_000:.1f}k".replace(".", ",")
-    else: return f"R$ {valor:,.0f}".replace(",", ".")
+    else: return f"{valor:,.0f}".replace(",", ".")
 
 # ---------------------------------------------------------
 # 3. LÓGICA DE NEGÓCIO
@@ -191,6 +163,7 @@ qtd_total = len(df_obras)
 
 # --- CARREGAR METAS (CONFIG) ---
 def load_config():
+    # Padrão: Venda 5M, Margem 25%, Custo Adm 5%
     default_data = {"meta_vendas": 5000000.0, "meta_margem": 25.0, "meta_custo_adm": 5.0}
     if not os.path.exists("config.json"):
         with open("config.json", "w") as f:
@@ -206,6 +179,7 @@ config = load_config()
 META_VENDAS = float(config["meta_vendas"])
 META_MARGEM_BRUTA = float(config["meta_margem"])
 META_CUSTO_ADM = float(config["meta_custo_adm"])
+# A meta líquida é o que sobra da meta bruta depois de pagar o ADM
 META_MARGEM_LIQUIDA = META_MARGEM_BRUTA - META_CUSTO_ADM
 
 # ---------------------------------------------------------
@@ -213,7 +187,7 @@ META_MARGEM_LIQUIDA = META_MARGEM_BRUTA - META_CUSTO_ADM
 # ---------------------------------------------------------
 st.title("Dashboard de Resultados")
 
-# LINHA 1 (3 Colunas) - KPIS GRANDES (Formatação COMPLETA)
+# LINHA 1 (3 Colunas)
 row1_c1, row1_c2, row1_c3 = st.columns(3)
 
 pct_meta_venda = (valor_vendido_total / META_VENDAS * 100)
@@ -221,10 +195,10 @@ with row1_c1:
     st.markdown(f"""
     <div class="kpi-card" style="border-top: 4px solid #58a6ff;">
         <div class="kpi-title">Valor Vendido</div>
-        <div class="kpi-val">{format_brl_full(valor_vendido_total)}</div>
+        <div class="kpi-val">{formatar_valor_ptbr(valor_vendido_total)}</div>
         <div class="kpi-sub">
             <span>Meta: {pct_meta_venda:.0f}%</span>
-            <span class="txt-blue">{format_brl_full(valor_faturado_total)} faturados</span>
+            <span class="txt-blue">{formatar_valor_ptbr(valor_faturado_total)} faturados</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -235,7 +209,7 @@ with row1_c2:
     st.markdown(f"""
     <div class="kpi-card" style="border-top: 4px solid #3fb950;">
         <div class="kpi-title">Valor Concluído</div>
-        <div class="kpi-val">{format_brl_full(valor_concluido)}</div>
+        <div class="kpi-val">{formatar_valor_ptbr(valor_concluido)}</div>
         <div class="kpi-sub">
             <span>Meta: {pct_meta_concluido:.0f}%</span>
             <span class="txt-green">{pct_concluido_carteira:.0f}% do total</span>
@@ -243,12 +217,13 @@ with row1_c2:
     </div>
     """, unsafe_allow_html=True)
 
+# Cor condicional do Custo Adm: Se for maior que a meta (ex: 5%), fica vermelho
 cor_adm = "txt-red" if overhead_pct > META_CUSTO_ADM else "txt-orange"
 with row1_c3:
     st.markdown(f"""
     <div class="kpi-card" style="border-top: 4px solid #d29922;">
         <div class="kpi-title">Custos internos</div>
-        <div class="kpi-val">{format_brl_full(custo_adm_total)}</div>
+        <div class="kpi-val">{formatar_valor_ptbr(custo_adm_total)}</div>
         <div class="kpi-sub">
             <span class="{cor_adm}" style="font-weight:bold">{overhead_pct:.1f}% do valor vendido</span>
         </div>
@@ -257,9 +232,10 @@ with row1_c3:
 
 st.write("")
 
-# LINHA 2 (4 Colunas) - MARGENS (Formatação padrão %)
+# LINHA 2 (4 Colunas)
 row2_c1, row2_c2, row2_c3, row2_c4 = st.columns(4)
 
+# Compara com Margem Bruta
 cor_m_geral = "txt-green" if mg_geral >= META_MARGEM_BRUTA else "txt-red"
 with row2_c1:
     st.markdown(f"""
@@ -284,6 +260,7 @@ with row2_c2:
     </div>
     """, unsafe_allow_html=True)
 
+# Compara com Margem Líquida (Bruta - Adm)
 cor_m_liq = "txt-green" if mg_liquida_pos_adm >= META_MARGEM_LIQUIDA else "txt-red"
 with row2_c3:
     st.markdown(f"""
@@ -310,19 +287,20 @@ with row2_c4:
 st.divider()
 
 # ---------------------------------------------------------
-# 5. CARDS DE PROJETOS (TILES)
+# 5. CARDS DE PROJETOS
 # ---------------------------------------------------------
 
 def calcular_dados_extras(row):
-    vendido = row['Vendido']
-    custo = row['Mat_Real'] + row['Desp_Real'] + row['HH_Real_Vlr'] + row['Impostos']
+    vendido = float(row['Vendido'])
+    custo = float(row['Mat_Real'] + row['Desp_Real'] + row['HH_Real_Vlr'] + row['Impostos'])
     lucro = vendido - custo
     margem = (lucro / vendido * 100) if vendido > 0 else 0
-    hh_orc, hh_real = row['HH_Orc_Qtd'], row['HH_Real_Qtd']
+    hh_orc, hh_real = float(row['HH_Orc_Qtd']), float(row['HH_Real_Qtd'])
     hh_perc = (hh_real / hh_orc * 100) if hh_orc > 0 else 0
-    fisico = row['Conclusao_%']
+    fisico = float(row['Conclusao_%'])
     critico = False
     
+    # Critério: Margem abaixo da meta bruta OU estouro de horas
     if (margem < META_MARGEM_BRUTA and row['Status'] != 'Apresentado') or (hh_perc > fisico + 10):
         critico = True
     return pd.Series([margem, critico, hh_perc])
@@ -371,16 +349,15 @@ for i, (index, row) in enumerate(df_show.iterrows()):
 
         cor_margem = "#da3633" if row['Margem_%'] < META_MARGEM_BRUTA else "#3fb950"
         
-        hh_orc, hh_real = row['HH_Orc_Qtd'], row['HH_Real_Qtd']
+        hh_orc, hh_real = float(row['HH_Orc_Qtd']), float(row['HH_Real_Qtd'])
         pct_horas = (hh_real / hh_orc * 100) if hh_orc > 0 else 0
         cor_horas = "#da3633" if pct_horas > 100 else "#e6edf3"
         
-        mat_orc, mat_real = row['Mat_Orc'], row['Mat_Real']
+        mat_orc, mat_real = float(row['Mat_Orc']), float(row['Mat_Real'])
         pct_mat = (mat_real / mat_orc * 100) if mat_orc > 0 else 0
         cor_mat = "#da3633" if pct_mat > 100 else "#e6edf3"
         
-        # AQUI USAMOS A FORMATAÇÃO ABREVIADA (SHORT)
-        valor_formatado = format_brl_short(row['Vendido'])
+        valor_formatado = formatar_valor_ptbr(row['Vendido'])
         
         with st.container(border=True):
             st.markdown(f"""
