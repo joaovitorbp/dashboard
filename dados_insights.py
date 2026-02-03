@@ -157,7 +157,6 @@ with tab1:
         st.divider()
         st.subheader("Matriz Valor x Margem (Por Planta)") 
         
-        # --- NOVO CÓDIGO DO GRÁFICO (MATRIZ) ---
         df_agrupado = df_finalizadas.groupby('Cliente_Local').agg({'Vendido': 'sum', 'Lucro': 'sum'}).reset_index()
         df_agrupado['Margem_%'] = (df_agrupado['Lucro'] / df_agrupado['Vendido'] * 100).fillna(0)
         
@@ -173,18 +172,17 @@ with tab1:
             hover_name='Cliente_Local'
         )
         
-        # Adiciona linha de meta
         fig_matriz.add_hline(y=META_MARGEM, line_dash="dash", line_color="#8b949e", annotation_text="Meta")
         
-        # Ajustes visuais
-        fig_matriz.update_traces(textposition='top center', marker=dict(line=dict(width=1, color='White')))
+        # AJUSTE AQUI: textposition='auto' e height=650
+        fig_matriz.update_traces(textposition='auto', marker=dict(line=dict(width=1, color='White')))
         fig_matriz.update_layout(
             plot_bgcolor='rgba(0,0,0,0)', 
             paper_bgcolor='rgba(0,0,0,0)', 
             font=dict(color='white'), 
             xaxis=dict(showgrid=True, gridcolor='#30363d'), 
             yaxis=dict(showgrid=True, gridcolor='#30363d'),
-            height=500,
+            height=650, # Aumentado para dar mais espaço
             margin=dict(t=10, l=10, r=10, b=10)
         )
         st.plotly_chart(fig_matriz, use_container_width=True, config={'displayModeBar': False})
