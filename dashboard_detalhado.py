@@ -77,13 +77,16 @@ st.markdown("""
 # ---------------------------------------------------------
 # FUNÇÕES E DADOS (GOOGLE SHEETS)
 # ---------------------------------------------------------
-def format_currency(value):
+# PADRONIZAÇÃO DE FORMATAÇÃO
+def format_brl(value):
     if pd.isna(value): return "R$ 0,00"
+    # Formata para R$ 1.000,00
     return f"R$ {value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 def format_percent(value):
     if pd.isna(value): return "0,0%"
-    return f"{value:.1f}%".replace(".", ",")
+    # Mantém o ponto decimal para margem
+    return f"{value:.1f}%"
 
 @st.cache_data(ttl=60)
 def load_data():
@@ -213,7 +216,7 @@ with k1:
     st.markdown(f"""
     <div class="kpi-card" style="border-top: 4px solid #58a6ff;">
         <div class="kpi-title">Valor Vendido</div>
-        <div class="kpi-val">{format_currency(dados['Vendido'])}</div>
+        <div class="kpi-val">{format_brl(dados['Vendido'])}</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -222,7 +225,7 @@ with k2:
     st.markdown(f"""
     <div class="kpi-card" style="border-top: 4px solid #3fb950;">
         <div class="kpi-title">Valor Faturado</div>
-        <div class="kpi-val">{format_currency(dados['Faturado'])}</div>
+        <div class="kpi-val">{format_brl(dados['Faturado'])}</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -233,7 +236,7 @@ with k3:
     st.markdown(f"""
     <div class="kpi-card" style="border-top: 4px solid {border_lucro};">
         <div class="kpi-title">Lucro Líquido</div>
-        <div class="kpi-val {cor_lucro}">{format_currency(lucro_liquido)}</div>
+        <div class="kpi-val {cor_lucro}">{format_brl(lucro_liquido)}</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -343,7 +346,8 @@ with st.container(border=True):
     
     if modo_vis == "Valores (R$)":
         vals = [dados['Vendido'], -dados['Impostos'], -dados['Mat_Real'], -dados['Desp_Real'], -dados['HH_Real_Vlr'], lucro_liquido]
-        text_vals = [format_currency(v).replace("R$ ", "") for v in vals]
+        # Formatação completa sem o "R$" para não poluir o waterfall
+        text_vals = [format_brl(v).replace("R$ ", "") for v in vals]
     else:
         base = dados['Vendido'] if dados['Vendido'] > 0 else 1
         vals = [100, -(dados['Impostos']/base)*100, -(dados['Mat_Real']/base)*100, -(dados['Desp_Real']/base)*100, -(dados['HH_Real_Vlr']/base)*100, (lucro_liquido/base)*100]
@@ -355,7 +359,7 @@ with st.container(border=True):
         connector = {"line":{"color":"#30363d"}},
         decreasing = {"marker":{"color":"#da3633"}}, 
         increasing = {"marker":{"color":"#3fb950"}}, 
-        totals = {"marker":{"color":"#58a6ff"}},      
+        totals = {"marker":{"color":"#58a6ff"}},       
         cliponaxis = False
     ))
     
@@ -385,14 +389,16 @@ def plot_row_fixed(titulo, orcado, real):
     fig.add_trace(go.Bar(
         y=[titulo], x=[orcado], name='Orçado', orientation='h', 
         marker_color='#30363d', 
-        text=[format_currency(orcado)], textposition='outside',
+        # Formatação completa no gráfico de barras
+        text=[format_brl(orcado)], textposition='outside',
         cliponaxis=False
     ))
     
     fig.add_trace(go.Bar(
         y=[titulo], x=[real], name='Realizado', orientation='h', 
         marker_color=cor_real, 
-        text=[format_currency(real)], textposition='outside',
+        # Formatação completa no gráfico de barras
+        text=[format_brl(real)], textposition='outside',
         cliponaxis=False 
     ))
 
