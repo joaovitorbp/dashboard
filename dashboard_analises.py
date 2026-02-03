@@ -215,16 +215,34 @@ with tab3:
     else:
         df_adm['Total_Sem_Imp'] = df_adm['Mat_Real'] + df_adm['Desp_Real'] + df_adm['HH_Real_Vlr']
         custo_adm_total = df_adm['Total_Sem_Imp'].sum()
-        faturamento_global = df_obras['Vendido'].sum()
-        verba_permitida = faturamento_global * (META_ADM / 100.0)
-        impacto_percentual = (custo_adm_total / faturamento_global * 100) if faturamento_global > 0 else 0
+        
+        # ---------------------------------------------------------
+        # SELETOR DE BASE DE CÁLCULO
+        # ---------------------------------------------------------
+        col_sel, _ = st.columns([1, 2])
+        with col_sel:
+            base_calculo = st.radio(
+                "Base de Faturamento:",
+                ["Valor Concluído (Padrão)", "Valor Total (Carteira)"],
+                horizontal=True
+            )
+
+        if "Carteira" in base_calculo:
+            faturamento_base = df_obras['Vendido'].sum()
+            lbl_base = "Carteira Total"
+        else:
+            faturamento_base = df_finalizadas['Vendido'].sum()
+            lbl_base = "Obras Concluídas"
+
+        verba_permitida = faturamento_base * (META_ADM / 100.0)
+        impacto_percentual = (custo_adm_total / faturamento_base * 100) if faturamento_base > 0 else 0
         saldo = verba_permitida - custo_adm_total
 
         c1, c2, c3 = st.columns(3)
         with c1: st.markdown(f'<div class="highlight-box" style="border-top: 4px solid #d29922"><div class="highlight-lbl">Custo Interno</div><div class="highlight-val">{format_brl(custo_adm_total)}</div></div>', unsafe_allow_html=True)
         with c2:
             cor_impacto = "#3fb950" if impacto_percentual <= META_ADM else "#da3633"
-            st.markdown(f'<div class="highlight-box" style="border-top: 4px solid {cor_impacto}"><div class="highlight-lbl">Overhead</div><div class="highlight-val" style="color: {cor_impacto}">{impacto_percentual:.1f}%</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="highlight-box" style="border-top: 4px solid {cor_impacto}"><div class="highlight-lbl">Overhead ({lbl_base})</div><div class="highlight-val" style="color: {cor_impacto}">{impacto_percentual:.1f}%</div></div>', unsafe_allow_html=True)
         with c3:
             cor_saldo = "#3fb950" if saldo >= 0 else "#da3633"
             sinal = "+" if saldo >= 0 else "-"
@@ -233,7 +251,6 @@ with tab3:
         st.divider()
 
         def plotar_consumo(df_input, group_col):
-            # 1. Preparação dos Dados
             if group_col == 'Categoria':
                 vals = {'Pessoal': df_adm['HH_Real_Vlr'].sum(), 'Despesas': df_adm['Desp_Real'].sum(), 'Materiais': df_adm['Mat_Real'].sum()}
                 df_grouped = pd.DataFrame(list(vals.items()), columns=['Categoria', 'Valor'])
@@ -243,24 +260,19 @@ with tab3:
                 df_grouped = df_adm.groupby('Projeto').agg({'Total_Sem_Imp': 'sum', 'Descricao': 'first'}).reset_index()
                 col_val, col_name = 'Total_Sem_Imp', 'Projeto'
             
-            # 2. ORDENAÇÃO DECRESCENTE (Maior para Menor)
             df_grouped = df_grouped.sort_values(by=col_val, ascending=False)
-
-            # 3. PALETA "MIDNIGHT BLUE" (Degradê do mais escuro para o mais claro)
             cores_seq = ['#001f3f', '#003366', '#00509d']
             
-            # Cálculo de % e rótulos
             total_deste_grafico = df_grouped[col_val].sum()
             df_grouped['Pct'] = (df_grouped[col_val] / total_deste_grafico * 100).fillna(0)
             
-            # AQUI ESTÁ O RÓTULO COM QUEBRA DE LINHA (COMO ERA ANTES)
+            # FORMATO ORIGINAL DE MÚLTIPLAS LINHAS
             df_grouped['Rotulo'] = df_grouped.apply(
                 lambda x: f"<b>{x[col_name]}</b><br>{format_brl(x[col_val])}<br>({x['Pct']:.1f}%)", 
                 axis=1
             )
 
             fig = go.Figure()
-            # Iterar usando ENUMERATE para garantir a cor baseada na POSIÇÃO
             for i, (idx, row) in enumerate(df_grouped.iterrows()):
                 cor = cores_seq[i % len(cores_seq)]
                 
@@ -272,7 +284,7 @@ with tab3:
                     marker=dict(color=cor), 
                     text=[row['Rotulo']], 
                     textposition='inside', 
-                    insidetextanchor='end', # Mantém o bloco de texto no final da barra
+                    insidetextanchor='end', 
                     insidetextfont=dict(color='white', size=13, family="Arial Black")
                 ))
 
@@ -305,3 +317,5 @@ with tab3:
         st.write("")
         st.subheader("Por Natureza do Gasto")
         st.plotly_chart(plotar_consumo(df_adm, 'Categoria'), use_container_width=True, config={'displayModeBar': False})
+        
+        st.caption("ℹ️ **Nota:** O cálculo de overhead e saldo varia conforme a base de faturamento selecionada acima.")
