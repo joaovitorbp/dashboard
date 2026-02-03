@@ -129,7 +129,7 @@ df_finalizadas = df_obras[df_obras['Status'].isin(['Finalizado', 'Apresentado'])
 
 # --- FUNÇÃO AUXILIAR DE FORMATAÇÃO (BRL) ---
 def format_brl(valor):
-    # Formata como 1,234.56 depois troca para 1.234,56
+    if pd.isna(valor): return "R$ 0,00"
     return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 # ---------------------------------------------------------
@@ -148,11 +148,9 @@ with tab1:
         margem_global = (total_lucro / total_vendido * 100) if total_vendido > 0 else 0
 
         c1, c2, c3 = st.columns(3)
-        # Formatação BRL aplicada nos cards
         with c1: st.markdown(f'<div class="highlight-box" style="border-top: 4px solid #3fb950"><div class="highlight-lbl">Total Finalizado</div><div class="highlight-val">{format_brl(total_vendido)}</div></div>', unsafe_allow_html=True)
         with c2:
             cor_m = "#3fb950" if margem_global >= META_MARGEM else "#da3633"
-            # Margem mantém o ponto decimal conforme pedido
             st.markdown(f'<div class="highlight-box" style="border-top: 4px solid {cor_m}"><div class="highlight-lbl">Margem</div><div class="highlight-val" style="color:{cor_m}">{margem_global:.1f}%</div></div>', unsafe_allow_html=True)
         with c3: st.markdown(f'<div class="highlight-box" style="border-top: 4px solid #8b949e"><div class="highlight-lbl">Obras Entregues</div><div class="highlight-val">{len(df_finalizadas)}</div></div>', unsafe_allow_html=True)
 
@@ -223,7 +221,6 @@ with tab3:
         saldo = verba_permitida - custo_adm_total
 
         c1, c2, c3 = st.columns(3)
-        # Formatação BRL aplicada nos cards de custo
         with c1: st.markdown(f'<div class="highlight-box" style="border-top: 4px solid #d29922"><div class="highlight-lbl">Custo Interno</div><div class="highlight-val">{format_brl(custo_adm_total)}</div></div>', unsafe_allow_html=True)
         with c2:
             cor_impacto = "#3fb950" if impacto_percentual <= META_ADM else "#da3633"
@@ -231,7 +228,6 @@ with tab3:
         with c3:
             cor_saldo = "#3fb950" if saldo >= 0 else "#da3633"
             sinal = "+" if saldo >= 0 else "-"
-            # Formatação BRL aplicada no Saldo
             st.markdown(f'<div class="highlight-box" style="border-top: 4px solid {cor_saldo}"><div class="highlight-lbl">Saldo</div><div class="highlight-val" style="color: {cor_saldo}">{sinal} {format_brl(abs(saldo)).replace("R$ ", "R$ ")}</div></div>', unsafe_allow_html=True)
 
         st.divider()
@@ -257,14 +253,13 @@ with tab3:
             total_deste_grafico = df_grouped[col_val].sum()
             df_grouped['Pct'] = (df_grouped[col_val] / total_deste_grafico * 100).fillna(0)
             
-            # APLICAÇÃO DA FORMATAÇÃO BRL NO RÓTULO DO GRÁFICO
             df_grouped['Rotulo'] = df_grouped.apply(
                 lambda x: f"<b>{x[col_name]}</b><br>{format_brl(x[col_val])}<br>({x['Pct']:.1f}%)", 
                 axis=1
             )
 
             fig = go.Figure()
-            # Iterar usando ENUMERATE para garantir a cor correta pela posição
+            # Iterar usando ENUMERATE para garantir a cor baseada na POSIÇÃO
             for i, (idx, row) in enumerate(df_grouped.iterrows()):
                 cor = cores_seq[i % len(cores_seq)]
                 
@@ -275,7 +270,8 @@ with tab3:
                     orientation='h', 
                     marker=dict(color=cor), 
                     text=[row['Rotulo']], 
-                    textposition='auto', 
+                    textposition='inside', # Garante que o texto fique dentro
+                    insidetextanchor='end', # ALINHA O TEXTO À DIREITA (NO FINAL DA BARRA)
                     insidetextfont=dict(color='white', size=13, family="Arial Black")
                 ))
 
@@ -288,14 +284,12 @@ with tab3:
                 xaxis=dict(
                     showgrid=True, gridcolor='#30363d', 
                     showticklabels=True, tickfont=dict(color='#8b949e'), 
-                    # Prefixo do eixo X simplificado, mas formato mantido pelo Plotly (dificil forçar PT-BR no eixo sem locale, mas o rótulo interno está ok)
                     tickprefix="R$ ", 
                     range=[0, max(verba_permitida, custo_adm_total) * 1.15]
                 ), 
                 yaxis=dict(showticklabels=False), 
                 showlegend=False
             )
-            # Linha da Meta formatada
             fig.add_vline(
                 x=verba_permitida, line_width=3, line_dash="dash", line_color="#da3633", 
                 annotation_text=f"Limite: {format_brl(verba_permitida)}", 
