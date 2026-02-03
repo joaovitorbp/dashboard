@@ -251,8 +251,8 @@ with tab3:
             df_grouped['Rotulo'] = df_grouped.apply(lambda x: f"<b>{x[col_name]}</b><br>R$ {x[col_val]/1000:.0f}k<br>({x['Pct']:.1f}%)", axis=1)
 
             fig = go.Figure()
-            # Iterar na ordem decrescente.
-            for i, row in df_grouped.iterrows():
+            # Iterar usando ENUMERATE para garantir a cor baseada na POSIÇÃO do ranking, não no índice original
+            for i, (idx, row) in enumerate(df_grouped.iterrows()):
                 cor = cores_seq[i % len(cores_seq)]
                 
                 fig.add_trace(go.Bar(
