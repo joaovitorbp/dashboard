@@ -126,10 +126,10 @@ if st.session_state.get("authentication_status"):
     
     # 1. Menu de Navegação
     pg = st.navigation([
-        st.Page("dashboard_visao_geral.py", title="Visão Geral", icon="🏢"),
-        st.Page("dashboard_detalhado.py", title="Detalhamento de Obra", icon="📝"),
+        st.Page("dashboard_visao_geral.py", title="Gestão da Carteira", icon="🏢"),
+        st.Page("dashboard_detalhado.py", title="Painel de Obra", icon="📝"),
         # --- NOVA PÁGINA ADICIONADA AQUI ---
-        st.Page("dashboard_analises.py", title="Análises Estratégicas", icon="📈"), 
+        st.Page("dashboard_analises.py", title="Dados & Insights", icon="📈"), 
         # -----------------------------------
         st.Page("configuracoes.py", title="Configurações", icon="⚙️"),
     ])
