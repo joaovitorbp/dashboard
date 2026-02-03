@@ -238,12 +238,13 @@ with tab3:
                 df_grouped = df_adm.groupby('Projeto').agg({'Total_Sem_Imp': 'sum', 'Descricao': 'first'}).reset_index()
                 col_val, col_name = 'Total_Sem_Imp', 'Projeto'
             
-            # 2. ORDENAÇÃO DECRESCENTE
+            # 2. ORDENAÇÃO DECRESCENTE (Maior para Menor)
             df_grouped = df_grouped.sort_values(by=col_val, ascending=False)
 
-            # 3. NOVAS CORES: Degradê Monocromático Roxo/Violeta (Escuro -> Claro)
-            # Roxo Profundo -> Roxo Médio -> Violeta -> Lavanda
-            cores_seq = ['#4A148C', '#7B1FA2', '#AB47BC', '#CE93D8']
+            # 3. NOVAS CORES: Paleta Monocromática "Teal/Petróleo" (Neutra e Sofisticada)
+            # Do mais escuro (maior valor) para o mais claro
+            # Cores: Petróleo Profundo -> Teal Médio -> Verde Água -> Menta Pálido
+            cores_seq = ['#115e59', '#0d9488', '#2dd4bf', '#99f6e4'] 
             
             # Cálculo de % e rótulos
             total_deste_grafico = df_grouped[col_val].sum()
@@ -251,7 +252,8 @@ with tab3:
             df_grouped['Rotulo'] = df_grouped.apply(lambda x: f"<b>{x[col_name]}</b><br>R$ {x[col_val]/1000:.0f}k<br>({x['Pct']:.1f}%)", axis=1)
 
             fig = go.Figure()
-            # Iterar e atribuir cor baseada na ordem (índice)
+            # Iterar na ordem já classificada. 
+            # O índice 'i' cresce (0, 1, 2...), pegando cores da mais escura para a mais clara.
             for i, row in df_grouped.iterrows():
                 cor = cores_seq[i % len(cores_seq)]
                 
