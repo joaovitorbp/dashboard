@@ -238,12 +238,13 @@ with tab3:
                 df_grouped = df_adm.groupby('Projeto').agg({'Total_Sem_Imp': 'sum', 'Descricao': 'first'}).reset_index()
                 col_val, col_name = 'Total_Sem_Imp', 'Projeto'
             
-            # 2. ORDENAÇÃO DECRESCENTE: Maior valor primeiro
+            # 2. ORDENAÇÃO DECRESCENTE
             df_grouped = df_grouped.sort_values(by=col_val, ascending=False)
 
-            # 3. NOVAS CORES: Paleta Profissional e Vibrante (Azul Royal, Laranja Ouro, Roxo)
-            cores_cat = {'Pessoal': '#2f81f7', 'Despesas': '#d29922', 'Materiais': '#a371f7'}
-            cores_seq = ['#2f81f7', '#d29922', '#a371f7', '#6e7681'] # Sequência para quando não for categoria
+            # 3. NOVAS CORES: Paleta Monocromática de Azuis (Profissional)
+            # Azul Forte, Azul Médio, Azul Claro, Azul Muito Claro
+            cores_cat = {'Pessoal': '#1565c0', 'Materiais': '#42a5f5', 'Despesas': '#90caf9'}
+            cores_seq = ['#1565c0', '#42a5f5', '#90caf9', '#bbdefb'] 
             
             # Cálculo de % e rótulos
             total_deste_grafico = df_grouped[col_val].sum()
@@ -251,7 +252,6 @@ with tab3:
             df_grouped['Rotulo'] = df_grouped.apply(lambda x: f"<b>{x[col_name]}</b><br>R$ {x[col_val]/1000:.0f}k<br>({x['Pct']:.1f}%)", axis=1)
 
             fig = go.Figure()
-            # Iterar na ordem já classificada para garantir que a barra maior fique à esquerda
             for i, row in df_grouped.iterrows():
                 cor = cores_cat.get(row[col_name], '#8b949e') if group_col == 'Categoria' else cores_seq[i % len(cores_seq)]
                 
