@@ -135,7 +135,7 @@ def format_brl(valor):
 # ---------------------------------------------------------
 # 5. INTERFACE
 # ---------------------------------------------------------
-st.title("Análises Estratégicas")
+st.title("Dados & Insights")
 tab1, tab2, tab3 = st.tabs(["Cliente", "Segmentos", "Custos Internos"])
 
 # ABA CLIENTE
